@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniNet Admin - Panel de Control</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f4f6f7;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding-top: 20px;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--accent);
+        }
+
+        .menu-item {
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background-color: var(--secondary);
+            border-left: 4px solid var(--accent);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        /* Cards de PCs */
+        .pc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .pc-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+            position: relative;
+        }
+
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .status-on { background-color: var(--success); box-shadow: 0 0 5px var(--success);}
+        .status-off { background-color: var(--danger); }
+
+        /* Módulos (Secciones) */
+        .section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Botones de Acción */
+        .action-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: 0.3s;
+        }
+
+        .btn-exam { background-color: var(--danger); }
+        .btn-class { background-color: var(--success); }
+        .btn-update { background-color: var(--accent); }
+        
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        /* Tabla LDAP */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        /* Consola de Logs */
+        .console-box {
+            background-color: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            border-radius: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 14px;
+        }
+        
+        .console-line { margin-bottom: 5px; border-bottom: 1px solid #333; }
+        .log-error { color: #ff5555; }
+        .log-warn { color: #ffb86c; }
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand"><i class="fas fa-network-wired"></i> UniNet Admin</div>
+        <div class="menu-item active" onclick="showSection('dashboard')">
+            <i class="fas fa-desktop"></i> Dashboard
+        </div>
+        <div class="menu-item" onclick="showSection('ldap')">
+            <i class="fas fa-users"></i> Usuarios (LDAP)
+        </div>
+        <div class="menu-item" onclick="showSection('network')">
+            <i class="fas fa-wifi"></i> Red & Firewall
+        </div>
+        <div class="menu-item" onclick="showSection('logs')">
+            <i class="fas fa-terminal"></i> Logs (Journalctl)
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <div class="header">
+            <h2>Panel de Administración</h2>
+            <div>
+                <span class="status-dot status-on"></span> Servidor: <strong>ONLINE</strong> (192.168.1.10)
+            </div>
+        </div>
+
+        <div id="dashboard" class="section active">
+            <h3><i class="fas fa-laptop-medical"></i> Estado de Laboratorio (Systemd Check)</h3>
+            <p>Monitoreo en tiempo real de los clientes Ubuntu.</p>
+            <div class="pc-grid" id="pcContainer">
+                </div>
+        </div>
+
+        <div id="ldap" class="section">
+            <h3><i class="fas fa-address-book"></i> Directorio Activo (OpenLDAP)</h3>
+            <div class="action-panel">
+                <input type="text" placeholder="Nuevo Alumno (CN)" style="padding: 10px;">
+                <button class="btn btn-update"><i class="fas fa-plus"></i> Crear Usuario LDAP</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>UID</th>
+                        <th>Nombre Común (CN)</th>
+                        <th>Home Directory</th>
+                        <th>Grupo (GID)</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1001</td>
+                        <td>juan.perez</td>
+                        <td>/home/juan.perez</td>
+                        <td>alumnos (5000)</td>
+                        <td><span style="color:green">Activo</span></td>
+                    </tr>
+                    <tr>
+                        <td>1002</td>
+                        <td>maria.gomez</td>
+                        <td>/home/maria.gomez</td>
+                        <td>alumnos (5000)</td>
+                        <td><span style="color:green">Activo</span></td>
+                    </tr>
+                    <tr>
+                        <td>1003</td>
+                        <td>prof.sistemas</td>
+                        <td>/home/prof.sistemas</td>
+                        <td>docentes (6000)</td>
+                        <td><span style="color:blue">Admin</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="network" class="section">
+            <h3><i class="fas fa-shield-alt"></i> Control de Red y Firewall (Netplan + UFW)</h3>
+            
+            <div class="action-panel" style="border-left: 5px solid var(--danger);">
+                <div>
+                    <h4>MODO EXAMEN</h4>
+                    <p><small>Ejecuta script SSH: Netplan Static IP + UFW Deny Outgoing</small></p>
+                </div>
+                <button class="btn btn-exam" onclick="applyMode('exam')">ACTIVAR BLOQUEO</button>
+            </div>
+
+            <div class="action-panel" style="border-left: 5px solid var(--success);">
+                <div>
+                    <h4>MODO CLASE</h4>
+                    <p><small>Ejecuta script SSH: Netplan DHCP + UFW Allow All</small></p>
+                </div>
+                <button class="btn btn-class" onclick="applyMode('class')">RESTAURAR INTERNET</button>
+            </div>
+
+            <div id="network-log" style="background: #eee; padding: 15px; display:none; border-radius: 5px;">
+                <i class="fas fa-cog fa-spin"></i> Aplicando configuración en 20 clientes...
+            </div>
+        </div>
+
+        <div id="logs" class="section">
+            <h3><i class="fas fa-list-alt"></i> Auditoría de Seguridad (Journalctl -f)</h3>
+            <p>Visualización remota de <code>/var/log/auth.log</code> y servicios.</p>
+            <div class="console-box" id="console">
+                <div class="console-line">Nov 29 10:00:01 server-main systemd[1]: Started Session 42 of user root.</div>
+                <div class="console-line">Nov 29 10:01:23 pc-lab-05 sshd[1230]: Accepted password for juan.perez from 192.168.1.50 port 4420</div>
+                <div class="console-line">Nov 29 10:01:23 pc-lab-05 systemd[1]: pam_unix(sshd:session): session opened for user juan.perez</div>
+                <div class="console-line">Nov 29 10:02:00 pc-lab-02 sudo[332]: pam_unix(sudo:auth): authentication failure; logname= uid=0 euid=0 tty=/dev/pts/1 user=root</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 1. Generar PCs dinámicamente para el Dashboard
+        const pcContainer = document.getElementById('pcContainer');
+        for (let i = 1; i <= 12; i++) {
+            const isOnline = Math.random() > 0.2; // 80% online
+            const user = isOnline ? (Math.random() > 0.5 ? 'juan.perez' : 'Sin Usuario') : '---';
+            
+            const html = `
+                <div class="pc-card">
+                    <div style="font-size: 40px; color: ${isOnline ? '#2c3e50' : '#bdc3c7'}; margin-bottom: 10px;">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <h4>PC-LAB-${i.toString().padStart(2, '0')}</h4>
+                    <div style="margin: 10px 0;">
+                        <span class="status-dot ${isOnline ? 'status-on' : 'status-off'}"></span>
+                        ${isOnline ? 'Conectado' : 'Sin Señal'}
+                    </div>
+                    <small style="color: #7f8c8d;">
+                        <i class="fas fa-user"></i> ${user}
+                    </small>
+                    <br>
+                    <small style="color: #7f8c8d;">IP: 192.168.1.${100+i}</small>
+                </div>
+            `;
+            pcContainer.innerHTML += html;
+        }
+
+        // 2. Lógica de Navegación
+        function showSection(sectionId) {
+            // Ocultar todas
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            
+            // Mostrar seleccionada
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Actualizar menú sidebar
+            event.currentTarget.classList.add('active');
+        }
+
+        // 3. Simulación de Netplan/UFW
+        function applyMode(mode) {
+            const logDiv = document.getElementById('network-log');
+            logDiv.style.display = 'block';
+            
+            let msg = mode === 'exam' 
+                ? 'Aplicando <strong>Netplan Static</strong> y <strong>UFW DENY</strong>...' 
+                : 'Restaurando <strong>Netplan DHCP</strong> y <strong>UFW ALLOW</strong>...';
+            
+            logDiv.innerHTML = `<i class="fas fa-cog fa-spin"></i> Conectando vía SSH a los clientes... <br> ${msg}`;
+
+            setTimeout(() => {
+                logDiv.innerHTML = `<i class="fas fa-check-circle" style="color:green"></i> Configuración aplicada exitosamente en 12 equipos.`;
+                // Agregar log a la consola simulada
+                addLog(`CMD: Admin ejecutó cambio de modo de red: ${mode.toUpperCase()}`, 'warn');
+            }, 2000);
+        }
+
+        // 4. Simulación de Logs en vivo
+        function addLog(msg, type='info') {
+            const consoleBox = document.getElementById('console');
+            const date = new Date().toLocaleTimeString();
+            let colorClass = '';
+            if(type === 'error') colorClass = 'log-error';
+            if(type === 'warn') colorClass = 'log-warn';
+
+            const line = `<div class="console-line ${colorClass}">Nov 29 ${date} server-main: ${msg}</div>`;
+            consoleBox.innerHTML += line;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        // Simular tráfico de logs aleatorio
+        setInterval(() => {
+            const events = [
+                {msg: "systemd-networkd[231]: enp0s3: Link UP", type: 'info'},
+                {msg: "sshd[142]: Received disconnect from 192.168.1.105: 11: Bye Bye", type: 'info'},
+                {msg: "UFW BLOCK: IN=enp0s3 OUT= MAC=... SRC=192.168.1.102 PROTO=TCP DPT=80", type: 'warn'},
+                {msg: "slapd[892]: conn=1002 op=1 SRCH base='ou=users,dc=uninet,dc=com'", type: 'info'}
+            ];
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            addLog(randomEvent.msg, randomEvent.type);
+        }, 5000);
+
+    </script>
+</body>
+</html>

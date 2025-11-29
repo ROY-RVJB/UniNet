@@ -1,0 +1,23 @@
+# Claude Code configuration
+.claude/
+
+# Node modules
+node_modules/
+package-lock.json
+
+# Dependencies
+**/node_modules/
+**/dist/
+**/build/
+
+# Environment variables
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
