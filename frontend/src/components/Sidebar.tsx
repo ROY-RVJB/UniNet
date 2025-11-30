@@ -16,9 +16,11 @@ const menuItems: MenuItem[] = [
 interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
+  serverOnline: boolean;
+  serverIP: string;
 }
 
-export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, serverOnline, serverIP }: SidebarProps) {
   return (
     <div className="w-64 bg-tech-dark border-r border-tech-darkBorder flex flex-col">
       {/* Brand */}
@@ -58,10 +60,16 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
       {/* Footer Info */}
       <div className="p-6 border-t border-tech-darkBorder">
         <div className="flex items-center gap-2 text-sm">
-          <div className="h-2 w-2 rounded-full bg-status-online animate-pulse" />
-          <span className="text-tech-textDim">Servidor: ONLINE</span>
+          <div className={`h-2 w-2 rounded-full ${
+            serverOnline 
+              ? 'bg-status-online animate-pulse' 
+              : 'bg-status-offline'
+          }`} />
+          <span className="text-tech-textDim">
+            Servidor: {serverOnline ? 'ONLINE' : 'OFFLINE'}
+          </span>
         </div>
-        <p className="text-xs text-tech-textDim mt-1">192.168.1.10</p>
+        <p className="text-xs text-tech-textDim mt-1">{serverIP}</p>
       </div>
     </div>
   );

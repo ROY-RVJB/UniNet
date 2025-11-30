@@ -1,49 +1,39 @@
-import type { PC, LogEntry, LDAPUser, PCStatus } from '@/types';
+import type { PC, LogEntry, LDAPUser } from '@/types';
 
 // ==========================================
-// DATOS MOCK - UniNet Admin
+// DATOS MOCK - Solo las 3 PCs + Servidor
 // ==========================================
 
 /**
- * Genera estado aleatorio para las PCs (80% online)
+ * Solo las 3 PCs del laboratorio
+ * El estado real vendrá del backend Python que hace ping
  */
-const getRandomStatus = (): PCStatus => {
-  const rand = Math.random();
-  if (rand > 0.8) return 'offline';
-  if (rand > 0.5) return 'online';
-  if (rand > 0.3) return 'inUse';
-  return 'examMode';
-};
-
-/**
- * Usuarios disponibles para asignar a PCs
- */
-const availableUsers = [
-  'juan.perez',
-  'maria.gomez',
-  'carlos.ruiz',
-  'ana.lopez',
-  'pedro.martinez',
-  null, // Sin usuario
+export const mockPCs: PC[] = [
+  {
+    id: 'pc-01',
+    name: 'PC-LAB-01',
+    ip: '172.29.2.37',
+    status: 'offline',
+    user: null,
+    lastSeen: new Date(0),
+  },
+  {
+    id: 'pc-02',
+    name: 'PC-LAB-02',
+    ip: '172.29.157.94',
+    status: 'offline',
+    user: null,
+    lastSeen: new Date(0),
+  },
+  {
+    id: 'pc-03',
+    name: 'PC-LAB-03',
+    ip: '172.29.177.20',
+    status: 'offline',
+    user: null,
+    lastSeen: new Date(0),
+  },
 ];
-
-/**
- * 12 PCs del laboratorio (simuladas)
- */
-export const mockPCs: PC[] = Array.from({ length: 12 }, (_, i) => {
-  const num = (i + 1).toString().padStart(2, '0');
-  const status = getRandomStatus();
-  const user = status === 'offline' ? null : availableUsers[Math.floor(Math.random() * availableUsers.length)];
-
-  return {
-    id: `pc-${num}`,
-    name: `PC-LAB-${num}`,
-    ip: `192.168.1.${100 + i + 1}`,
-    status,
-    user,
-    lastSeen: new Date(Date.now() - Math.random() * 3600000), // Última vez visto en la última hora
-  };
-});
 
 /**
  * Logs del sistema (simulados)

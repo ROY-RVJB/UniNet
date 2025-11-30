@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { PCGrid } from '@/components/PCGrid';
 import { ControlPanel } from '@/components/ControlPanel';
@@ -10,11 +10,49 @@ import { Monitor } from 'lucide-react';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [pcs, setPcs] = useState<PC[]>(mockPCs);
+  const [serverOnline, setServerOnline] = useState(false);
+  const [serverIP] = useState('172.29.137.160');
 
   const handlePCClick = (pc: PC) => {
     console.log('PC clicked:', pc);
-    // TODO: Abrir modal con detalles de la PC
   };
+
+  // Poll server status API and update pc statuses
+  useEffect(() => {
+    const serverUrl = import.meta.env.VITE_STATUS_SERVER_URL || 'http://172.29.137.160:4000/status';
+
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch(serverUrl);
+        if (!res.ok) {
+          setServerOnline(false);
+          return;
+        }
+        const data = await res.json();
+        setServerOnline(true);
+        
+        setPcs((prev) =>
+          prev.map((pc) => {
+            const s = data.find((d: any) => d.ip === pc.ip);
+            if (!s) return pc;
+            return {
+              ...pc,
+              status: s.alive ? 'online' : 'offline',
+              lastSeen: s.lastSeen ? new Date(s.lastSeen) : pc.lastSeen,
+            } as PC;
+          })
+        );
+      } catch (err) {
+        console.error('Error fetching status:', err);
+        setServerOnline(false);
+      }
+    };
+
+    fetchStatus();
+    const id = setInterval(fetchStatus, 5000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="flex h-screen bg-tech-dark">
@@ -22,6 +60,8 @@ function App() {
       <Sidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}
+        serverOnline={serverOnline}
+        serverIP={serverIP}
       />
 
       {/* Main Content */}
@@ -41,7 +81,7 @@ function App() {
                 </p>
               </div>
 
-              <PCGrid pcs={mockPCs} onPCClick={handlePCClick} />
+              <PCGrid pcs={pcs} onPCClick={handlePCClick} />
             </div>
           )}
 
