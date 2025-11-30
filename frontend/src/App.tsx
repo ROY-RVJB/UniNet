@@ -50,7 +50,7 @@ function App() {
     };
 
     fetchStatus();
-    const id = setInterval(fetchStatus, 5000);
+    const id = setInterval(fetchStatus, 2000); // Polling cada 2 segundos (más rápido)
     return () => clearInterval(id);
   }, []);
 

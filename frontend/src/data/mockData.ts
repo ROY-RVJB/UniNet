@@ -1,11 +1,11 @@
 import type { PC, LogEntry, LDAPUser } from '@/types';
 
 // ==========================================
-// DATOS MOCK - Solo las 3 PCs + Servidor
+// DATOS MOCK - 4 PCs Cliente
 // ==========================================
 
 /**
- * Solo las 3 PCs del laboratorio
+ * 4 PCs del laboratorio
  * El estado real vendrá del backend Python que hace ping
  */
 export const mockPCs: PC[] = [
@@ -29,6 +29,14 @@ export const mockPCs: PC[] = [
     id: 'pc-03',
     name: 'PC-LAB-03',
     ip: '172.29.177.20',
+    status: 'offline',
+    user: null,
+    lastSeen: new Date(0),
+  },
+  {
+    id: 'pc-04',
+    name: 'PC-LAB-04',
+    ip: '172.29.104.181',
     status: 'offline',
     user: null,
     lastSeen: new Date(0),

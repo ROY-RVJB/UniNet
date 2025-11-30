@@ -13,11 +13,12 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  # Permitir CORS para desarrollo
 
-# Lista de hosts a monitorear (3 clientes + servidor)
+# Lista de hosts a monitorear (4 clientes + servidor)
 HOSTS = [
     {"id": "pc-01", "name": "PC-LAB-01", "ip": "172.29.2.37"},
     {"id": "pc-02", "name": "PC-LAB-02", "ip": "172.29.157.94"},
     {"id": "pc-03", "name": "PC-LAB-03", "ip": "172.29.177.20"},
+    {"id": "pc-04", "name": "PC-LAB-04", "ip": "172.29.104.181"},
     {"id": "server-01", "name": "SERVIDOR", "ip": "172.29.137.160"},
 ]
 
