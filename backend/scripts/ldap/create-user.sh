@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # UniNet - Script para crear usuario LDAP
-# Uso: ./create-user.sh <username> <password> <full_name> [email]
+# Uso: ./create-user.sh <username> <full_name> <password> [email]
 #
 
 # Cargar configuración
@@ -14,13 +14,13 @@ source /etc/uninet/ldap.conf
 
 # Validar argumentos
 if [ $# -lt 3 ]; then
-    echo "Uso: $0 <username> <password> <full_name> [email]" >&2
+    echo "Uso: $0 <username> <full_name> <password> [email]" >&2
     exit 1
 fi
 
 USERNAME=$1
-PASSWORD=$2
-FULL_NAME=$3
+FULL_NAME=$2
+PASSWORD=$3
 EMAIL=${4:-"$USERNAME@$LDAP_DOMAIN"}
 
 # Generar UID numérico único

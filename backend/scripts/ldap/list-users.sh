@@ -13,17 +13,20 @@ fi
 source /etc/uninet/ldap.conf
 
 # Buscar todos los usuarios
-ldapsearch -x -b "ou=users,$LDAP_BASE" "(objectClass=posixAccount)" uid cn mail 2>/dev/null | \
+ldapsearch -x -LLL -b "ou=users,$LDAP_BASE" "(objectClass=inetOrgPerson)" uid cn mail dn 2>/dev/null | \
 awk '
-BEGIN { RS=""; FS="\n"; OFS="|" }
-/^dn:/ {
-    dn=""; uid=""; cn=""; mail="";
-    for (i=1; i<=NF; i++) {
-        if ($i ~ /^dn:/) { sub(/^dn: /, "", $i); dn=$i }
-        if ($i ~ /^uid:/) { sub(/^uid: /, "", $i); uid=$i }
-        if ($i ~ /^cn:/) { sub(/^cn: /, "", $i); cn=$i }
-        if ($i ~ /^mail:/) { sub(/^mail: /, "", $i); mail=$i }
+BEGIN { OFS="|" }
+/^dn:/ { dn=$2; for(i=3;i<=NF;i++) dn=dn" "$i }
+/^uid:/ { uid=$2 }
+/^cn:/ { cn=$2; for(i=3;i<=NF;i++) cn=cn" "$i }
+/^mail:/ { mail=$2 }
+/^$/ { 
+    if (uid != "") {
+        print uid, cn, mail, dn
+        uid=""; cn=""; mail=""; dn=""
     }
+}
+END {
     if (uid != "") print uid, cn, mail, dn
 }
 '
