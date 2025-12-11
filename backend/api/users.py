@@ -49,6 +49,7 @@ async def create_user(
     Returns:
         Confirmación de creación
     """
+    print(f"[DEBUG] Recibido: username={user_data.username}, full_name={user_data.full_name}, email={user_data.email}")
     script_path = os.path.join(SCRIPT_DIR, "create-user.sh")
     
     if not os.path.exists(script_path):
