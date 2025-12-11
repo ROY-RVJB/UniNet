@@ -10,44 +10,41 @@ import { ToastDemo } from '@/components/ToastDemo';
 
 interface UserTableProps {
   users: LDAPUser[];
+  onRefresh: () => void;
 }
 
-export function UserTable({ users }: UserTableProps) {
+export function UserTable({ users, onRefresh }: UserTableProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { showToast, hideToast } = useToast();
 
   const handleCreateUser = async (userData: UserFormData) => {
     const loadingId = showToast('loading', 'Creando usuario...');
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
 
     try {
-      // TODO: Conectar con API backend
-      console.log('Crear usuario LDAP:', {
-        uid: userData.username,
-        cn: userData.fullName,
-        password: userData.password,
-        gid: parseInt(userData.group),
+      const res = await fetch(`${apiUrl}/api/users/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: userData.username,
+          full_name: userData.fullName,
+          password: userData.password,
+          email: `${userData.username}@uninet.com`,
+        }),
       });
 
-      // Simular delay de API
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Aquí iría la llamada real al backend
-      // await fetch('/api/users', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     uid: userData.username,
-      //     cn: userData.fullName,
-      //     password: userData.password,
-      //     gid: parseInt(userData.group),
-      //   }),
-      // });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || 'Error al crear usuario');
+      }
 
       hideToast(loadingId);
       showToast('success', `Usuario ${userData.username} creado exitosamente`);
+      setIsModalOpen(false);
+      onRefresh(); // Recargar lista de usuarios
     } catch (error) {
       hideToast(loadingId);
-      showToast('error', 'Error al crear el usuario');
+      showToast('error', error instanceof Error ? error.message : 'Error al crear el usuario');
       throw error;
     }
   };
@@ -55,11 +52,34 @@ export function UserTable({ users }: UserTableProps) {
   const handleEditUser = (user: LDAPUser) => {
     // TODO: Implementar edición de usuario
     console.log('Editar usuario:', user);
+    showToast('info', 'Edición de usuarios próximamente');
   };
 
-  const handleDeleteUser = (user: LDAPUser) => {
-    // TODO: Implementar eliminación de usuario
-    console.log('Eliminar usuario:', user);
+  const handleDeleteUser = async (user: LDAPUser) => {
+    if (!confirm(`¿Estás seguro de eliminar al usuario ${user.uid}?`)) return;
+
+    const loadingId = showToast('loading', 'Eliminando usuario...');
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
+
+    try {
+      const res = await fetch(`${apiUrl}/api/users/delete`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.uid }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || 'Error al eliminar usuario');
+      }
+
+      hideToast(loadingId);
+      showToast('success', `Usuario ${user.uid} eliminado exitosamente`);
+      onRefresh(); // Recargar lista de usuarios
+    } catch (error) {
+      hideToast(loadingId);
+      showToast('error', error instanceof Error ? error.message : 'Error al eliminar el usuario');
+    }
   };
 
   return (
@@ -88,34 +108,27 @@ export function UserTable({ users }: UserTableProps) {
           <table className="w-full">
             <thead className="bg-tech-hoverState">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-tech-text">UID</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-tech-text">Nombre Común (CN)</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-tech-text">Home Directory</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-tech-text">Grupo (GID)</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-tech-text">Estado</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-tech-text">Usuario (UID)</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-tech-text">Nombre Completo (CN)</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-tech-text">Email</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-tech-text">DN</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-tech-text">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-tech-darkBorder">
-              {users.map((user) => (
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-tech-textDim">
+                    No hay usuarios creados. Haz clic en &quot;Crear Usuario LDAP&quot; para comenzar.
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
                 <tr key={user.uid} className="hover:bg-tech-hoverState transition-colors">
-                  <td className="px-4 py-3 text-sm text-tech-textDim">{user.uid}</td>
+                  <td className="px-4 py-3 text-sm text-tech-text font-medium">{user.uid}</td>
                   <td className="px-4 py-3 text-sm text-tech-text">{user.cn}</td>
-                  <td className="px-4 py-3 text-sm text-tech-textDim">{user.homeDir}</td>
-                  <td className="px-4 py-3 text-sm text-tech-textDim">
-                    {user.group} ({user.gid})
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        user.status === 'active'
-                          ? 'bg-status-online/20 text-status-online'
-                          : 'bg-tech-textDim/20 text-tech-textDim'
-                      }`}
-                    >
-                      {user.status === 'active' ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
+                  <td className="px-4 py-3 text-sm text-tech-textDim">{user.mail}</td>
+                  <td className="px-4 py-3 text-sm text-tech-textDim text-xs">{user.dn}</td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center justify-end gap-1">
                       <button
@@ -135,7 +148,8 @@ export function UserTable({ users }: UserTableProps) {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )))
+              )}
             </tbody>
           </table>
         </div>

@@ -4,13 +4,14 @@ import { PCGrid } from '@/components/PCGrid';
 import { ControlPanel } from '@/components/ControlPanel';
 import { LogViewer } from '@/components/LogViewer';
 import { UserTable } from '@/components/UserTable';
-import { mockPCs, mockLogs, mockUsers } from '@/data/mockData';
-import type  { PC } from '@/types';
+import { mockPCs, mockLogs } from '@/data/mockData';
+import type  { PC, LDAPUser } from '@/types';
 import { Monitor } from 'lucide-react';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [pcs, setPcs] = useState<PC[]>(mockPCs);
+  const [users, setUsers] = useState<LDAPUser[]>([]);
   const [serverOnline, setServerOnline] = useState(false);
   const [serverIP] = useState('172.29.137.160');
 
@@ -53,6 +54,28 @@ function App() {
     const id = setInterval(fetchStatus, 2000); // Polling cada 2 segundos (más rápido)
     return () => clearInterval(id);
   }, []);
+
+  // Fetch users from LDAP API
+  const fetchUsers = async () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
+    try {
+      const res = await fetch(`${apiUrl}/api/users/list`);
+      if (!res.ok) {
+        console.error('Error fetching users:', res.statusText);
+        return;
+      }
+      const data = await res.json();
+      setUsers(data.users || []);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === 'users') {
+      fetchUsers();
+    }
+  }, [activeSection]);
 
   return (
     <div className="flex h-screen bg-tech-dark">
@@ -97,7 +120,7 @@ function App() {
                 </p>
               </div>
 
-              <UserTable users={mockUsers} />
+              <UserTable users={users} onRefresh={fetchUsers} />
             </div>
           )}
 

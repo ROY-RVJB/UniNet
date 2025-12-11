@@ -44,12 +44,10 @@ export type UserGroup = 'alumnos' | 'docentes';
  * Usuario en OpenLDAP
  */
 export interface LDAPUser {
-  uid: number;
-  cn: string;           // Common Name (nombre de usuario)
-  homeDir: string;
-  gid: number;          // Group ID
-  group: UserGroup;
-  status: 'active' | 'inactive';
+  uid: string;          // Username (uid en LDAP)
+  cn: string;           // Common Name (nombre completo)
+  mail: string;         // Email del usuario
+  dn: string;           // Distinguished Name
 }
 
 /**
