@@ -23,12 +23,23 @@ FULL_NAME=$2
 PASSWORD=$3
 EMAIL=${4:-"$USERNAME@$LDAP_DOMAIN"}
 
-# Generar UID numérico único (optimizado)
-LAST_UID=$(ldapsearch -x -LLL -b "$LDAP_BASE" "(objectClass=posixAccount)" uidNumber 2>/dev/null | grep "^uidNumber:" | awk '{print $2}' | sort -n | tail -1)
-if [ -z "$LAST_UID" ]; then
-    UID_NUMBER=10000
+# Generar UID numérico único usando archivo contador (RÁPIDO)
+UID_FILE="/etc/uninet/last_uid"
+if [ ! -f "$UID_FILE" ]; then
+    # Primera vez: buscar el último UID en LDAP
+    LAST_UID=$(ldapsearch -x -LLL -b "$LDAP_BASE" "(objectClass=posixAccount)" uidNumber 2>/dev/null | grep "^uidNumber:" | awk '{print $2}' | sort -n | tail -1)
+    if [ -z "$LAST_UID" ]; then
+        echo "10000" | sudo tee "$UID_FILE" > /dev/null
+        UID_NUMBER=10000
+    else
+        echo "$LAST_UID" | sudo tee "$UID_FILE" > /dev/null
+        UID_NUMBER=$((LAST_UID + 1))
+    fi
 else
+    # Leer del archivo y incrementar (INSTANTÁNEO)
+    LAST_UID=$(cat "$UID_FILE")
     UID_NUMBER=$((LAST_UID + 1))
+    echo "$UID_NUMBER" | sudo tee "$UID_FILE" > /dev/null
 fi
 
 # Pedir contraseña de admin LDAP
