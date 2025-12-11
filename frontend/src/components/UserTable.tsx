@@ -149,7 +149,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                   </td>
                 </tr>
               )))
-              )}
+            }
             </tbody>
           </table>
         </div>
