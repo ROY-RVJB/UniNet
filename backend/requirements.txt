@@ -1,2 +1,13 @@
-Flask==3.0.0
-flask-cors==4.0.0
+# FastAPI y dependencias principales
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Autenticación
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Base de datos
+sqlalchemy==2.0.23

@@ -89,7 +89,7 @@ git clone https://github.com/ROY-RVJB/UniNet.git
 
 ```bash
 # Entrar al proyecto
-cd UniNet
+cd UniNetls
 
 # Entrar a la carpeta del backend
 cd backend
