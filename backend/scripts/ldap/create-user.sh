@@ -23,8 +23,8 @@ FULL_NAME=$2
 PASSWORD=$3
 EMAIL=${4:-"$USERNAME@$LDAP_DOMAIN"}
 
-# Generar UID numérico único
-LAST_UID=$(ldapsearch -x -b "$LDAP_BASE" "(objectClass=posixAccount)" uidNumber 2>/dev/null | grep "uidNumber:" | awk '{print $2}' | sort -n | tail -1)
+# Generar UID numérico único (optimizado)
+LAST_UID=$(ldapsearch -x -LLL -b "$LDAP_BASE" "(objectClass=posixAccount)" uidNumber 2>/dev/null | grep "^uidNumber:" | awk '{print $2}' | sort -n | tail -1)
 if [ -z "$LAST_UID" ]; then
     UID_NUMBER=10000
 else
