@@ -3,12 +3,11 @@ Endpoints para gestión de usuarios LDAP
 Permite crear, listar, modificar y eliminar usuarios
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import List
 import subprocess
 import os
-from api.auth import get_current_user, User
 
 router = APIRouter()
 
@@ -39,15 +38,13 @@ class UserDelete(BaseModel):
 
 @router.post("/create", response_model=dict)
 async def create_user(
-    user_data: UserCreate,
-    current_user: User = Depends(get_current_user)
+    user_data: UserCreate
 ):
     """
     Crea un nuevo usuario en LDAP
     
     Args:
         user_data: Datos del usuario a crear
-        current_user: Usuario autenticado (profesor/admin)
     
     Returns:
         Confirmación de creación
@@ -80,8 +77,7 @@ async def create_user(
             return {
                 "success": True,
                 "message": f"Usuario {user_data.username} creado exitosamente",
-                "username": user_data.username,
-                "created_by": current_user.username
+                "username": user_data.username
             }
         else:
             raise HTTPException(
@@ -96,12 +92,9 @@ async def create_user(
 
 
 @router.get("/list", response_model=List[UserResponse])
-async def list_users(current_user: User = Depends(get_current_user)):
+async def list_users():
     """
     Lista todos los usuarios LDAP
-    
-    Args:
-        current_user: Usuario autenticado
     
     Returns:
         Lista de usuarios
@@ -150,15 +143,13 @@ async def list_users(current_user: User = Depends(get_current_user)):
 
 @router.delete("/delete", response_model=dict)
 async def delete_user(
-    user_data: UserDelete,
-    current_user: User = Depends(get_current_user)
+    user_data: UserDelete
 ):
     """
     Elimina un usuario de LDAP
     
     Args:
         user_data: Username del usuario a eliminar
-        current_user: Usuario autenticado
     
     Returns:
         Confirmación de eliminación
@@ -183,8 +174,7 @@ async def delete_user(
             return {
                 "success": True,
                 "message": f"Usuario {user_data.username} eliminado exitosamente",
-                "username": user_data.username,
-                "deleted_by": current_user.username
+                "username": user_data.username
             }
         else:
             raise HTTPException(
