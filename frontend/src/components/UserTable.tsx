@@ -56,7 +56,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
   };
 
   const handleDeleteUser = async (user: LDAPUser) => {
-    if (!confirm(`¿Estás seguro de eliminar al usuario ${user.uid}?`)) return;
+    if (!confirm(`¿Estás seguro de eliminar al usuario ${user.username}?`)) return;
 
     const loadingId = showToast('loading', 'Eliminando usuario...');
     const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
@@ -74,7 +74,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
       }
 
       hideToast(loadingId);
-      showToast('success', `Usuario ${user.uid} eliminado exitosamente`);
+      showToast('success', `Usuario ${user.username} eliminado exitosamente`);
       onRefresh(); // Recargar lista de usuarios
     } catch (error) {
       hideToast(loadingId);
@@ -124,10 +124,10 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                 </tr>
               ) : (
                 users.map((user) => (
-                <tr key={user.uid} className="hover:bg-tech-hoverState transition-colors">
-                  <td className="px-4 py-3 text-sm text-tech-text font-medium">{user.uid}</td>
-                  <td className="px-4 py-3 text-sm text-tech-text">{user.cn}</td>
-                  <td className="px-4 py-3 text-sm text-tech-textDim">{user.mail}</td>
+                <tr key={user.username} className="hover:bg-tech-hoverState transition-colors">
+                  <td className="px-4 py-3 text-sm text-tech-text font-medium">{user.username}</td>
+                  <td className="px-4 py-3 text-sm text-tech-text">{user.full_name}</td>
+                  <td className="px-4 py-3 text-sm text-tech-textDim">{user.email}</td>
                   <td className="px-4 py-3 text-sm text-tech-textDim text-xs">{user.dn}</td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center justify-end gap-1">

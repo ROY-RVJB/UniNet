@@ -32,8 +32,11 @@ else
 fi
 
 # Pedir contraseña de admin LDAP
-read -sp "Contraseña de admin LDAP: " ADMIN_PASS
-echo ""
+ADMIN_PASS=${LDAP_ADMIN_PASSWORD:-$(cat /etc/uninet/ldap_admin_pass 2>/dev/null || echo "")}
+if [ -z "$ADMIN_PASS" ]; then
+    read -sp "Contraseña de admin LDAP: " ADMIN_PASS
+    echo ""
+fi
 
 # Crear archivo LDIF temporal
 TEMP_LDIF=$(mktemp)

@@ -65,7 +65,7 @@ function App() {
         return;
       }
       const data = await res.json();
-      setUsers(data.users || []);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error fetching users:', err);
     }

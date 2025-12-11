@@ -28,8 +28,11 @@ if ! ldapsearch -x -b "$USER_DN" "(objectClass=*)" dn 2>/dev/null | grep -q "^dn
 fi
 
 # Pedir contraseña de admin LDAP
-read -sp "Contraseña de admin LDAP: " ADMIN_PASS
-echo ""
+ADMIN_PASS=${LDAP_ADMIN_PASSWORD:-$(cat /etc/uninet/ldap_admin_pass 2>/dev/null || echo "")}
+if [ -z "$ADMIN_PASS" ]; then
+    read -sp "Contraseña de admin LDAP: " ADMIN_PASS
+    echo ""
+fi
 
 # Eliminar usuario
 if ldapdelete -x -D "$LDAP_ADMIN" -w "$ADMIN_PASS" "$USER_DN" 2>/dev/null; then
