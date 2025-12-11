@@ -32,29 +32,52 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
     console.log('[DEBUG] Payload:', payload);
 
     try {
-      const res = await fetch(`${apiUrl}/api/users/create`, {
-        method: 'POST',
-        mode: 'cors',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload),
+      // Usar XMLHttpRequest para mejor debugging
+      const xhr = new XMLHttpRequest();
+      
+      const response: any = await new Promise((resolve, reject) => {
+        xhr.open('POST', `${apiUrl}/api/users/create`, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Accept', 'application/json');
+        
+        xhr.onload = function() {
+          console.log('[DEBUG] XHR Status:', xhr.status);
+          console.log('[DEBUG] XHR Response:', xhr.responseText);
+          
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch {
+              resolve({ success: true });
+            }
+          } else {
+            reject(new Error(`Error ${xhr.status}: ${xhr.responseText}`));
+          }
+        };
+        
+        xhr.onerror = function() {
+          console.error('[DEBUG] XHR Error:', xhr.status, xhr.statusText);
+          reject(new Error('Error de red al crear usuario'));
+        };
+        
+        xhr.ontimeout = function() {
+          console.error('[DEBUG] XHR Timeout');
+          reject(new Error('Timeout al crear usuario'));
+        };
+        
+        xhr.timeout = 35000; // 35 segundos
+        
+        console.log('[DEBUG] Enviando request XHR...');
+        xhr.send(JSON.stringify(payload));
       });
 
-      console.log('[DEBUG] Response status:', res.status);
-      console.log('[DEBUG] Response headers:', [...res.headers.entries()]);
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || 'Error al crear usuario');
-      }
-
+      console.log('[DEBUG] Response exitoso:', response);
       hideToast(loadingId);
       showToast('success', `Usuario ${userData.username} creado exitosamente`);
       setIsModalOpen(false);
       onRefresh(); // Recargar lista de usuarios
     } catch (error) {
+      console.error('[DEBUG] Error capturado:', error);
       hideToast(loadingId);
       showToast('error', error instanceof Error ? error.message : 'Error al crear el usuario');
       throw error;

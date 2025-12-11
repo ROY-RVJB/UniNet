@@ -22,18 +22,22 @@ app = FastAPI(
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
-    print(f"\n{'='*80}")
-    print(f"🔵 REQUEST: {request.method} {request.url.path}")
-    print(f"   Headers: {dict(request.headers)}")
-    print(f"   Client: {request.client}")
+    # IMPRIMIR INMEDIATAMENTE cuando llega el request
+    print(f"\n{'='*80}", flush=True)
+    print(f"🔵 REQUEST: {request.method} {request.url.path}", flush=True)
+    print(f"   Headers: {dict(request.headers)}", flush=True)
+    print(f"   Client: {request.client}", flush=True)
+    print(f"{'='*80}\n", flush=True)
     
-    response = await call_next(request)
-    
-    process_time = time.time() - start_time
-    print(f"✅ RESPONSE: {response.status_code} (took {process_time:.2f}s)")
-    print(f"{'='*80}\n")
-    
-    return response
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        print(f"✅ RESPONSE: {response.status_code} (took {process_time:.2f}s)\n", flush=True)
+        return response
+    except Exception as e:
+        process_time = time.time() - start_time
+        print(f"❌ ERROR: {str(e)} (took {process_time:.2f}s)\n", flush=True)
+        raise
 
 # Configurar CORS para permitir acceso desde el frontend
 app.add_middleware(

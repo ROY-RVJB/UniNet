@@ -55,13 +55,16 @@ async def create_user(
     Returns:
         Confirmación de creación
     """
-    print(f"\n{'='*60}")
-    print(f"[CREATE USER] Endpoint POST /create llamado")
-    print(f"[CREATE USER] username={user_data.username}")
-    print(f"[CREATE USER] full_name={user_data.full_name}")
-    print(f"[CREATE USER] email={user_data.email}")
-    print(f"{'='*60}\n")
+    print(f"\n{'='*60}", flush=True)
+    print(f"[CREATE USER] ✅ Endpoint POST /create RECIBIDO", flush=True)
+    print(f"[CREATE USER] username={user_data.username}", flush=True)
+    print(f"[CREATE USER] full_name={user_data.full_name}", flush=True)
+    print(f"[CREATE USER] email={user_data.email}", flush=True)
+    print(f"{'='*60}\n", flush=True)
     script_path = os.path.join(SCRIPT_DIR, "create-user.sh")
+    
+    print(f"[CREATE USER] Script path: {script_path}", flush=True)
+    print(f"[CREATE USER] Script exists: {os.path.exists(script_path)}", flush=True)
     
     if not os.path.exists(script_path):
         raise HTTPException(
@@ -71,6 +74,9 @@ async def create_user(
     
     try:
         # Ejecutar script de creación
+        print(f"[CREATE USER] 🚀 Ejecutando script...", flush=True)
+        print(f"[CREATE USER] Command: bash {script_path} {user_data.username} '{user_data.full_name}' [PASSWORD] {user_data.email or ''}", flush=True)
+        
         result = subprocess.run(
             [
                 "bash",
@@ -82,8 +88,13 @@ async def create_user(
             ],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
+            env=os.environ.copy()  # Pasar variables de entorno
         )
+        
+        print(f"[CREATE USER] ✅ Script terminó con código: {result.returncode}", flush=True)
+        print(f"[CREATE USER] STDOUT: {result.stdout}", flush=True)
+        print(f"[CREATE USER] STDERR: {result.stderr}", flush=True)
         
         if result.returncode == 0:
             return {
@@ -97,9 +108,11 @@ async def create_user(
                 detail=f"Error al crear usuario: {result.stderr}"
             )
     
-    except subprocess.TimeoutExpired:
-        raise HTTPException(status_code=504, detail="Timeout al crear usuario")
+    except subprocess.TimeoutExpired as e:
+        print(f"[CREATE USER] ⏱️ TIMEOUT después de 30 segundos", flush=True)
+        raise HTTPException(status_code=504, detail="Timeout al crear usuario - el script tardó más de 30 segundos")
     except Exception as e:
+        print(f"[CREATE USER] ❌ ERROR: {str(e)}", flush=True)
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
