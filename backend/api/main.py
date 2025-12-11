@@ -4,17 +4,36 @@ UniNet Dashboard - FastAPI Server
 Servidor principal que gestiona monitoreo, usuarios LDAP y autenticación
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from api.monitoring import router as monitoring_router
 from api.users import router as users_router
 from api.auth import router as auth_router
+import time
 
 app = FastAPI(
     title="UniNet Dashboard API",
     description="API para gestión de laboratorio de cómputo",
-    version="2.0.0"
+    version="2.0.0",
+    redirect_slashes=False  # Deshabilitar redirects automáticos
 )
+
+# Middleware para logging de requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    print(f"\n{'='*80}")
+    print(f"🔵 REQUEST: {request.method} {request.url.path}")
+    print(f"   Headers: {dict(request.headers)}")
+    print(f"   Client: {request.client}")
+    
+    response = await call_next(request)
+    
+    process_time = time.time() - start_time
+    print(f"✅ RESPONSE: {response.status_code} (took {process_time:.2f}s)")
+    print(f"{'='*80}\n")
+    
+    return response
 
 # Configurar CORS para permitir acceso desde el frontend
 app.add_middleware(

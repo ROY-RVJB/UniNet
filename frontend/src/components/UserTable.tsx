@@ -21,17 +21,29 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
     const loadingId = showToast('loading', 'Creando usuario...');
     const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
 
+    const payload = {
+      username: userData.username,
+      full_name: userData.fullName,
+      password: userData.password,
+      email: `${userData.username}@uninet.com`,
+    };
+
+    console.log('[DEBUG] Enviando POST a:', `${apiUrl}/api/users/create`);
+    console.log('[DEBUG] Payload:', payload);
+
     try {
       const res = await fetch(`${apiUrl}/api/users/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: userData.username,
-          full_name: userData.fullName,
-          password: userData.password,
-          email: `${userData.username}@uninet.com`,
-        }),
+        mode: 'cors',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload),
       });
+
+      console.log('[DEBUG] Response status:', res.status);
+      console.log('[DEBUG] Response headers:', [...res.headers.entries()]);
 
       if (!res.ok) {
         const error = await res.json();
@@ -52,7 +64,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
   const handleEditUser = (user: LDAPUser) => {
     // TODO: Implementar edición de usuario
     console.log('Editar usuario:', user);
-    showToast('info', 'Edición de usuarios próximamente');
+    showToast('loading', 'Edición de usuarios próximamente');
   };
 
   const handleDeleteUser = async (user: LDAPUser) => {
@@ -65,7 +77,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
       const res = await fetch(`${apiUrl}/api/users/delete`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user.uid }),
+        body: JSON.stringify({ username: user.username }),
       });
 
       if (!res.ok) {

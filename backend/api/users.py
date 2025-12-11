@@ -36,6 +36,12 @@ class UserDelete(BaseModel):
     username: str
 
 
+@router.options("/create")
+async def create_user_options():
+    """Manejo explícito de CORS preflight para /create"""
+    return {"message": "OK"}
+
+
 @router.post("/create", response_model=dict)
 async def create_user(
     user_data: UserCreate
@@ -49,7 +55,12 @@ async def create_user(
     Returns:
         Confirmación de creación
     """
-    print(f"[DEBUG] Recibido: username={user_data.username}, full_name={user_data.full_name}, email={user_data.email}")
+    print(f"\n{'='*60}")
+    print(f"[CREATE USER] Endpoint POST /create llamado")
+    print(f"[CREATE USER] username={user_data.username}")
+    print(f"[CREATE USER] full_name={user_data.full_name}")
+    print(f"[CREATE USER] email={user_data.email}")
+    print(f"{'='*60}\n")
     script_path = os.path.join(SCRIPT_DIR, "create-user.sh")
     
     if not os.path.exists(script_path):
