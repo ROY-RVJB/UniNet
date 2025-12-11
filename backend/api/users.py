@@ -64,13 +64,13 @@ async def create_user(
                 "bash",
                 script_path,
                 user_data.username,
-                user_data.password,
                 user_data.full_name,
+                user_data.password,
                 user_data.email or ""
             ],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=30
         )
         
         if result.returncode == 0:
