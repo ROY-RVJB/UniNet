@@ -9,7 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.monitoring import router as monitoring_router
 from api.users import router as users_router
 from api.auth import router as auth_router
+from api.logs import router as logs_router, setup_logging
+import logging
 import time
+
+setup_logging()  # Configurar logging al iniciar la app
 
 app = FastAPI(
     title="UniNet Dashboard API",
@@ -21,23 +25,26 @@ app = FastAPI(
 # Middleware para logging de requests
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
+    request_logger = logging.getLogger("uvicorn.access")
+    
     start_time = time.time()
-    # IMPRIMIR INMEDIATAMENTE cuando llega el request
-    print(f"\n{'='*80}", flush=True)
-    print(f"🔵 REQUEST: {request.method} {request.url.path}", flush=True)
-    print(f"   Headers: {dict(request.headers)}", flush=True)
-    print(f"   Client: {request.client}", flush=True)
-    print(f"{'='*80}\n", flush=True)
+    
+    # Loguear la solicitud (INFO o DEBUG)
+    request_logger.info(f"🔵 REQUEST: {request.method} {request.url.path} from {request.client.host}")
     
     try:
         response = await call_next(request)
         process_time = time.time() - start_time
-        print(f"✅ RESPONSE: {response.status_code} (took {process_time:.2f}s)\n", flush=True)
+        
+        # Loguear la respuesta (INFO)
+        request_logger.info(f"✅ RESPONSE: {response.status_code} {request.method} {request.url.path} (took {process_time:.2f}s)")
         return response
+    
     except Exception as e:
         process_time = time.time() - start_time
-        print(f"❌ ERROR: {str(e)} (took {process_time:.2f}s)\n", flush=True)
-        raise
+        # Loguear el error (ERROR)
+        request_logger.error(f"❌ ERROR processing {request.method} {request.url.path}: {str(e)} (took {process_time:.2f}s)")
+        raise # Es importante re-lanzar la excepción
 
 # Configurar CORS para permitir acceso desde el frontend
 app.add_middleware(
@@ -52,7 +59,7 @@ app.add_middleware(
 app.include_router(monitoring_router, prefix="/api", tags=["Monitoring"])
 app.include_router(users_router, prefix="/api/users", tags=["Users"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
-
+app.include_router(logs_router, prefix="/api", tags=["Logs"]) 
 
 @app.get("/")
 async def root():
