@@ -75,6 +75,18 @@ export default {
           '3': '#f5a623',
           '4': '#ef4444',
           '5': '#3b82f6',
+        },
+
+        // Colores por laboratorio (bordes de cards)
+        lab: {
+          sistemas: '#0070f3',    // Azul (Ingeniería)
+          redes: '#8b5cf6',       // Morado (Telecomunicaciones)
+          diseno: '#ec4899',      // Rosa (Artes/Diseño)
+          finanzas: '#f97316',    // Naranja (Economía)
+          desarrollo: '#22c55e',  // Verde (Desarrollo Web)
+          ciencias: '#06b6d4',    // Cyan (Ciencias)
+          medicina: '#ef4444',    // Rojo (Salud)
+          derecho: '#eab308',     // Amarillo (Derecho)
         }
       },
       borderRadius: {

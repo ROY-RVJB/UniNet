@@ -8,6 +8,30 @@
 export type PCStatus = 'online' | 'offline' | 'inUse' | 'examMode';
 
 /**
+ * Estado del laboratorio
+ */
+export type LabStatus = 'online' | 'offline' | 'partial';
+
+/**
+ * Colores disponibles para laboratorios
+ */
+export type LabColor = 'sistemas' | 'redes' | 'diseno' | 'finanzas' | 'desarrollo' | 'ciencias' | 'medicina' | 'derecho';
+
+/**
+ * Interfaz de Laboratorio
+ */
+export interface Laboratory {
+  id: string;           // "lab-sistemas"
+  name: string;         // "Laboratorio de Sistemas"
+  faculty: string;      // "Ingeniería"
+  color: LabColor;      // Color del borde
+  icon: string;         // Nombre del icono Lucide
+  pcsCount: number;     // Total de PCs
+  usersCount: number;   // Usuarios activos
+  status: LabStatus;    // Estado general
+}
+
+/**
  * Interfaz de PC del Laboratorio
  */
 export interface PC {
@@ -17,6 +41,7 @@ export interface PC {
   status: PCStatus;
   user: string | null;  // Usuario LDAP actual o null
   lastSeen: Date;
+  laboratoryId: string; // ID del laboratorio al que pertenece
 }
 
 /**
@@ -48,6 +73,10 @@ export interface LDAPUser {
   full_name: string;    // Common Name (nombre completo)
   email: string;        // Email del usuario
   dn: string;           // Distinguished Name
+  laboratoryId: string; // ID del laboratorio al que pertenece
+  group: UserGroup;     // Grupo (alumnos/docentes)
+  carrera?: string;     // Carrera profesional
+  status: 'active' | 'inactive'; // Estado del usuario
 }
 
 /**
