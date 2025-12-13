@@ -1,5 +1,6 @@
 # Claude Code configuration
 .claude/
+.mcp.json
 
 # Node modules
 node_modules/
@@ -23,3 +24,4 @@ Thumbs.db
 .idea/
 docs/
 .playwright-mcp
+CLAUDE.md
