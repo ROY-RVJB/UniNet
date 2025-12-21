@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import type { Carrera } from '@/types';
 import { FACULTY_COLORS, FACULTY_LABELS } from '@/data/mockData';
 import { cn } from '@/lib/utils';
@@ -54,11 +55,13 @@ interface CarreraDetailProps {
 }
 
 export function CarreraDetail({ carrera }: CarreraDetailProps) {
+  const navigate = useNavigate();
   const { setSelectedCarrera } = useCarrera();
 
   const handleGestionarDashboard = () => {
     if (carrera) {
       setSelectedCarrera(carrera);
+      navigate('/dashboard');
     }
   };
 

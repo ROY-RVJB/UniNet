@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Check } from 'lucide-react';
 import { useCarrera } from '@/contexts/CarreraContext';
 import { FACULTY_COLORS } from '@/data/mockData';
@@ -15,7 +16,8 @@ const statusColors: Record<string, string> = {
 };
 
 export function CarreraSelectorDropdown() {
-  const { carreras, selectedCarrera, setSelectedCarrera } = useCarrera();
+  const navigate = useNavigate();
+  const { availableCarreras, selectedCarrera, setSelectedCarrera } = useCarrera();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +35,13 @@ export function CarreraSelectorDropdown() {
   const handleSelect = (carrera: Carrera | null) => {
     setSelectedCarrera(carrera);
     setIsOpen(false);
+    // Si selecciona "Todas" -> ir al Home con panel de carreras
+    // Si selecciona una carrera -> ir al Dashboard
+    if (carrera === null) {
+      navigate('/');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -88,8 +97,8 @@ export function CarreraSelectorDropdown() {
               )}
             </button>
 
-            {/* Carrera Options */}
-            {carreras.map((carrera) => {
+            {/* Carrera Options (filtradas según rol) */}
+            {availableCarreras.map((carrera) => {
               const facultyColor = FACULTY_COLORS[carrera.faculty];
               return (
                 <button

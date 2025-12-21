@@ -58,7 +58,7 @@ const statusColors = {
 };
 
 // Genera partículas orbitales con tamaños variables
-function generateParticles(count: number, radius: number, sizes: number[]) {
+function generateParticles(count: number, _radius: number, sizes: number[]) {
   const particles = [];
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * 360;

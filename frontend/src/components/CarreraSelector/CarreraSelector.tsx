@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Carrera, Faculty } from '@/types';
-import { mockCarreras } from '@/data/mockData';
+import { useCarrera } from '@/contexts/CarreraContext';
 import { FacultyFilter } from './FacultyFilter';
 import { CarreraList } from './CarreraList';
 import { CarreraDetail } from './CarreraDetail';
@@ -10,16 +10,28 @@ import { CarreraDetail } from './CarreraDetail';
 // ==========================================
 
 export function CarreraSelector() {
-  const [selectedCarrera, setSelectedCarrera] = useState<Carrera | null>(mockCarreras[0]);
+  const { availableCarreras, isRestricted } = useCarrera();
+  const [selectedCarrera, setSelectedCarrera] = useState<Carrera | null>(null);
   const [selectedFaculty, setSelectedFaculty] = useState<Faculty | 'todas'>('todas');
 
-  // Filtrar carreras por facultad
-  const filteredCarreras = useMemo(() => {
-    if (selectedFaculty === 'todas') {
-      return mockCarreras;
+  // Inicializar con la primera carrera disponible
+  useEffect(() => {
+    if (availableCarreras.length > 0 && !selectedCarrera) {
+      setSelectedCarrera(availableCarreras[0]);
     }
-    return mockCarreras.filter((c) => c.faculty === selectedFaculty);
-  }, [selectedFaculty]);
+  }, [availableCarreras, selectedCarrera]);
+
+  // Filtrar carreras por facultad (solo aplica si no está restringido)
+  const filteredCarreras = useMemo(() => {
+    if (isRestricted) {
+      // Docente: solo ve su carrera, ignorar filtro de facultad
+      return availableCarreras;
+    }
+    if (selectedFaculty === 'todas') {
+      return availableCarreras;
+    }
+    return availableCarreras.filter((c) => c.faculty === selectedFaculty);
+  }, [selectedFaculty, availableCarreras, isRestricted]);
 
   // Total de carreras para el contador
   const totalCarreras = filteredCarreras.length;
@@ -34,17 +46,21 @@ export function CarreraSelector() {
           <div className="flex-shrink-0 p-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xs font-semibold text-subtle uppercase tracking-wider">
-                Nodos de Infraestructura
+                {isRestricted ? 'Tu Carrera Asignada' : 'Nodos de Infraestructura'}
               </h2>
-              <span className="text-xs text-subtle">
-                {totalCarreras} Unidades
-              </span>
+              {!isRestricted && (
+                <span className="text-xs text-subtle">
+                  {totalCarreras} Unidades
+                </span>
+              )}
             </div>
-            {/* Filtros por facultad */}
-            <FacultyFilter
-              selected={selectedFaculty}
-              onSelect={setSelectedFaculty}
-            />
+            {/* Filtros por facultad - solo para admin */}
+            {!isRestricted && (
+              <FacultyFilter
+                selected={selectedFaculty}
+                onSelect={setSelectedFaculty}
+              />
+            )}
           </div>
           {/* Lista de carreras - scrolleable */}
           <CarreraList

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Search, Bell, User, ChevronDown } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Search, Bell, User, ChevronDown, LogOut } from 'lucide-react';
 import { useCarrera } from '@/contexts/CarreraContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { CarreraSelectorDropdown } from './CarreraSelectorDropdown';
 import { UniNetLogo } from './UniNetLogo';
 
@@ -8,20 +10,22 @@ import { UniNetLogo } from './UniNetLogo';
 // Navbar - Navegación horizontal estilo Vercel
 // ==========================================
 
-interface NavbarProps {
-  activeSection: string;
-  onSectionChange: (section: string) => void;
-}
+import type { UserRole } from '@/types/auth'
 
-const navTabs = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'users', label: 'Usuarios' },
-  { id: 'network', label: 'Network' },
-  { id: 'logs', label: 'Logs' },
+// Tabs con roles permitidos
+// Docente puede ver Network y Logs pero filtrado por su carrera
+const navTabs: { id: string; label: string; path: string; roles: UserRole[] }[] = [
+  { id: 'dashboard', label: 'Dashboard', path: '/dashboard', roles: ['admin', 'docente'] },
+  { id: 'users', label: 'Usuarios', path: '/users', roles: ['admin', 'docente'] },
+  { id: 'network', label: 'Network', path: '/network', roles: ['admin', 'docente'] },
+  { id: 'logs', label: 'Logs', path: '/logs', roles: ['admin', 'docente'] },
 ];
 
-export function Navbar({ activeSection, onSectionChange }: NavbarProps) {
+export function Navbar() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { isHome } = useCarrera();
+  const { user, logout } = useAuth();
   const [isBrandHovered, setIsBrandHovered] = useState(false);
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -73,21 +77,23 @@ export function Navbar({ activeSection, onSectionChange }: NavbarProps) {
           {/* Tabs - solo visibles cuando hay lab seleccionado */}
           {!isHome && (
             <div className="flex items-center gap-1">
-              {navTabs.map((tab) => (
+              {navTabs
+                .filter(tab => user && tab.roles.includes(user.role))
+                .map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => onSectionChange(tab.id)}
+                  onClick={() => navigate(tab.path)}
                   className={`
                     relative px-4 py-2 text-sm font-medium rounded-md transition-colors
-                    ${activeSection === tab.id
+                    ${location.pathname === tab.path
                       ? 'text-white bg-white/10'
                       : 'text-tech-textDim hover:text-white hover:bg-white/5'
                     }
                   `}
                 >
                   {tab.label}
-                  {/* Underline dentro del botón activo */}
-                  {activeSection === tab.id && (
+                  {/* Underline dentro del boton activo */}
+                  {location.pathname === tab.path && (
                     <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-white rounded-full" />
                   )}
                 </button>
@@ -131,8 +137,8 @@ export function Navbar({ activeSection, onSectionChange }: NavbarProps) {
             {showProfileMenu && (
               <div className="absolute right-0 top-12 w-56 bg-tech-darkCard border border-tech-darkBorder rounded-lg shadow-xl overflow-hidden">
                 <div className="p-3 border-b border-tech-darkBorder">
-                  <p className="text-sm font-medium text-white">Admin User</p>
-                  <p className="text-xs text-tech-textDim">admin@uninet.com</p>
+                  <p className="text-sm font-medium text-white">{user?.username || 'Usuario'}</p>
+                  <p className="text-xs text-tech-textDim capitalize">{user?.role || 'Sin rol'}</p>
                 </div>
                 <div className="p-1">
                   <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-tech-textDim hover:bg-white/5 hover:text-white rounded transition-colors">
@@ -149,11 +155,16 @@ export function Navbar({ activeSection, onSectionChange }: NavbarProps) {
                     <User className="w-4 h-4" />
                     <span>Perfil</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    <span>Cerrar Sesión</span>
+                  <button
+                    onClick={() => {
+                      logout();
+                      navigate('/login');
+                      setShowProfileMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Cerrar Sesion</span>
                   </button>
                 </div>
               </div>
