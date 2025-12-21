@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { PCGrid } from '@/components/PCGrid';
+import { PCDetailPanel } from '@/components/PCDetailPanel';
+import { PCStatusFilter, type FilterStatus } from '@/components/PCStatusFilter';
 import { ControlPanel } from '@/components/ControlPanel';
 import { LogViewer } from '@/components/LogViewer';
 import { UserTable } from '@/components/UserTable';
-import { LabGrid } from '@/components/LabGrid';
+import { CarreraSelector } from '@/components/CarreraSelector';
 import { mockPCs, mockLogs, mockUsers } from '@/data/mockData';
 import type { PC, LDAPUser } from '@/types';
-import { useLaboratory } from '@/contexts/LaboratoryContext';
+import { useCarrera } from '@/contexts/CarreraContext';
 import { Monitor } from 'lucide-react';
 
 function App() {
@@ -15,34 +17,63 @@ function App() {
   const [pcs, setPcs] = useState<PC[]>(mockPCs);
   const [users, setUsers] = useState<LDAPUser[]>(mockUsers);
   const [, setServerOnline] = useState(false);
-  const { selectedLab, isHome } = useLaboratory();
+  const { selectedCarrera, isHome } = useCarrera();
 
-  const handlePCClick = (_pc: PC) => {
-    // TODO: Implementar modal de detalles del PC
+  // Estado para el panel de detalles de PC
+  const [selectedPC, setSelectedPC] = useState<PC | null>(null);
+  const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+
+  // Estado para filtro de PCs por estado
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+
+  const handlePCClick = (pc: PC) => {
+    setSelectedPC(pc);
+    setIsDetailPanelOpen(true);
   };
 
-  // Filtrar PCs por laboratorio seleccionado
+  const handleCloseDetailPanel = () => {
+    setIsDetailPanelOpen(false);
+    // Delay para permitir animación de cierre
+    setTimeout(() => setSelectedPC(null), 300);
+  };
+
+  // Filtrar PCs por carrera seleccionada y por estado
   const filteredPCs = useMemo(() => {
-    if (!selectedLab) return pcs;
-    return pcs.filter(pc => pc.laboratoryId === selectedLab.id);
-  }, [pcs, selectedLab]);
+    // TODO: Vincular PCs con carreras cuando se implemente
+    let filtered = pcs;
 
-  // Stats del laboratorio seleccionado
-  const labStats = useMemo(() => {
-    const labPCs = filteredPCs;
+    // Aplicar filtro por estado
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(pc => pc.status === statusFilter);
+    }
+
+    return filtered;
+  }, [pcs, statusFilter]);
+
+  // Stats de la carrera seleccionada
+  const carreraStats = useMemo(() => {
+    if (selectedCarrera) {
+      return {
+        total: selectedCarrera.pcsCount,
+        online: Math.floor(selectedCarrera.pcsCount * 0.7),
+        offline: Math.floor(selectedCarrera.pcsCount * 0.1),
+        inUse: Math.floor(selectedCarrera.pcsCount * 0.2),
+      };
+    }
+    const allPCs = filteredPCs;
     return {
-      total: labPCs.length,
-      online: labPCs.filter(pc => pc.status === 'online').length,
-      offline: labPCs.filter(pc => pc.status === 'offline').length,
-      inUse: labPCs.filter(pc => pc.status === 'inUse').length,
+      total: allPCs.length,
+      online: allPCs.filter(pc => pc.status === 'online').length,
+      offline: allPCs.filter(pc => pc.status === 'offline').length,
+      inUse: allPCs.filter(pc => pc.status === 'inUse').length,
     };
-  }, [filteredPCs]);
+  }, [filteredPCs, selectedCarrera]);
 
-  // Filtrar usuarios por laboratorio seleccionado
+  // Filtrar usuarios (por ahora muestra todos)
   const filteredUsers = useMemo(() => {
-    if (!selectedLab) return users;
-    return users.filter(user => user.laboratoryId === selectedLab.id);
-  }, [users, selectedLab]);
+    // TODO: Vincular usuarios con carreras cuando se implemente
+    return users;
+  }, [users]);
 
   // Poll server status API and update pc statuses
   useEffect(() => {
@@ -112,47 +143,32 @@ function App() {
 
       {/* Main Content */}
       <main className="px-6 py-8 flex-1">
-        {/* Home: Grid de Laboratorios */}
-        {isHome && <LabGrid />}
+        {/* Home: Selector de Carreras */}
+        {isHome && <CarreraSelector />}
 
-        {/* Lab Selected: mostrar secciones */}
+        {/* Carrera Selected: mostrar secciones */}
         {!isHome && (
           <>
             {/* Dashboard Section */}
             {activeSection === 'dashboard' && (
               <div className="space-y-6">
-                {/* Header con nombre del lab */}
+                {/* Header con nombre de la carrera */}
                 <div>
                   <h2 className="text-2xl font-bold text-tech-text flex items-center gap-2">
                     <Monitor className="h-6 w-6 text-tech-text" />
-                    {selectedLab?.name || 'Dashboard'}
+                    {selectedCarrera?.name || 'Dashboard'}
                   </h2>
                   <p className="text-tech-textDim mt-1">
                     Monitoreo en tiempo real de los clientes Ubuntu
                   </p>
                 </div>
 
-                {/* Stats mini */}
-                <div className="flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-status-online" />
-                    <span className="text-tech-textDim">Online:</span>
-                    <span className="text-white font-medium">{labStats.online}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-status-offline" />
-                    <span className="text-tech-textDim">Offline:</span>
-                    <span className="text-white font-medium">{labStats.offline}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-status-inUse" />
-                    <span className="text-tech-textDim">En uso:</span>
-                    <span className="text-white font-medium">{labStats.inUse}</span>
-                  </div>
-                  <div className="text-tech-textDim">
-                    Total: <span className="text-white font-medium">{labStats.total}</span>
-                  </div>
-                </div>
+                {/* Filtros por estado */}
+                <PCStatusFilter
+                  activeFilter={statusFilter}
+                  onFilterChange={setStatusFilter}
+                  stats={carreraStats}
+                />
 
                 <PCGrid pcs={filteredPCs} onPCClick={handlePCClick} />
               </div>
@@ -160,18 +176,7 @@ function App() {
 
             {/* Users Section */}
             {activeSection === 'users' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-tech-text">
-                    Gestión de Usuarios
-                  </h2>
-                  <p className="text-tech-textDim mt-1">
-                    Administración de usuarios en OpenLDAP
-                  </p>
-                </div>
-
-                <UserTable users={filteredUsers} onRefresh={fetchUsers} />
-              </div>
+              <UserTable users={filteredUsers} onRefresh={fetchUsers} />
             )}
 
             {/* Network Section */}
@@ -222,6 +227,13 @@ function App() {
           </p>
         </div>
       </footer>
+
+      {/* Panel lateral de detalles de PC */}
+      <PCDetailPanel
+        pc={selectedPC}
+        isOpen={isDetailPanelOpen}
+        onClose={handleCloseDetailPanel}
+      />
     </div>
   );
 }
