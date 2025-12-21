@@ -1,77 +1,7 @@
-import type { PC, LogEntry, LDAPUser, Laboratory } from '@/types';
+import type { PC, LogEntry, LDAPUser, Carrera } from '@/types';
 
 // ==========================================
-// DATOS MOCK - Laboratorios
-// ==========================================
-
-/**
- * Laboratorios de la universidad
- */
-export const mockLaboratories: Laboratory[] = [
-  {
-    id: 'lab-sistemas',
-    name: 'Laboratorio de Sistemas',
-    faculty: 'Ingeniería',
-    color: 'sistemas',
-    icon: 'Monitor',
-    pcsCount: 24,
-    usersCount: 18,
-    status: 'online',
-  },
-  {
-    id: 'lab-redes',
-    name: 'Redes y Telecom',
-    faculty: 'Ingeniería',
-    color: 'redes',
-    icon: 'Network',
-    pcsCount: 30,
-    usersCount: 28,
-    status: 'online',
-  },
-  {
-    id: 'lab-diseno',
-    name: 'Diseño Gráfico',
-    faculty: 'Artes',
-    color: 'diseno',
-    icon: 'Palette',
-    pcsCount: 15,
-    usersCount: 12,
-    status: 'online',
-  },
-  {
-    id: 'lab-finanzas',
-    name: 'Sala Bloomberg',
-    faculty: 'Finanzas',
-    color: 'finanzas',
-    icon: 'TrendingUp',
-    pcsCount: 20,
-    usersCount: 5,
-    status: 'partial',
-  },
-  {
-    id: 'lab-desarrollo',
-    name: 'Desarrollo Web',
-    faculty: 'Ingeniería',
-    color: 'desarrollo',
-    icon: 'Code',
-    pcsCount: 25,
-    usersCount: 0,
-    status: 'offline',
-  },
-  {
-    id: 'lab-ciencias',
-    name: 'Simulación Física',
-    faculty: 'Ciencias',
-    color: 'ciencias',
-    icon: 'Atom',
-    pcsCount: 12,
-    usersCount: 10,
-    status: 'online',
-  },
-];
-
-// ==========================================
-// DATOS MOCK - PCs por Laboratorio
+// DATOS MOCK - PCs
 // ==========================================
 
 /**
@@ -586,3 +516,173 @@ export const mockUsers: LDAPUser[] = [
     status: 'active',
   },
 ];
+
+// ==========================================
+// DATOS MOCK - Carreras (Nodos de Infraestructura)
+// ==========================================
+
+/**
+ * Carreras universitarias para el selector
+ * Basado en las 12 carreras del documento TASK_LDAP-USUARIOS.md
+ */
+export const mockCarreras: Carrera[] = [
+  // ========== INGENIERÍA ==========
+  {
+    id: 'carrera-sistemas',
+    name: 'Ingeniería de Sistemas e Informática',
+    faculty: 'ingenieria',
+    icon: 'Monitor',
+    pcsCount: 45,
+    usersCount: 320,
+    status: 'online',
+    nodeId: 'NODE-ISI-01',
+    lastSync: new Date(Date.now() - 120000), // hace 2 min
+  },
+  {
+    id: 'carrera-agroindustrial',
+    name: 'Ingeniería Agroindustrial',
+    faculty: 'ingenieria',
+    icon: 'Factory',
+    pcsCount: 20,
+    usersCount: 145,
+    status: 'online',
+    nodeId: 'NODE-AGR-01',
+    lastSync: new Date(Date.now() - 180000),
+  },
+  {
+    id: 'carrera-forestal',
+    name: 'Ingeniería Forestal y Medio Ambiente',
+    faculty: 'ingenieria',
+    icon: 'TreePine',
+    pcsCount: 18,
+    usersCount: 98,
+    status: 'partial',
+    nodeId: 'NODE-FOR-01',
+    lastSync: new Date(Date.now() - 300000),
+  },
+
+  // ========== CIENCIAS ==========
+  {
+    id: 'carrera-matematicas',
+    name: 'Educación Matemáticas y Computación',
+    faculty: 'ciencias',
+    icon: 'Calculator',
+    pcsCount: 25,
+    usersCount: 156,
+    status: 'online',
+    nodeId: 'NODE-MAT-01',
+    lastSync: new Date(Date.now() - 90000),
+  },
+  {
+    id: 'carrera-contabilidad',
+    name: 'Contabilidad y Finanzas',
+    faculty: 'ciencias',
+    icon: 'Receipt',
+    pcsCount: 30,
+    usersCount: 280,
+    status: 'online',
+    nodeId: 'NODE-CON-01',
+    lastSync: new Date(Date.now() - 60000),
+  },
+  {
+    id: 'carrera-administracion',
+    name: 'Administración y Negocios Internacionales',
+    faculty: 'ciencias',
+    icon: 'Briefcase',
+    pcsCount: 35,
+    usersCount: 410,
+    status: 'online',
+    nodeId: 'NODE-ADM-01',
+    lastSync: new Date(Date.now() - 150000),
+  },
+  {
+    id: 'carrera-derecho',
+    name: 'Derecho y Ciencias Políticas',
+    faculty: 'ciencias',
+    icon: 'Scale',
+    pcsCount: 22,
+    usersCount: 195,
+    status: 'online',
+    nodeId: 'NODE-DER-01',
+    lastSync: new Date(Date.now() - 240000),
+  },
+
+  // ========== SALUD ==========
+  {
+    id: 'carrera-enfermeria',
+    name: 'Enfermería',
+    faculty: 'salud',
+    icon: 'Heart',
+    pcsCount: 15,
+    usersCount: 178,
+    status: 'online',
+    nodeId: 'NODE-ENF-01',
+    lastSync: new Date(Date.now() - 200000),
+  },
+  {
+    id: 'carrera-veterinaria',
+    name: 'Medicina Veterinaria y Zootecnia',
+    faculty: 'salud',
+    icon: 'Stethoscope',
+    pcsCount: 12,
+    usersCount: 89,
+    status: 'partial',
+    nodeId: 'NODE-VET-01',
+    lastSync: new Date(Date.now() - 600000),
+  },
+
+  // ========== ARTES / EDUCACIÓN ==========
+  {
+    id: 'carrera-inicial',
+    name: 'Educación Inicial y Especial',
+    faculty: 'artes',
+    icon: 'Baby',
+    pcsCount: 10,
+    usersCount: 125,
+    status: 'online',
+    nodeId: 'NODE-EDI-01',
+    lastSync: new Date(Date.now() - 180000),
+  },
+  {
+    id: 'carrera-primaria',
+    name: 'Educación Primaria e Informática',
+    faculty: 'artes',
+    icon: 'GraduationCap',
+    pcsCount: 14,
+    usersCount: 142,
+    status: 'online',
+    nodeId: 'NODE-PRI-01',
+    lastSync: new Date(Date.now() - 120000),
+  },
+  {
+    id: 'carrera-ecoturismo',
+    name: 'Ecoturismo',
+    faculty: 'artes',
+    icon: 'Mountain',
+    pcsCount: 8,
+    usersCount: 67,
+    status: 'offline',
+    nodeId: 'NODE-ECO-01',
+    lastSync: new Date(Date.now() - 3600000), // hace 1 hora
+  },
+];
+
+/**
+ * Colores por facultad para el selector de carreras
+ */
+export const FACULTY_COLORS: Record<string, string> = {
+  ingenieria: '#0070f3',  // Azul Vercel
+  artes: '#ec4899',       // Rosa/Magenta
+  ciencias: '#06b6d4',    // Cyan
+  salud: '#10b981',       // Verde
+};
+
+/**
+ * Labels de facultades para mostrar en UI
+ */
+export const FACULTY_LABELS: Record<string, string> = {
+  ingenieria: 'Ingeniería',
+  artes: 'Artes',
+  ciencias: 'Ciencias',
+  salud: 'Salud',
+};

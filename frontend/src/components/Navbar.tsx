@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Search, Bell, User } from 'lucide-react';
-import { useLaboratory } from '@/contexts/LaboratoryContext';
-import { LabSelector } from './LabSelector';
+import { useCarrera } from '@/contexts/CarreraContext';
+import { CarreraSelectorDropdown } from './CarreraSelectorDropdown';
+import { UniNetLogo } from './UniNetLogo';
 
 // ==========================================
 // Navbar - Navegación horizontal estilo Vercel
@@ -19,17 +21,29 @@ const navTabs = [
 ];
 
 export function Navbar({ activeSection, onSectionChange }: NavbarProps) {
-  const { isHome } = useLaboratory();
+  const { isHome } = useCarrera();
+  const [isBrandHovered, setIsBrandHovered] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 h-16 bg-black/80 backdrop-blur-md border-b border-tech-darkBorder">
       <div className="h-full px-6 flex items-center justify-between">
-        {/* Left: Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-            <span className="text-black font-bold text-sm">UN</span>
-          </div>
-          <span className="text-white font-semibold text-lg">UniNet</span>
+        {/* Left: Logo Singularidad + Texto con efecto bidireccional */}
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+          onMouseEnter={() => setIsBrandHovered(true)}
+          onMouseLeave={() => setIsBrandHovered(false)}
+        >
+          <UniNetLogo size="sm" isHovered={isBrandHovered} />
+          <span
+            className="text-white font-semibold text-lg uppercase transition-all duration-500 ease-out"
+            style={{
+              transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+              letterSpacing: isBrandHovered ? '0.2em' : '0.05em',
+              transform: isBrandHovered ? 'scaleY(1.1)' : 'scaleY(1)',
+            }}
+          >
+            UNINET
+          </span>
         </div>
 
         {/* Center: Tabs + Lab Selector */}
@@ -59,8 +73,8 @@ export function Navbar({ activeSection, onSectionChange }: NavbarProps) {
             </div>
           )}
 
-          {/* Lab Selector */}
-          <LabSelector />
+          {/* Carrera Selector - solo visible en Dashboard */}
+          {!isHome && <CarreraSelectorDropdown />}
         </div>
 
         {/* Right: Icons */}

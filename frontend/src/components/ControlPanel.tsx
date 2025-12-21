@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Globe, Lock, AlertTriangle, FileText, Settings, Terminal } from 'lucide-react';
 import { useState } from 'react';
-import { useLaboratory } from '@/contexts/LaboratoryContext';
+import { useCarrera } from '@/contexts/CarreraContext';
 
 type LabMode = 'clase' | 'examen';
 
@@ -23,7 +23,7 @@ const firewallRules = {
 
 export function ControlPanel() {
   const [currentMode, setCurrentMode] = useState<LabMode>('clase');
-  const { selectedLab } = useLaboratory();
+  const { selectedCarrera } = useCarrera();
 
   const handleModeChange = (mode: LabMode) => {
     if (mode === currentMode) return;
@@ -31,7 +31,7 @@ export function ControlPanel() {
   };
 
   const rules = firewallRules[currentMode];
-  const pcsCount = selectedLab?.pcsCount || 24;
+  const pcsCount = selectedCarrera?.pcsCount || 24;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -187,12 +187,12 @@ export function ControlPanel() {
           <p className="text-sm text-tech-textDim">Sockets establecidos actualmente.</p>
         </Card>
 
-        {/* Info del Lab */}
+        {/* Info de la Carrera */}
         <Card className="bg-tech-darkCard border-tech-darkBorder p-4">
           <h3 className="text-xs font-semibold text-tech-textDim uppercase tracking-wider mb-3">
-            Laboratorio
+            Carrera
           </h3>
-          <p className="text-white font-medium">{selectedLab?.name || 'No seleccionado'}</p>
+          <p className="text-white font-medium">{selectedCarrera?.name || 'No seleccionado'}</p>
           <p className="text-sm text-tech-textDim mt-1">{pcsCount} equipos conectados</p>
         </Card>
       </div>

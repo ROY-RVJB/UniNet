@@ -8,30 +8,6 @@
 export type PCStatus = 'online' | 'offline' | 'inUse' | 'examMode';
 
 /**
- * Estado del laboratorio
- */
-export type LabStatus = 'online' | 'offline' | 'partial';
-
-/**
- * Colores disponibles para laboratorios
- */
-export type LabColor = 'sistemas' | 'redes' | 'diseno' | 'finanzas' | 'desarrollo' | 'ciencias' | 'medicina' | 'derecho';
-
-/**
- * Interfaz de Laboratorio
- */
-export interface Laboratory {
-  id: string;           // "lab-sistemas"
-  name: string;         // "Laboratorio de Sistemas"
-  faculty: string;      // "Ingeniería"
-  color: LabColor;      // Color del borde
-  icon: string;         // Nombre del icono Lucide
-  pcsCount: number;     // Total de PCs
-  usersCount: number;   // Usuarios activos
-  status: LabStatus;    // Estado general
-}
-
-/**
  * Interfaz de PC del Laboratorio
  */
 export interface PC {
@@ -79,7 +55,31 @@ export interface LDAPUser {
   status: 'active' | 'inactive'; // Estado del usuario
 }
 
+// ==========================================
+// TIPOS - Selector de Carreras
+// ==========================================
+
 /**
- * Modos de operación del laboratorio
+ * Facultades disponibles
  */
-export type LabMode = 'normal' | 'exam';
+export type Faculty = 'ingenieria' | 'artes' | 'ciencias' | 'salud';
+
+/**
+ * Estado de una carrera/nodo
+ */
+export type CarreraStatus = 'online' | 'offline' | 'partial';
+
+/**
+ * Interfaz de Carrera (Nodo de infraestructura)
+ */
+export interface Carrera {
+  id: string;              // "carrera-sistemas"
+  name: string;            // "Ingeniería de Sistemas"
+  faculty: Faculty;        // Facultad a la que pertenece
+  icon: string;            // Nombre del icono Lucide
+  pcsCount: number;        // Total de PCs asignadas
+  usersCount: number;      // Usuarios registrados
+  status: CarreraStatus;   // Estado del nodo
+  nodeId?: string;         // ID del nodo (ej: "NODE-ISI-01")
+  lastSync?: Date;         // Última sincronización
+}
