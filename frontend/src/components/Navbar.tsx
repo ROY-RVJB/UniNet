@@ -1,6 +1,7 @@
-import { Search, Bell, User } from 'lucide-react';
+import { Search, Bell, User, ChevronDown } from 'lucide-react';
 import { useLaboratory } from '@/contexts/LaboratoryContext';
 import { LabSelector } from './LabSelector';
+import { useState, useEffect } from 'react';
 
 // ==========================================
 // Navbar - Navegación horizontal estilo Vercel
@@ -20,6 +21,28 @@ const navTabs = [
 
 export function Navbar({ activeSection, onSectionChange }: NavbarProps) {
   const { isHome } = useLaboratory();
+  const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  // Check server status every 10 seconds
+  useEffect(() => {
+    const checkServer = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
+        const response = await fetch(`${apiUrl}/health`, { 
+          method: 'GET',
+          signal: AbortSignal.timeout(3000)
+        });
+        setServerStatus(response.ok ? 'online' : 'offline');
+      } catch {
+        setServerStatus('offline');
+      }
+    };
+
+    checkServer();
+    const interval = setInterval(checkServer, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 h-16 bg-black/80 backdrop-blur-md border-b border-tech-darkBorder">
@@ -63,19 +86,66 @@ export function Navbar({ activeSection, onSectionChange }: NavbarProps) {
           <LabSelector />
         </div>
 
-        {/* Right: Icons */}
+        {/* Right: Server Status + Profile */}
         <div className="flex items-center gap-4">
-          <button className="p-2 text-tech-textDim hover:text-white transition-colors">
-            <Search className="w-5 h-5" />
-          </button>
-          <button className="p-2 text-tech-textDim hover:text-white transition-colors relative">
-            <Bell className="w-5 h-5" />
-            {/* Notification dot */}
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
-          <button className="w-8 h-8 rounded-full bg-tech-darkCard border border-tech-darkBorder flex items-center justify-center hover:border-tech-textDim transition-colors">
-            <User className="w-4 h-4 text-tech-textDim" />
-          </button>
+          {/* Server Status Indicator */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-tech-darkCard border border-tech-darkBorder">
+            <div className={`w-2 h-2 rounded-full ${
+              serverStatus === 'online' ? 'bg-green-500 animate-pulse' :
+              serverStatus === 'offline' ? 'bg-red-500' :
+              'bg-yellow-500 animate-pulse'
+            }`} />
+            <span className="text-xs font-medium text-tech-textDim">
+              {serverStatus === 'online' ? 'Online' :
+               serverStatus === 'offline' ? 'Offline' :
+               'Checking...'}
+            </span>
+          </div>
+
+          {/* Profile Menu */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-tech-darkCard border border-tech-darkBorder hover:border-tech-textDim transition-colors"
+            >
+              <div className="w-6 h-6 rounded-full bg-tech-text/20 flex items-center justify-center">
+                <User className="w-3.5 h-3.5 text-tech-text" />
+              </div>
+              <ChevronDown className={`w-4 h-4 text-tech-textDim transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showProfileMenu && (
+              <div className="absolute right-0 top-12 w-56 bg-tech-darkCard border border-tech-darkBorder rounded-lg shadow-xl overflow-hidden">
+                <div className="p-3 border-b border-tech-darkBorder">
+                  <p className="text-sm font-medium text-white">Admin User</p>
+                  <p className="text-xs text-tech-textDim">admin@uninet.com</p>
+                </div>
+                <div className="p-1">
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-tech-textDim hover:bg-white/5 hover:text-white rounded transition-colors">
+                    <Search className="w-4 h-4" />
+                    <span>Buscar</span>
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-tech-textDim hover:bg-white/5 hover:text-white rounded transition-colors relative">
+                    <Bell className="w-4 h-4" />
+                    <span>Notificaciones</span>
+                    <span className="ml-auto w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                  </button>
+                  <div className="my-1 h-px bg-tech-darkBorder" />
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-tech-textDim hover:bg-white/5 hover:text-white rounded transition-colors">
+                    <User className="w-4 h-4" />
+                    <span>Perfil</span>
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Cerrar Sesión</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

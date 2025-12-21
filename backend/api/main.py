@@ -9,11 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.monitoring import router as monitoring_router
 from api.users import router as users_router
 from api.auth import router as auth_router
-from api.logs import router as logs_router, setup_logging
-import logging
 import time
-
-setup_logging()  # Configurar logging al iniciar la app
 
 app = FastAPI(
     title="UniNet Dashboard API",
@@ -58,8 +54,7 @@ app.add_middleware(
 # Registrar routers
 app.include_router(monitoring_router, prefix="/api", tags=["Monitoring"])
 app.include_router(users_router, prefix="/api/users", tags=["Users"])
-app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
-app.include_router(logs_router, prefix="/api", tags=["Logs"]) 
+app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"]) 
 
 @app.get("/")
 async def root():
