@@ -1,23 +1,70 @@
-# Backend - Status Server
+# Backend - UniNet API Server
 
-Servidor Python (Flask) que monitorea el estado de las máquinas cliente mediante ping.
+Servidor FastAPI que gestiona autenticación, usuarios LDAP y monitoreo de laboratorio.
 
-## 📋 Contenido
+## 📋 Scripts Disponibles
 
-- `status_server.py` - Servidor Flask principal
-- `requirements.txt` - Dependencias Python
-- `install.sh` - Script de instalación automática
+### 🚀 Iniciar Servidor (Recomendado)
+```bash
+chmod +x start-server.sh
+./start-server.sh
+```
+Este script:
+- ✅ Mata procesos zombies automáticamente
+- ✅ Verifica que el puerto esté libre
+- ✅ Activa el entorno virtual
+- ✅ Inicia uvicorn con reload
 
-## 🚀 Instalación Rápida
+### 🛑 Detener Servidor
+```bash
+chmod +x stop-server.sh
+./stop-server.sh
+```
+
+### 🔍 Verificar Estado
+```bash
+chmod +x check-server.sh
+./check-server.sh
+```
+Muestra:
+- Estado del servidor (corriendo/detenido)
+- Puerto 4000 (libre/ocupado)
+- PIDs de procesos activos
+
+---
+
+## 🔧 Instalación Manual
+
+Si prefieres el método tradicional:
 
 ```bash
 # Asegúrate de estar en la carpeta backend
 cd backend
 
-# Da permisos y ejecuta
-chmod +x install.sh
-sudo ./install.sh
+# Crear entorno virtual
+python3 -m venv venv
+source venv/bin/activate
+
+# Instalar dependencias
+pip install -r requirements.txt
 ```
+
+### Iniciar manualmente (sin auto-limpieza)
+```bash
+# Opción 1: Con auto-reload (desarrollo)
+python -m uvicorn api.main:app --host 0.0.0.0 --port 4000 --reload
+
+# Opción 2: Sin auto-reload (producción)
+python -m uvicorn api.main:app --host 0.0.0.0 --port 4000
+```
+
+⚠️ **Problema común:** Si el puerto está ocupado:
+```bash
+# Mata el proceso zombie
+sudo fuser -k 4000/tcp
+```
+
+---
 
 ## 📡 Endpoints
 
