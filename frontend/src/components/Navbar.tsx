@@ -30,15 +30,21 @@ export function Navbar() {
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  // Check server status every 10 seconds
+  // Check server status every 5 seconds
   useEffect(() => {
     const checkServer = async () => {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
+      
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        
         const response = await fetch(`${apiUrl}/health`, { 
           method: 'GET',
-          signal: AbortSignal.timeout(3000)
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         setServerStatus(response.ok ? 'online' : 'offline');
       } catch {
         setServerStatus('offline');
@@ -46,7 +52,7 @@ export function Navbar() {
     };
 
     checkServer();
-    const interval = setInterval(checkServer, 10000);
+    const interval = setInterval(checkServer, 5000);
     return () => clearInterval(interval);
   }, []);
 
