@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { X, Loader2, Eye, EyeOff, ChevronDown } from "lucide-react"
+import { X, Loader2, Eye, EyeOff, ChevronDown, Check, AlertCircle } from "lucide-react"
 
 interface CreateUserModalProps {
   isOpen: boolean
@@ -9,31 +9,35 @@ interface CreateUserModalProps {
 }
 
 export interface UserFormData {
+  codigo: string
+  nombres: string
+  apellidoPaterno: string
+  apellidoMaterno: string
   username: string
-  fullName: string
+  email: string
+  dni: string
   password: string
   confirmPassword: string
-  group: string
   carrera: string
 }
 
 interface FormErrors {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  codigo?: string
+  nombres?: string
+  apellidoPaterno?: string
+  apellidoMaterno?: string
   username?: string
-  fullName?: string
+  email?: string
+  dni?: string
   password?: string
   confirmPassword?: string
-  group?: string
   carrera?: string
 }
 
 // ==========================================
 // CreateUserModal - Estilo Minimalista Vercel
 // ==========================================
-
-const GROUP_OPTIONS = [
-  { value: "5000", label: "Alumno" },
-  { value: "6000", label: "Docente" },
-]
 
 const CARRERA_OPTIONS = [
   { value: "5001", label: "Administración y Negocios Internacionales" },
@@ -49,6 +53,72 @@ const CARRERA_OPTIONS = [
   { value: "5011", label: "Ingeniería Forestal y Medio Ambiente" },
   { value: "5012", label: "Medicina Veterinaria y Zootecnia" },
 ]
+
+// ==========================================
+// Utilidades para generar username
+// ==========================================
+
+/**
+ * Normaliza texto removiendo tildes y caracteres especiales
+ */
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Quitar tildes
+    .replace(/[^a-z]/g, '') // Solo letras
+}
+
+/**
+ * Genera username desde nombres y apellidos
+ * Formato: nombre.apellidopaterno
+ */
+function generateUsername(
+  nombres: string,
+  apellidoPaterno: string,
+  codigo?: string
+): string {
+  if (!nombres.trim() || !apellidoPaterno.trim()) return ""
+  
+  const nombre = normalizeText(nombres.split(' ')[0]) // Primer nombre
+  const paterno = normalizeText(apellidoPaterno)
+  
+  return `${nombre}.${paterno}`
+}
+
+/**
+ * Genera username con código como sufijo
+ * Formato: nombre.apellidopaterno1234 (últimos 4 dígitos del código)
+ */
+function generateUsernameWithCode(
+  nombres: string,
+  apellidoPaterno: string,
+  codigo: string
+): string {
+  if (!codigo.trim()) return generateUsername(nombres, apellidoPaterno)
+  
+  const baseUsername = generateUsername(nombres, apellidoPaterno)
+  const codigoSuffix = codigo.slice(-4) // Últimos 4 dígitos
+  
+  return `${baseUsername}${codigoSuffix}`
+}
+
+/**
+ * Simula verificación de disponibilidad de username
+ * TODO: Conectar con backend real
+ */
+async function checkUsernameAvailability(username: string): Promise<boolean> {
+  // Simulación de llamada API con delay
+  await new Promise(resolve => setTimeout(resolve, 300))
+  
+  // Por ahora, simular que algunos usernames están ocupados
+  const ocupados = ['juan.perez', 'maria.torres', 'jose.gomez']
+  return !ocupados.includes(username)
+}
+
+// ==========================================
+// Componentes UI
+// ==========================================
 
 // Input minimalista reutilizable
 function MinimalInput({
@@ -364,46 +434,144 @@ function CommandSelect({
 
 export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalProps) {
   const [formData, setFormData] = React.useState<UserFormData>({
+    codigo: "",
+    nombres: "",
+    apellidoPaterno: "",
+    apellidoMaterno: "",
     username: "",
-    fullName: "",
+    email: "",
+    dni: "",
     password: "",
     confirmPassword: "",
-    group: "5000", // Default: Alumnos
-    carrera: "", // Solo requerido para Alumnos
+    carrera: "",
   })
   const [errors, setErrors] = React.useState<FormErrors>({})
   const [isLoading, setIsLoading] = React.useState(false)
   const [touched, setTouched] = React.useState<Record<string, boolean>>({})
+  const [usernameStatus, setUsernameStatus] = React.useState<{
+    checking: boolean
+    available: boolean | null
+    usedCode: boolean // Si usó código como sufijo
+  }>({
+    checking: false,
+    available: null,
+    usedCode: false,
+  })
+  const [usernameManuallyEdited, setUsernameManuallyEdited] = React.useState(false)
 
   // Reset form when modal opens/closes
   React.useEffect(() => {
     if (!isOpen) {
       setFormData({
+        codigo: "",
+        nombres: "",
+        apellidoPaterno: "",
+        apellidoMaterno: "",
         username: "",
-        fullName: "",
+        email: "",
+        dni: "",
         password: "",
         confirmPassword: "",
-        group: "5000",
         carrera: "",
       })
       setErrors({})
       setTouched({})
       setIsLoading(false)
+      setUsernameStatus({ checking: false, available: null, usedCode: false })
+      setUsernameManuallyEdited(false)
     }
   }, [isOpen])
+
+  // Auto-generar username cuando cambian nombres o apellidos
+  React.useEffect(() => {
+    if (usernameManuallyEdited) return // No auto-generar si el usuario editó manualmente
+    if (!formData.nombres.trim() || !formData.apellidoPaterno.trim()) return
+
+    const checkAndGenerate = async () => {
+      // Generar username base
+      const baseUsername = generateUsername(formData.nombres, formData.apellidoPaterno)
+      
+      setUsernameStatus(prev => ({ ...prev, checking: true }))
+      
+      // Verificar disponibilidad
+      const available = await checkUsernameAvailability(baseUsername)
+      
+      if (available) {
+        // Username disponible
+        setFormData(prev => ({
+          ...prev,
+          username: baseUsername,
+          email: `${baseUsername}@universidad.edu.pe`
+        }))
+        setUsernameStatus({ checking: false, available: true, usedCode: false })
+      } else if (formData.codigo.trim()) {
+        // Username ocupado, intentar con código
+        const usernameWithCode = generateUsernameWithCode(
+          formData.nombres,
+          formData.apellidoPaterno,
+          formData.codigo
+        )
+        const availableWithCode = await checkUsernameAvailability(usernameWithCode)
+        
+        setFormData(prev => ({
+          ...prev,
+          username: usernameWithCode,
+          email: `${usernameWithCode}@universidad.edu.pe`
+        }))
+        setUsernameStatus({ 
+          checking: false, 
+          available: availableWithCode, 
+          usedCode: true 
+        })
+      } else {
+        // Username ocupado y no hay código para usar
+        setFormData(prev => ({
+          ...prev,
+          username: baseUsername,
+          email: `${baseUsername}@universidad.edu.pe`
+        }))
+        setUsernameStatus({ checking: false, available: false, usedCode: false })
+      }
+    }
+
+    checkAndGenerate()
+  }, [formData.nombres, formData.apellidoPaterno, formData.codigo, usernameManuallyEdited])
 
   // Validaciones
   const validateField = (field: keyof UserFormData, value: string): string | undefined => {
     switch (field) {
+      case "codigo":
+        if (!value.trim()) return "Este campo es obligatorio"
+        if (value.length < 8) return "Mínimo 8 caracteres"
+        if (!/^[0-9]+$/.test(value)) return "Solo números"
+        return undefined
+
+      case "nombres":
+        if (!value.trim()) return "Este campo es obligatorio"
+        if (value.length < 2) return "Mínimo 2 caracteres"
+        return undefined
+
+      case "apellidoPaterno":
+        if (!value.trim()) return "Este campo es obligatorio"
+        if (value.length < 2) return "Mínimo 2 caracteres"
+        return undefined
+
+      case "apellidoMaterno":
+        if (!value.trim()) return "Este campo es obligatorio"
+        if (value.length < 2) return "Mínimo 2 caracteres"
+        return undefined
+
       case "username":
         if (!value.trim()) return "Este campo es obligatorio"
         if (value.length < 3) return "Mínimo 3 caracteres"
         if (!/^[a-z0-9._-]+$/.test(value)) return "Solo letras minúsculas, números, puntos, guiones"
+        if (usernameStatus.available === false) return "Este usuario ya existe"
         return undefined
 
-      case "fullName":
+      case "dni":
         if (!value.trim()) return "Este campo es obligatorio"
-        if (value.length < 2) return "Mínimo 2 caracteres"
+        if (value.length !== 8) return "El DNI debe tener 8 dígitos"
+        if (!/^[0-9]+$/.test(value)) return "Solo números"
         return undefined
 
       case "password":
@@ -416,13 +584,8 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
         if (value !== formData.password) return "Las contraseñas no coinciden"
         return undefined
 
-      case "group":
-        if (!value) return "Selecciona un grupo"
-        return undefined
-
       case "carrera":
-        // Solo requerido si es Alumno
-        if (formData.group === "5000" && !value) return "Selecciona una carrera"
+        if (!value) return "Selecciona una carrera"
         return undefined
 
       default:
@@ -446,12 +609,13 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
   const handleChange = (field: keyof UserFormData, value: string) => {
     setFormData((prev) => {
       const newData = { ...prev, [field]: value }
-
-      // Si cambia a Docente, limpiar carrera
-      if (field === "group" && value === "6000") {
-        newData.carrera = ""
+      
+      // Si cambia username manualmente, actualizar email
+      if (field === "username") {
+        newData.email = `${value}@universidad.edu.pe`
+        setUsernameManuallyEdited(true)
       }
-
+      
       return newData
     })
 
@@ -464,11 +628,6 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
       if (field === "password" && touched.confirmPassword) {
         const confirmError = validateField("confirmPassword", formData.confirmPassword)
         setErrors((prev) => ({ ...prev, confirmPassword: confirmError }))
-      }
-
-      // Limpiar error de carrera si cambia a Docente
-      if (field === "group" && value === "6000") {
-        setErrors((prev) => ({ ...prev, carrera: undefined }))
       }
     }
   }
@@ -484,11 +643,14 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
 
     // Marcar todos los campos como tocados
     setTouched({
+      codigo: true,
+      nombres: true,
+      apellidoPaterno: true,
+      apellidoMaterno: true,
       username: true,
-      fullName: true,
+      dni: true,
       password: true,
       confirmPassword: true,
-      group: true,
       carrera: true,
     })
 
@@ -506,20 +668,20 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
   }
 
   const isFormValid = React.useMemo(() => {
-    const baseValid =
+    return (
+      formData.codigo.trim().length >= 8 &&
+      formData.nombres.trim().length >= 2 &&
+      formData.apellidoPaterno.trim().length >= 2 &&
+      formData.apellidoMaterno.trim().length >= 2 &&
       formData.username.trim().length >= 3 &&
-      formData.fullName.trim().length >= 2 &&
+      formData.dni.length === 8 &&
       formData.password.length >= 6 &&
       formData.confirmPassword === formData.password &&
-      formData.group !== ""
-
-    // Si es Alumno, también debe tener carrera seleccionada
-    if (formData.group === "5000") {
-      return baseValid && formData.carrera !== ""
-    }
-
-    return baseValid
-  }, [formData])
+      formData.carrera !== "" &&
+      usernameStatus.available !== false &&
+      !usernameStatus.checking
+    )
+  }, [formData, usernameStatus])
 
   if (!isOpen) return null
 
@@ -537,7 +699,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
             <h2 className="text-base font-medium text-white">
-              Nuevo Usuario
+              Nuevo Alumno
             </h2>
             <button
               onClick={onClose}
@@ -550,26 +712,107 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {/* Usuario */}
+            {/* Código de estudiante */}
             <MinimalInput
-              label="Usuario"
-              placeholder="juan.perez"
-              value={formData.username}
-              onChange={(value) => handleChange("username", value)}
-              onBlur={() => handleBlur("username")}
-              error={touched.username ? errors.username : undefined}
+              label="Código de Estudiante"
+              placeholder="2024010123"
+              value={formData.codigo}
+              onChange={(value) => handleChange("codigo", value)}
+              onBlur={() => handleBlur("codigo")}
+              error={touched.codigo ? errors.codigo : undefined}
               disabled={isLoading}
               autoComplete="off"
             />
 
-            {/* Nombre completo */}
+            {/* Nombres */}
             <MinimalInput
-              label="Nombre completo"
-              placeholder="Juan Pérez García"
-              value={formData.fullName}
-              onChange={(value) => handleChange("fullName", value)}
-              onBlur={() => handleBlur("fullName")}
-              error={touched.fullName ? errors.fullName : undefined}
+              label="Nombre(s)"
+              placeholder="Juan Carlos"
+              value={formData.nombres}
+              onChange={(value) => handleChange("nombres", value)}
+              onBlur={() => handleBlur("nombres")}
+              error={touched.nombres ? errors.nombres : undefined}
+              disabled={isLoading}
+              autoComplete="off"
+            />
+
+            {/* Apellidos en grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <MinimalInput
+                label="Apellido Paterno"
+                placeholder="Pérez"
+                value={formData.apellidoPaterno}
+                onChange={(value) => handleChange("apellidoPaterno", value)}
+                onBlur={() => handleBlur("apellidoPaterno")}
+                error={touched.apellidoPaterno ? errors.apellidoPaterno : undefined}
+                disabled={isLoading}
+                autoComplete="off"
+              />
+
+              <MinimalInput
+                label="Apellido Materno"
+                placeholder="García"
+                value={formData.apellidoMaterno}
+                onChange={(value) => handleChange("apellidoMaterno", value)}
+                onBlur={() => handleBlur("apellidoMaterno")}
+                error={touched.apellidoMaterno ? errors.apellidoMaterno : undefined}
+                disabled={isLoading}
+                autoComplete="off"
+              />
+            </div>
+
+            {/* Username (Auto-generado) */}
+            <div className="space-y-1.5">
+              <label className="block text-sm text-white/50">
+                Usuario
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) => handleChange("username", e.target.value)}
+                  onBlur={() => handleBlur("username")}
+                  placeholder="Generando..."
+                  disabled={isLoading || usernameStatus.checking}
+                  className={cn(
+                    "w-full px-3 py-2 pr-10 text-sm text-white",
+                    "bg-transparent border rounded-lg",
+                    "placeholder:text-white/20",
+                    "focus:outline-none transition-colors",
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
+                    errors.username
+                      ? "border-red-500/50 focus:border-red-500"
+                      : "border-white/10 focus:border-white/30"
+                  )}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {usernameStatus.checking ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-white/30" />
+                  ) : usernameStatus.available === true ? (
+                    <Check className="h-4 w-4 text-green-400" />
+                  ) : usernameStatus.available === false ? (
+                    <AlertCircle className="h-4 w-4 text-red-400" />
+                  ) : null}
+                </div>
+              </div>
+              {touched.username && errors.username && (
+                <p className="text-xs text-red-400">{errors.username}</p>
+              )}
+              {usernameStatus.usedCode && (
+                <p className="text-xs text-yellow-400">
+                  ℹ️ Se agregó código porque el usuario base ya existe
+                </p>
+              )}
+            </div>
+
+            {/* DNI */}
+            <MinimalInput
+              label="DNI"
+              placeholder="72345678"
+              value={formData.dni}
+              onChange={(value) => handleChange("dni", value)}
+              onBlur={() => handleBlur("dni")}
+              error={touched.dni ? errors.dni : undefined}
               disabled={isLoading}
               autoComplete="off"
             />
@@ -601,44 +844,16 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
               />
             </div>
 
-            {/* Tipo de usuario - Pills inline */}
-            <div className="space-y-1.5">
-              <label className="block text-sm text-white/50">
-                Tipo
-              </label>
-              <div className="flex gap-2">
-                {GROUP_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => handleChange("group", option.value)}
-                    disabled={isLoading}
-                    className={cn(
-                      "flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors",
-                      "border disabled:opacity-50",
-                      formData.group === option.value
-                        ? "bg-white text-black border-white"
-                        : "text-white/50 border-white/10 hover:text-white hover:border-white/20"
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Carrera - Solo visible para Alumnos */}
-            {formData.group === "5000" && (
-              <CommandSelect
-                label="Carrera"
-                value={formData.carrera}
-                onChange={(value) => handleChange("carrera", value)}
-                options={CARRERA_OPTIONS}
-                placeholder="Buscar carrera..."
-                error={touched.carrera ? errors.carrera : undefined}
-                disabled={isLoading}
-              />
-            )}
+            {/* Carrera */}
+            <CommandSelect
+              label="Carrera Profesional"
+              value={formData.carrera}
+              onChange={(value) => handleChange("carrera", value)}
+              options={CARRERA_OPTIONS}
+              placeholder="Buscar carrera..."
+              error={touched.carrera ? errors.carrera : undefined}
+              disabled={isLoading}
+            />
 
             {/* Footer buttons */}
             <div className="flex gap-3 pt-2">
@@ -673,7 +888,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
                     Creando...
                   </span>
                 ) : (
-                  "Crear"
+                  "Crear Alumno"
                 )}
               </button>
             </div>

@@ -96,11 +96,20 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
     const loadingId = showToast('loading', 'Creando usuario...');
     const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
 
+    // Construir nombre completo desde los campos individuales
+    const fullName = `${userData.nombres} ${userData.apellidoPaterno} ${userData.apellidoMaterno}`.trim();
+
     const payload = {
       username: userData.username,
-      full_name: userData.fullName,
+      full_name: fullName,
       password: userData.password,
-      email: `${userData.username}@uninet.com`,
+      email: userData.email,
+      codigo: userData.codigo,
+      nombres: userData.nombres,
+      apellido_paterno: userData.apellidoPaterno,
+      apellido_materno: userData.apellidoMaterno,
+      dni: userData.dni,
+      carrera: userData.carrera,
     };
 
     try {
@@ -310,7 +319,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                   Nombre
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">
-                  Email
+                  Código
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">
                   Rol
@@ -364,10 +373,10 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                       </span>
                     </td>
 
-                    {/* Email */}
+                    {/* Código de Estudiante */}
                     <td className="px-4 py-4">
-                      <span className="text-sm text-white/40 font-mono">
-                        {user.email || '—'}
+                      <span className="text-sm text-white/50 font-mono">
+                        {user.codigo || '—'}
                       </span>
                     </td>
 

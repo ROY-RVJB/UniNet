@@ -48,6 +48,7 @@ export interface LDAPUser {
   username: string;     // Username (uid en LDAP)
   full_name: string;    // Common Name (nombre completo)
   email: string;        // Email del usuario
+  codigo?: string;      // Código de estudiante
   dn: string;           // Distinguished Name
   laboratoryId: string; // ID del laboratorio al que pertenece
   group: UserGroup;     // Grupo (alumnos/docentes)
