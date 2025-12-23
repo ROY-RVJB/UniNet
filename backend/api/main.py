@@ -9,39 +9,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.monitoring import router as monitoring_router
 from api.users import router as users_router
 from api.auth import router as auth_router
-import time
-import logging
 
 app = FastAPI(
     title="UniNet Dashboard API",
     description="API para gestión de laboratorio de cómputo",
     version="2.0.0",
-    redirect_slashes=False  # Deshabilitar redirects automáticos
+    redirect_slashes=False
 )
-
-# Middleware para logging de requests
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    request_logger = logging.getLogger("uvicorn.access")
-    
-    start_time = time.time()
-    
-    # Loguear la solicitud (INFO o DEBUG)
-    request_logger.info(f"🔵 REQUEST: {request.method} {request.url.path} from {request.client.host}")
-    
-    try:
-        response = await call_next(request)
-        process_time = time.time() - start_time
-        
-        # Loguear la respuesta (INFO)
-        request_logger.info(f"✅ RESPONSE: {response.status_code} {request.method} {request.url.path} (took {process_time:.2f}s)")
-        return response
-    
-    except Exception as e:
-        process_time = time.time() - start_time
-        # Loguear el error (ERROR)
-        request_logger.error(f"❌ ERROR processing {request.method} {request.url.path}: {str(e)} (took {process_time:.2f}s)")
-        raise # Es importante re-lanzar la excepción
 
 # Configurar CORS para permitir acceso desde el frontend
 app.add_middleware(

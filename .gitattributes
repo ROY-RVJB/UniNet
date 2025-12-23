@@ -1,0 +1,25 @@
+# UniNet - Configuración de Git para finales de línea
+
+# Scripts bash SIEMPRE deben tener LF (formato Linux)
+*.sh text eol=lf
+
+# Python también usa LF
+*.py text eol=lf
+
+# Frontend puede usar auto (Git decide)
+*.ts text=auto
+*.tsx text=auto
+*.js text=auto
+*.jsx text=auto
+*.json text=auto
+*.css text=auto
+*.html text=auto
+*.md text=auto
+
+# Archivos binarios (no convertir)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
