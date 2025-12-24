@@ -40,22 +40,24 @@ if ! dpkg -l | grep -q python3-venv; then
 fi
 
 # Crear directorio del servidor
-INSTALL_DIR="/opt/uninet-status-server"
+INSTALL_DIR="/opt/uninet-api-server"
 echo ""
 echo "📁 Creando directorio del servidor en $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 
 # Copiar archivos
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-echo "   Copiando archivos desde $SCRIPT_DIR..."
+echo "   Copiando archivos del backend completo..."
 
-if [ -f "$SCRIPT_DIR/status_server.py" ]; then
-    cp "$SCRIPT_DIR/status_server.py" "$INSTALL_DIR/"
-    echo -e "   ${GREEN}✓ status_server.py copiado${NC}"
-else
-    echo -e "   ${RED}✗ No se encontró status_server.py${NC}"
-    exit 1
+# Copiar todo el contenido recursivamente (FastAPI necesita la carpeta api/)
+cp -r "$SCRIPT_DIR/"* "$INSTALL_DIR/"
+
+# Ajustar permisos de ejecución para scripts
+if [ -d "$INSTALL_DIR/scripts" ]; then
+    find "$INSTALL_DIR/scripts" -name "*.sh" -exec chmod +x {} \;
 fi
+
+echo -e "   ${GREEN}✓ Archivos copiados y permisos ajustados${NC}"
 
 if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
     cp "$SCRIPT_DIR/requirements.txt" "$INSTALL_DIR/"
@@ -77,6 +79,7 @@ echo "📚 Instalando dependencias Python en el entorno virtual..."
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
+pip install uvicorn
 deactivate
 
 echo -e "${GREEN}✓ Dependencias instaladas correctamente${NC}"
@@ -84,16 +87,16 @@ echo -e "${GREEN}✓ Dependencias instaladas correctamente${NC}"
 # Crear servicio systemd
 echo ""
 echo "⚙️  Creando servicio systemd..."
-cat > /etc/systemd/system/uninet-status.service << EOF
+cat > /etc/systemd/system/uninet-api.service << EOF
 [Unit]
-Description=UniNet Status Server - Dashboard Backend
+Description=UniNet API Server (FastAPI)
 After=network.target
 
 [Service]
 Type=simple
 User=root
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/status_server.py
+ExecStart=$INSTALL_DIR/venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 4000
 Restart=always
 RestartSec=10
 
@@ -109,8 +112,8 @@ systemctl daemon-reload
 # Habilitar e iniciar el servicio
 echo ""
 echo "🚀 Iniciando el servicio..."
-systemctl enable uninet-status
-systemctl start uninet-status
+systemctl enable uninet-api
+systemctl start uninet-api
 
 # Configurar firewall (si UFW está instalado)
 if command -v ufw &> /dev/null; then
@@ -126,13 +129,13 @@ echo "============================================================"
 echo "  ✅ Instalación completada"
 echo "============================================================"
 echo ""
-systemctl status uninet-status --no-pager
+systemctl status uninet-api --no-pager
 echo ""
 echo "📝 Comandos útiles:"
-echo "   Ver logs:      sudo journalctl -u uninet-status -f"
-echo "   Reiniciar:     sudo systemctl restart uninet-status"
-echo "   Detener:       sudo systemctl stop uninet-status"
-echo "   Ver estado:    sudo systemctl status uninet-status"
+echo "   Ver logs:      sudo journalctl -u uninet-api -f"
+echo "   Reiniciar:     sudo systemctl restart uninet-api"
+echo "   Detener:       sudo systemctl stop uninet-api"
+echo "   Ver estado:    sudo systemctl status uninet-api"
 echo ""
 echo "🌐 El servidor está escuchando en:"
 echo "   http://localhost:4000/status"
