@@ -4,12 +4,10 @@
 # Elimina logs rotados o antiguos para liberar espacio
 #
 
-# Colores
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Cargar configuración
 if [ ! -f /etc/uninet/logs.conf ]; then
     echo "Error: Logs no configurados. Ejecuta setup.sh primero" >&2
     exit 1
@@ -19,10 +17,6 @@ source /etc/uninet/logs.conf
 
 echo "🧹 Iniciando limpieza de logs en $LOG_DIR..."
 echo "   Retención configurada: $RETENTION_DAYS días"
-
-# Buscar archivos modificados hace más de X días y borrarlos
-# Nota: Esto limpia archivos rotados si usas rotación, o podrías vaciar el archivo actual.
-# Aquí buscamos archivos .log antiguos o backups (.1, .gz)
 
 COUNT=$(find "$LOG_DIR" -name "*.log*" -type f -mtime +$RETENTION_DAYS | wc -l)
 
