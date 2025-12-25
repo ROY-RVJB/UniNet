@@ -4,7 +4,17 @@ Servidor FastAPI que gestiona autenticación, usuarios LDAP y monitoreo de labor
 
 ## 📋 Scripts Disponibles
 
-### 🚀 Iniciar Servidor (Recomendado)
+### � Configurar Permisos (Primer Uso)
+```bash
+cd scripts
+sudo bash setup-permissions.sh
+```
+**Ejecuta esto una sola vez** para configurar:
+- Permisos de archivos LDAP (owner: tu usuario)
+- Contraseña admin LDAP
+- Contador de UID (detecta último UID en LDAP automáticamente)
+
+### �🚀 Iniciar Servidor (Recomendado)
 ```bash
 chmod +x start-server.sh
 ./start-server.sh

@@ -18,10 +18,17 @@ SCRIPT_DIR = os.path.join(os.path.dirname(__file__), "..", "scripts", "ldap")
 
 class UserCreate(BaseModel):
     """Modelo para creación de usuario"""
-    username: str = Field(..., min_length=3, max_length=20, pattern="^[a-z0-9]+$")
+    username: str = Field(..., min_length=3, max_length=20, pattern="^[a-z0-9.]+$")
     password: str = Field(..., min_length=6)
     full_name: str = Field(..., min_length=3)
     email: str | None = None
+    # Nuevos campos del frontend
+    codigo: str = Field(..., min_length=8)  # Código de estudiante
+    nombres: str = Field(..., min_length=2)  # Nombre(s)
+    apellido_paterno: str = Field(..., min_length=2)  # Apellido paterno
+    apellido_materno: str = Field(..., min_length=2)  # Apellido materno
+    dni: str = Field(..., min_length=8, max_length=8, pattern="^[0-9]{8}$")  # DNI (8 dígitos)
+    carrera: str = Field(..., pattern="^50(0[1-9]|1[0-2])$")  # Carrera (5001-5012)
 
 
 class UserResponse(BaseModel):
@@ -153,7 +160,7 @@ async def create_user_options():
 @router.post("/create", response_model=dict)
 async def create_user(user_data: UserCreate):
     """
-    Crea un nuevo usuario en LDAP
+    Crea un nuevo usuario en LDAP con los datos completos del estudiante
     """
     script_path = os.path.join(SCRIPT_DIR, "create-user.sh")
 
@@ -161,8 +168,20 @@ async def create_user(user_data: UserCreate):
         raise HTTPException(status_code=500, detail=f"Script de creación no encontrado: {script_path}")
 
     try:
+        # Nuevo orden de parámetros: username codigo nombres apellido_paterno apellido_materno dni password carrera email
         result = subprocess.run(
-            ["bash", script_path, user_data.username, user_data.full_name, user_data.password, user_data.email or ""],
+            [
+                "bash", script_path,
+                user_data.username,
+                user_data.codigo,
+                user_data.nombres,
+                user_data.apellido_paterno,
+                user_data.apellido_materno,
+                user_data.dni,
+                user_data.password,
+                user_data.carrera,
+                user_data.email or ""
+            ],
             capture_output=True,
             text=True,
             timeout=30,
