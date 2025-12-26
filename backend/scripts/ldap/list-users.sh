@@ -26,8 +26,13 @@ BEGIN { OFS="|" }
 /^description:/ { 
     desc=$0
     sub(/^description: */, "", desc)
-    if (match(desc, /DNI: *([0-9]+)/, arr)) {
-        dni=arr[1]
+    # Extraer DNI sin usar arrays (compatible con todas las versiones de awk)
+    if (desc ~ /DNI: *[0-9]+/) {
+        split(desc, parts, "DNI: *")
+        if (length(parts) > 1) {
+            match(parts[2], /[0-9]+/)
+            dni = substr(parts[2], RSTART, RLENGTH)
+        }
     }
 }
 /^departmentNumber:/ { carrera=$2 }
