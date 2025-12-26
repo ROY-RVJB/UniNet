@@ -32,28 +32,36 @@ export function Navbar() {
 
   // Check server status every 5 seconds
   useEffect(() => {
+    let isMounted = true;
+
     const checkServer = async () => {
       const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000";
-      
+
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
-        
-        const response = await fetch(`${apiUrl}/health`, { 
+        const response = await fetch(`${apiUrl}/health`, {
           method: 'GET',
-          signal: controller.signal
+          headers: {
+            'Accept': 'application/json',
+          }
         });
-        
-        clearTimeout(timeoutId);
-        setServerStatus(response.ok ? 'online' : 'offline');
-      } catch {
-        setServerStatus('offline');
+
+        if (isMounted) {
+          setServerStatus(response.ok ? 'online' : 'offline');
+        }
+      } catch (error) {
+        if (isMounted) {
+          setServerStatus('offline');
+        }
       }
     };
 
     checkServer();
-    const interval = setInterval(checkServer, 5000);
-    return () => clearInterval(interval);
+    const interval = setInterval(checkServer, 15000); // cada 15 segundos para no saturar
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   return (
@@ -107,8 +115,8 @@ export function Navbar() {
             </div>
           )}
 
-          {/* Carrera Selector - visible en Dashboard cuando hay usuario */}
-          {user && location.pathname === '/dashboard' && <CarreraSelectorDropdown />}
+          {/* Carrera Selector - visible en todas las páginas principales */}
+          {user && <CarreraSelectorDropdown />}
         </div>
 
         {/* Right: Server Status + Profile */}

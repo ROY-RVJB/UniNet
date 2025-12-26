@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Plus, Pencil, Trash2, RefreshCw, Search, GraduationCap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CreateDocenteModal } from '@/components/CreateDocenteModal'
@@ -48,6 +49,95 @@ function getAvatarColor(name: string): string {
   ]
   const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
   return colors[index % colors.length]
+}
+
+// Componente Badge "+N más" con tooltip
+function CarrerasBadgeWithTooltip({
+  count,
+  carreras
+}: {
+  count: number
+  carreras: { id: string; nombre: string }[]
+}) {
+  const [isHovered, setIsHovered] = useState(false)
+  const triggerRef = useRef<HTMLSpanElement>(null)
+
+  return (
+    <>
+      <span
+        ref={triggerRef}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="px-2 py-0.5 text-xs rounded-full bg-white/5 text-white/50 border border-white/10 cursor-default hover:bg-white/10 hover:text-white/70 transition-colors"
+      >
+        +{count} más
+      </span>
+      <CarrerasTooltip
+        carreras={carreras}
+        triggerRef={triggerRef}
+        isVisible={isHovered}
+      />
+    </>
+  )
+}
+
+// Componente Tooltip con Portal para evitar overflow
+function CarrerasTooltip({
+  carreras,
+  triggerRef,
+  isVisible
+}: {
+  carreras: { id: string; nombre: string }[]
+  triggerRef: React.RefObject<HTMLSpanElement | null>
+  isVisible: boolean
+}) {
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+
+  useEffect(() => {
+    if (isVisible && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect()
+      const tooltipWidth = 220
+      const viewportWidth = window.innerWidth
+
+      // Calcular posición - preferir derecha, si no cabe ir a izquierda
+      let left = rect.right + 8
+      if (left + tooltipWidth > viewportWidth - 20) {
+        left = rect.left - tooltipWidth - 8
+      }
+
+      setPosition({
+        top: rect.top + rect.height / 2,
+        left: left
+      })
+    }
+  }, [isVisible, triggerRef])
+
+  if (!isVisible) return null
+
+  return createPortal(
+    <div
+      className="fixed z-[9999] -translate-y-1/2"
+      style={{ top: position.top, left: position.left }}
+    >
+      <div className="bg-zinc-900 border border-white/10 rounded-lg p-3 shadow-2xl min-w-[200px] max-w-[280px]">
+        <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2 pb-1.5 border-b border-white/5">
+          Otras carreras
+        </p>
+        <ul className="flex flex-col gap-1.5">
+          {carreras.map((carrera) => (
+            <li
+              key={carrera.id}
+              className="flex items-start gap-2 text-xs text-white/70"
+            >
+              <span className="text-amber-400/60 mt-0.5">›</span>
+              <span>{carrera.nombre}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>,
+    document.body
+  )
 }
 
 interface DocentesTableProps {
@@ -239,21 +329,31 @@ export function DocentesTable({ docentes, onRefresh, onCreate, onDelete }: Docen
 
                     {/* Carreras */}
                     <td className="px-4 py-4">
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-1.5 items-center">
                         {docente.carreras.length === 0 ? (
                           <span className="text-sm text-white/30">Sin carreras</span>
                         ) : (
-                          docente.carreras.map((carrera) => (
-                            <span
-                              key={carrera.id}
-                              className="px-2 py-0.5 text-xs rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                            >
-                              {carrera.nombre.length > 25
-                                ? carrera.nombre.slice(0, 25) + '...'
-                                : carrera.nombre
-                              }
-                            </span>
-                          ))
+                          <>
+                            {/* Mostrar máximo 3 carreras */}
+                            {docente.carreras.slice(0, 3).map((carrera) => (
+                              <span
+                                key={carrera.id}
+                                className="px-2 py-0.5 text-xs rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              >
+                                {carrera.nombre.length > 20
+                                  ? carrera.nombre.slice(0, 20) + '...'
+                                  : carrera.nombre
+                                }
+                              </span>
+                            ))}
+                            {/* Badge "+N más" con tooltip usando Portal */}
+                            {docente.carreras.length > 3 && (
+                              <CarrerasBadgeWithTooltip
+                                count={docente.carreras.length - 3}
+                                carreras={docente.carreras.slice(3)}
+                              />
+                            )}
+                          </>
                         )}
                       </div>
                     </td>

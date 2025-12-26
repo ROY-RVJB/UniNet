@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { Carrera, Faculty } from '@/types';
 import { useCarrera } from '@/contexts/CarreraContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { FacultyFilter } from './FacultyFilter';
 import { CarreraList } from './CarreraList';
 import { CarreraDetail } from './CarreraDetail';
@@ -10,16 +11,34 @@ import { CarreraDetail } from './CarreraDetail';
 // ==========================================
 
 export function CarreraSelector() {
-  const { availableCarreras, isRestricted } = useCarrera();
+  const { availableCarreras, isRestricted, selectedCarrera: contextCarrera, setSelectedCarrera: setContextCarrera } = useCarrera();
+  const { user } = useAuth();
   const [selectedCarrera, setSelectedCarrera] = useState<Carrera | null>(null);
   const [selectedFaculty, setSelectedFaculty] = useState<Faculty | 'todas'>('todas');
 
-  // Inicializar con la primera carrera disponible
+  // Sincronizar con carrera_activa del docente o carrera del contexto
   useEffect(() => {
+    // Si es docente con carrera_activa, buscar esa carrera
+    if (user?.role === 'docente' && user.carrera_activa) {
+      const carreraActiva = availableCarreras.find(c => c.id === user.carrera_activa?.id);
+      if (carreraActiva) {
+        setSelectedCarrera(carreraActiva);
+        setContextCarrera(carreraActiva);
+        return;
+      }
+    }
+
+    // Si hay carrera en el contexto, usarla
+    if (contextCarrera) {
+      setSelectedCarrera(contextCarrera);
+      return;
+    }
+
+    // Fallback: primera carrera disponible
     if (availableCarreras.length > 0 && !selectedCarrera) {
       setSelectedCarrera(availableCarreras[0]);
     }
-  }, [availableCarreras, selectedCarrera]);
+  }, [availableCarreras, user?.carrera_activa, contextCarrera]);
 
   // Filtrar carreras por facultad (solo aplica si no está restringido)
   const filteredCarreras = useMemo(() => {
