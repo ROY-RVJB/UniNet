@@ -146,15 +146,18 @@ def init_db():
 
     # Insertar carreras por defecto
     carreras_default = [
-        ('carrera-sistemas', 'Ingeniería de Sistemas e Informática'),
-        ('carrera-ambiental', 'Ingeniería Ambiental'),
-        ('carrera-forestal', 'Ingeniería Forestal'),
-        ('carrera-agroindustrial', 'Ingeniería Agroindustrial'),
+        ('carrera-administracion', 'Administración y Negocios Internacionales'),
+        ('carrera-contabilidad', 'Contabilidad y Finanzas'),
+        ('carrera-derecho', 'Derecho y Ciencias Políticas'),
+        ('carrera-ecoturismo', 'Ecoturismo'),
+        ('carrera-inicial', 'Educación Inicial y Especial'),
+        ('carrera-matematicas', 'Educación Matemáticas y Computación'),
+        ('carrera-primaria', 'Educación Primaria e Informática'),
         ('carrera-enfermeria', 'Enfermería'),
-        ('carrera-contabilidad', 'Contabilidad'),
-        ('carrera-administracion', 'Administración'),
-        ('carrera-derecho', 'Derecho'),
-        ('carrera-educacion', 'Educación')
+        ('carrera-agroindustrial', 'Ingeniería Agroindustrial'),
+        ('carrera-sistemas', 'Ingeniería de Sistemas e Informática'),
+        ('carrera-forestal', 'Ingeniería Forestal y Medio Ambiente'),
+        ('carrera-veterinaria', 'Medicina Veterinaria y Zootecnia'),
     ]
     for carrera_id, carrera_nombre in carreras_default:
         try:

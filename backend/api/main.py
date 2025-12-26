@@ -18,9 +18,6 @@ app = FastAPI(
     redirect_slashes=False
 )
 
-# (3) NUEVO: middleware de logs por carrera (es 1 línea aquí)
-app.middleware("http")(carrera_log_middleware)
-
 # CORS
 app.add_middleware(
     CORSMiddleware,
