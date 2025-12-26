@@ -12,8 +12,8 @@ fi
 
 source /etc/uninet/ldap.conf
 
-# Buscar todos los usuarios con todos los atributos
-ldapsearch -x -LLL -b "ou=users,$LDAP_BASE" "(objectClass=inetOrgPerson)" \
+# Buscar todos los usuarios (posixAccount incluye tanto nuevos como antiguos)
+ldapsearch -x -LLL -b "ou=users,$LDAP_BASE" "(objectClass=posixAccount)" \
     uid employeeNumber givenName sn cn description departmentNumber mail dn 2>/dev/null | \
 awk '
 BEGIN { OFS="|" }

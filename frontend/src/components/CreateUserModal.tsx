@@ -18,7 +18,7 @@ export interface UserFormData {
   dni: string
   password: string
   confirmPassword: string
-  carrera: string
+  carrera: string // Siempre será 5010 (Ingeniería de Sistemas) - no visible en UI
 }
 
 interface FormErrors {
@@ -39,20 +39,7 @@ interface FormErrors {
 // CreateUserModal - Estilo Minimalista Vercel
 // ==========================================
 
-const CARRERA_OPTIONS = [
-  { value: "5001", label: "Administración y Negocios Internacionales" },
-  { value: "5002", label: "Contabilidad y Finanzas" },
-  { value: "5003", label: "Derecho y Ciencias Políticas" },
-  { value: "5004", label: "Ecoturismo" },
-  { value: "5005", label: "Educación Inicial y Especial" },
-  { value: "5006", label: "Educación Matemáticas y Computación" },
-  { value: "5007", label: "Educación Primaria e Informática" },
-  { value: "5008", label: "Enfermería" },
-  { value: "5009", label: "Ingeniería Agroindustrial" },
-  { value: "5010", label: "Ingeniería de Sistemas e Informática" },
-  { value: "5011", label: "Ingeniería Forestal y Medio Ambiente" },
-  { value: "5012", label: "Medicina Veterinaria y Zootecnia" },
-]
+// CARRERA_OPTIONS eliminado - carrera se asigna automáticamente a 5010 (Ingeniería de Sistemas)
 
 // ==========================================
 // Utilidades para generar username
@@ -443,7 +430,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
     dni: "",
     password: "",
     confirmPassword: "",
-    carrera: "",
+    carrera: "5010", // Ingeniería de Sistemas e Informática - asignación automática
   })
   const [errors, setErrors] = React.useState<FormErrors>({})
   const [isLoading, setIsLoading] = React.useState(false)
@@ -461,7 +448,8 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
 
   // Reset form when modal opens/closes
   React.useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      // Al abrir el modal, resetear con carrera ya asignada
       setFormData({
         codigo: "",
         nombres: "",
@@ -472,7 +460,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
         dni: "",
         password: "",
         confirmPassword: "",
-        carrera: "",
+        carrera: "5010", // Ingeniería de Sistemas e Informática - asignación automática
       })
       setErrors({})
       setTouched({})
@@ -584,10 +572,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
         if (value !== formData.password) return "Las contraseñas no coinciden"
         return undefined
 
-      case "carrera":
-        if (!value) return "Selecciona una carrera"
-        return undefined
-
+      // carrera ya no se valida porque se asigna automáticamente
       default:
         return undefined
     }
@@ -651,7 +636,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
       dni: true,
       password: true,
       confirmPassword: true,
-      carrera: true,
+      // carrera no se marca porque ya está asignada automáticamente
     })
 
     if (!validateForm()) return
@@ -677,7 +662,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
       formData.dni.length === 8 &&
       formData.password.length >= 6 &&
       formData.confirmPassword === formData.password &&
-      formData.carrera !== "" &&
+      // carrera siempre es "5010", no necesita validación
       usernameStatus.available !== false &&
       !usernameStatus.checking
     )
@@ -844,16 +829,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
               />
             </div>
 
-            {/* Carrera */}
-            <CommandSelect
-              label="Carrera Profesional"
-              value={formData.carrera}
-              onChange={(value) => handleChange("carrera", value)}
-              options={CARRERA_OPTIONS}
-              placeholder="Buscar carrera..."
-              error={touched.carrera ? errors.carrera : undefined}
-              disabled={isLoading}
-            />
+            {/* Carrera asignada automáticamente a 5010 (Ingeniería de Sistemas) - no visible */}
 
             {/* Footer buttons */}
             <div className="flex gap-3 pt-2">

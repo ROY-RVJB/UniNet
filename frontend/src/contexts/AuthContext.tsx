@@ -27,7 +27,12 @@ interface BackendLoginResponse {
   }
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000"
+// API Base URL - DEBE venir del archivo .env
+const API_BASE = import.meta.env.VITE_API_URL
+if (!API_BASE) {
+  console.error('❌ ERROR: VITE_API_URL no está definido. Verifica que el archivo .env existe y que reiniciaste el servidor.')
+}
+console.log('🔍 API_BASE:', API_BASE)
 const TOKEN_KEY = "uninet_token"
 const USER_KEY = "uninet_user"
 
