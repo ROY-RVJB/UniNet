@@ -11,6 +11,12 @@ package-lock.json
 **/dist/
 **/build/
 
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
 # Environment variables
 .env
 .env.local
@@ -27,4 +33,5 @@ Thumbs.db
 .idea/
 docs/
 .playwright-mcp
-CLAUDE.md
+CLAUDE.mdbackend/admins.db
+backend/database/
