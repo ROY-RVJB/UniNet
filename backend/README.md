@@ -2,6 +2,18 @@
 
 Servidor FastAPI que gestiona autenticación, usuarios LDAP y monitoreo de laboratorio.
 
+## ⚡ Inicio Rápido
+
+**Primera vez después de clonar/pullear:**
+```bash
+# Desde el directorio raíz del proyecto
+bash init.sh
+
+# Luego continúa con la configuración normal
+cd backend/scripts
+sudo bash setup-permissions.sh
+```
+
 ## 📋 Scripts Disponibles
 
 ### � Configurar Permisos (Primer Uso)
