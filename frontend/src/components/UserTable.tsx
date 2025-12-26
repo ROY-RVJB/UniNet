@@ -65,7 +65,15 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
 
   // Filtrar usuarios por grupo y búsqueda
   const filteredUsers = useMemo(() => {
-    let result = users;
+    let result = users.map(user => ({
+      ...user,
+      // Construir full_name si no existe
+      full_name: user.full_name || `${user.nombres} ${user.apellido_paterno} ${user.apellido_materno}`.trim(),
+      // Derivar grupo (todos son alumnos en el sistema actual)
+      group: user.group || ('alumnos' as UserGroup),
+      // Estado por defecto
+      status: user.status || ('active' as const)
+    }));
 
     // Filtro por grupo
     if (activeFilter !== 'todos') {
@@ -78,7 +86,8 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
       result = result.filter(user =>
         user.username.toLowerCase().includes(query) ||
         (user.full_name?.toLowerCase().includes(query)) ||
-        (user.email?.toLowerCase().includes(query))
+        (user.codigo?.toLowerCase().includes(query)) ||
+        (user.dni?.toLowerCase().includes(query))
       );
     }
 
@@ -316,13 +325,13 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                   Usuario
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">
-                  Nombre
+                  Nombre Completo
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">
                   Código
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">
-                  Rol
+                  DNI
                 </th>
                 <th className="px-4 py-3 w-24" />
               </tr>
@@ -366,7 +375,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                       </div>
                     </td>
 
-                    {/* Nombre */}
+                    {/* Nombre Completo */}
                     <td className="px-4 py-4">
                       <span className="text-sm text-white/70">
                         {user.full_name || '—'}
@@ -380,15 +389,11 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                       </span>
                     </td>
 
-                    {/* Rol - solo texto coloreado */}
+                    {/* DNI */}
                     <td className="px-4 py-4">
-                      {user.group ? (
-                        <span className={cn('text-sm font-medium', roleColors[user.group])}>
-                          {user.group === 'alumnos' ? 'Alumno' : 'Docente'}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-white/20">—</span>
-                      )}
+                      <span className="text-sm text-white/50 font-mono">
+                        {user.dni || '—'}
+                      </span>
                     </td>
 
                     {/* Acciones - visibles en hover */}

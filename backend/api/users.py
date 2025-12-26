@@ -20,8 +20,6 @@ class UserCreate(BaseModel):
     """Modelo para creación de usuario"""
     username: str = Field(..., min_length=3, max_length=20, pattern="^[a-z0-9.]+$")
     password: str = Field(..., min_length=6)
-    full_name: str = Field(..., min_length=3)
-    email: str | None = None
     # Nuevos campos del frontend
     codigo: str = Field(..., min_length=8)  # Código de estudiante
     nombres: str = Field(..., min_length=2)  # Nombre(s)
@@ -32,9 +30,14 @@ class UserCreate(BaseModel):
 
 
 class UserResponse(BaseModel):
-    """Modelo de respuesta de usuario"""
+    """Modelo de respuesta de usuario con todos los campos"""
     username: str
-    full_name: str
+    codigo: str
+    nombres: str
+    apellido_paterno: str
+    apellido_materno: str
+    dni: str
+    carrera: str
     email: str | None = None
     dn: str
 
@@ -44,7 +47,6 @@ class UserResponse(BaseModel):
 # ==========================
 class UserWithCarreras(UserResponse):
     carreras: list[str] = []
-    carrera: Optional[str] = None
 
 
 class UserDelete(BaseModel):
@@ -168,6 +170,9 @@ async def create_user(user_data: UserCreate):
         raise HTTPException(status_code=500, detail=f"Script de creación no encontrado: {script_path}")
 
     try:
+        # Generar email automáticamente basado en username
+        email = f"{user_data.username}@universidad.edu.pe"
+        
         # Nuevo orden de parámetros: username codigo nombres apellido_paterno apellido_materno dni password carrera email
         result = subprocess.run(
             [
@@ -180,7 +185,7 @@ async def create_user(user_data: UserCreate):
                 user_data.dni,
                 user_data.password,
                 user_data.carrera,
-                user_data.email or ""
+                email
             ],
             capture_output=True,
             text=True,
@@ -200,10 +205,10 @@ async def create_user(user_data: UserCreate):
 
 
 @router.get("/list", response_model=List[UserResponse])
-async def list_users():
+async def list_users(carrera: Optional[str] = None):
     """
-    Lista todos los usuarios LDAP
-    Retorna: username|full_name|email|dn
+    Lista usuarios LDAP, opcionalmente filtrados por carrera
+    Query param: ?carrera=5001 (solo muestra Ingeniería de Sistemas)
     """
     script_path = os.path.join(SCRIPT_DIR, "list-users.sh")
 
@@ -219,16 +224,28 @@ async def list_users():
                 if not line:
                     continue
                 parts = line.split("|")
-                if len(parts) >= 4:
+                if len(parts) >= 9:
+                    # Formato: username|codigo|nombres|apellido_p|apellido_m|dni|carrera|email|dn
+                    user_carrera = parts[6].strip()
+                    
+                    # Filtrar por carrera si se especifica
+                    if carrera and user_carrera != carrera:
+                        continue
+                    
                     users.append(UserResponse(
-                        username=parts[0],
-                        full_name=parts[1],
-                        email=parts[2] if parts[2] else None,
-                        dn=parts[3]
+                        username=parts[0].strip(),
+                        codigo=parts[1].strip(),
+                        nombres=parts[2].strip(),
+                        apellido_paterno=parts[3].strip(),
+                        apellido_materno=parts[4].strip(),
+                        dni=parts[5].strip(),
+                        carrera=user_carrera,
+                        email=parts[7].strip() if parts[7].strip() else None,
+                        dn=parts[8].strip()
                     ))
             return users
 
-        raise HTTPException(status_code=400, detail=f"Error al listar usuarios: {result.stderr}")
+        raise HTTPException(status_code=500, detail=f"Error al listar usuarios: {result.stderr}")
 
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="Timeout al listar usuarios")
