@@ -80,11 +80,11 @@ export function Navbar() {
 
         {/* Center: Tabs + Lab Selector */}
         <div className="flex items-center gap-8">
-          {/* Tabs - solo visibles cuando hay lab seleccionado */}
-          {!isHome && (
+          {/* Tabs - siempre visibles cuando el usuario está autenticado */}
+          {user && (
             <div className="flex items-center gap-1">
               {navTabs
-                .filter(tab => user && tab.roles.includes(user.role))
+                .filter(tab => tab.roles.includes(user.role))
                 .map((tab) => (
                 <button
                   key={tab.id}
@@ -107,8 +107,8 @@ export function Navbar() {
             </div>
           )}
 
-          {/* Carrera Selector - solo visible en Dashboard */}
-          {!isHome && <CarreraSelectorDropdown />}
+          {/* Carrera Selector - visible en Dashboard cuando hay usuario */}
+          {user && location.pathname === '/dashboard' && <CarreraSelectorDropdown />}
         </div>
 
         {/* Right: Server Status + Profile */}

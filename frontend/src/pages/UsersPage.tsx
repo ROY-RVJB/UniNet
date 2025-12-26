@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { UserTable } from '@/components/UserTable'
-import { DocentesTable, type DocenteSistema, type DocenteFormData } from '@/components/DocentesTable'
+import { DocentesTable } from '@/components/DocentesTable'
 import { useAuth } from '@/contexts/AuthContext'
-import { mockUsers } from '@/data/mockData'
 import type { LDAPUser } from '@/types'
 
 // ==========================================
@@ -11,10 +10,28 @@ import type { LDAPUser } from '@/types'
 // - Docentes del Sistema (solo admin)
 // ==========================================
 
+interface Docente {
+  id: string
+  username: string
+  full_name: string | null
+  email: string | null
+  carreras: Array<{ id: string; nombre: string }>
+  created_at: string
+  active: boolean
+}
+
+interface DocenteFormData {
+  username: string
+  full_name: string
+  email: string
+  password: string
+  carreras: string[]
+}
+
 export function UsersPage() {
+  const [users, setUsers] = useState<LDAPUser[]>([])
+  const [docentes, setDocentes] = useState<Docente[]>([])
   const { user } = useAuth()
-  const [users, setUsers] = useState<LDAPUser[]>(mockUsers)
-  const [docentes, setDocentes] = useState<DocenteSistema[]>([])
 
   const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000"
 

@@ -128,7 +128,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
 
   const handleUpdateUser = async (userData: EditUserFormData) => {
     const loadingId = showToast('loading', 'Actualizando usuario...');
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
+    const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000";
 
     const payload: Record<string, string> = {
       username: userData.username,
@@ -172,7 +172,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
     if (!userToDelete) return;
 
     const loadingId = showToast('loading', 'Eliminando usuario...');
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
+    const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000";
 
     try {
       const res = await fetch(`${apiUrl}/api/users/delete`, {
@@ -254,7 +254,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                   Usuario
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">
-                  Nombre
+                  Nombre Completo
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">
                   Código
@@ -299,7 +299,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                       </div>
                     </td>
 
-                    {/* Nombre */}
+                    {/* Nombre Completo */}
                     <td className="px-4 py-4">
                       <span className="text-sm text-white/70">
                         {user.full_name || '—'}

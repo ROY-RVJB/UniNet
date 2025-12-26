@@ -42,18 +42,23 @@ export interface LogEntry {
 export type UserGroup = 'alumnos' | 'docentes';
 
 /**
- * Usuario en OpenLDAP
+ * Usuario en OpenLDAP (actualizado con nuevos campos)
  */
 export interface LDAPUser {
-  username: string;     // Username (uid en LDAP)
-  full_name: string;    // Common Name (nombre completo)
-  email: string;        // Email del usuario
-  codigo?: string;      // Código de estudiante
-  dn: string;           // Distinguished Name
-  laboratoryId: string; // ID del laboratorio al que pertenece
-  group: UserGroup;     // Grupo (alumnos/docentes)
-  carrera?: string;     // Carrera profesional
-  status: 'active' | 'inactive'; // Estado del usuario
+  username: string;           // Username (uid en LDAP)
+  codigo: string;             // Código de estudiante (employeeNumber)
+  nombres: string;            // Nombre(s) (givenName)
+  apellido_paterno: string;   // Apellido paterno (sn)
+  apellido_materno: string;   // Apellido materno
+  dni: string;                // DNI (desde description)
+  carrera: string;            // Código de carrera (departmentNumber): 5001-5012
+  email: string | null;       // Email del usuario (generado automáticamente)
+  dn: string;                 // Distinguished Name
+  // Campos opcionales para compatibilidad con UI anterior
+  full_name?: string;         // Nombre completo (construido desde nombres + apellidos)
+  group?: UserGroup;          // Grupo (alumnos/docentes) - derivado
+  laboratoryId?: string;      // ID del laboratorio - derivado de carrera
+  status?: 'active' | 'inactive'; // Estado - por defecto active
 }
 
 // ==========================================
