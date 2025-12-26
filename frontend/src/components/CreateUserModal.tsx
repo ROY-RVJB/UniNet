@@ -6,6 +6,7 @@ interface CreateUserModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (userData: UserFormData) => Promise<void>
+  carreraCode: string // Código LDAP de la carrera (5001-5012)
 }
 
 export interface UserFormData {
@@ -18,7 +19,7 @@ export interface UserFormData {
   dni: string
   password: string
   confirmPassword: string
-  carrera: string // Siempre será 5010 (Ingeniería de Sistemas) - no visible en UI
+  carrera: string // Código LDAP asignado dinámicamente según dashboard - no visible en UI
 }
 
 interface FormErrors {
@@ -39,7 +40,7 @@ interface FormErrors {
 // CreateUserModal - Estilo Minimalista Vercel
 // ==========================================
 
-// CARRERA_OPTIONS eliminado - carrera se asigna automáticamente a 5010 (Ingeniería de Sistemas)
+// CARRERA_OPTIONS eliminado - carrera se asigna automáticamente según dashboard activo
 
 // ==========================================
 // Utilidades para generar username
@@ -419,7 +420,7 @@ function CommandSelect({
   )
 }
 
-export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalProps) {
+export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: CreateUserModalProps) {
   const [formData, setFormData] = React.useState<UserFormData>({
     codigo: "",
     nombres: "",
@@ -430,7 +431,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
     dni: "",
     password: "",
     confirmPassword: "",
-    carrera: "5010", // Ingeniería de Sistemas e Informática - asignación automática
+    carrera: carreraCode, // Usar código de carrera del dashboard activo
   })
   const [errors, setErrors] = React.useState<FormErrors>({})
   const [isLoading, setIsLoading] = React.useState(false)
@@ -460,7 +461,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
         dni: "",
         password: "",
         confirmPassword: "",
-        carrera: "5010", // Ingeniería de Sistemas e Informática - asignación automática
+        carrera: carreraCode, // Usar código de carrera del dashboard activo
       })
       setErrors({})
       setTouched({})
@@ -468,7 +469,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
       setUsernameStatus({ checking: false, available: null, usedCode: false })
       setUsernameManuallyEdited(false)
     }
-  }, [isOpen])
+  }, [isOpen, carreraCode]) // Actualizar cuando cambie isOpen o carreraCode
 
   // Auto-generar username cuando cambian nombres o apellidos
   React.useEffect(() => {

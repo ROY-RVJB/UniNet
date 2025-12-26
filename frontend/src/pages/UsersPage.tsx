@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { UserTable } from '@/components/UserTable'
 import { DocentesTable } from '@/components/DocentesTable'
 import { useAuth } from '@/contexts/AuthContext'
+import { useCarrera } from '@/contexts/CarreraContext'
 import type { LDAPUser } from '@/types'
 
 // ==========================================
@@ -9,6 +10,22 @@ import type { LDAPUser } from '@/types'
 // - Usuarios LDAP (todos ven)
 // - Docentes del Sistema (solo admin)
 // ==========================================
+
+// Mapeo de IDs de carrera (frontend) a códigos LDAP (backend)
+const CARRERA_TO_LDAP_CODE: Record<string, string> = {
+  'carrera-administracion': '5001',
+  'carrera-contabilidad': '5002',
+  'carrera-derecho': '5003',
+  'carrera-ecoturismo': '5004',
+  'carrera-inicial': '5005',
+  'carrera-matematicas': '5006',
+  'carrera-primaria': '5007',
+  'carrera-enfermeria': '5008',
+  'carrera-agroindustrial': '5009',
+  'carrera-sistemas': '5010',
+  'carrera-forestal': '5011',
+  'carrera-veterinaria': '5012',
+}
 
 interface Docente {
   id: string
@@ -32,13 +49,23 @@ export function UsersPage() {
   const [users, setUsers] = useState<LDAPUser[]>([])
   const [docentes, setDocentes] = useState<Docente[]>([])
   const { user } = useAuth()
+  const { selectedCarrera } = useCarrera()
 
   const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000"
 
-  // Fetch usuarios LDAP
+  // Fetch usuarios LDAP (filtrados por carrera seleccionada)
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${apiUrl}/api/users/list`)
+      // Obtener código LDAP de la carrera seleccionada
+      const carreraCode = selectedCarrera ? CARRERA_TO_LDAP_CODE[selectedCarrera.id] : null
+      
+      // Si no hay carrera seleccionada, no mostrar usuarios
+      if (!carreraCode) {
+        setUsers([])
+        return
+      }
+      
+      const res = await fetch(`${apiUrl}/api/users/list?carrera=${carreraCode}`)
       if (!res.ok) {
         console.error('Error fetching users:', res.statusText)
         return
@@ -116,12 +143,24 @@ export function UsersPage() {
     if (user?.role === 'admin') {
       fetchDocentes()
     }
-  }, [user?.role])
+  }, [user?.role, selectedCarrera]) // Recargar cuando cambie la carrera o el rol
 
   return (
     <div className="space-y-12">
       {/* Tabla de usuarios LDAP */}
-      <UserTable users={users} onRefresh={fetchUsers} />
+      {selectedCarrera && (
+        <UserTable 
+          users={users} 
+          onRefresh={fetchUsers} 
+          carreraCode={CARRERA_TO_LDAP_CODE[selectedCarrera.id] || "5010"}
+        />
+      )}
+      
+      {!selectedCarrera && (
+        <div className="text-center text-white/50 py-12">
+          Selecciona una carrera para gestionar usuarios
+        </div>
+      )}
 
       {/* Tabla de docentes del sistema - Solo visible para admin */}
       {user?.role === 'admin' && (
