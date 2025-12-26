@@ -44,7 +44,7 @@ BEGIN { OFS="|" }
         
         # Si no hay email, generar uno por defecto
         if (!mail) {
-            mail = uid "@universidad.edu.pe"
+            mail = uid"@universidad.edu.pe"
         }
         
         print uid, (codigo?codigo:"N/A"), (nombres?nombres:"N/A"), (apellido_p?apellido_p:"N/A"), "", (dni?dni:"N/A"), (carrera?carrera:"N/A"), mail, dn
@@ -60,7 +60,7 @@ END {
             apellido_p = cn
         }
         if (!mail) {
-            mail = uid "@universidad.edu.pe"
+            mail = uid"@universidad.edu.pe"
         }
         print uid, (codigo?codigo:"N/A"), (nombres?nombres:"N/A"), (apellido_p?apellido_p:"N/A"), "", (dni?dni:"N/A"), (carrera?carrera:"N/A"), mail, dn
     }
