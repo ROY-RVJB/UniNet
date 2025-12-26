@@ -2,33 +2,34 @@ import * as React from "react"
 import type {
   AuthContextValue,
   AuthUser,
-  LoginCredentials
+  LoginCredentials,
+  MeResponse,
+  CarreraAsignada
 } from "@/types/auth"
 
-// Respuesta real del backend (sin user)
+// ==========================================
+// AuthContext - Autenticación UniNet
+// Backend determina rol y carreras
+// ==========================================
+
+// Respuesta del endpoint /api/auth/login
+// Soporta dos formatos:
+// - Básico: solo token (requiere segunda petición a /me)
+// - Extendido: token + datos de usuario (más rápido)
 interface BackendLoginResponse {
   access_token: string
   token_type: string
+  // Opcional: datos del usuario incluidos en login (evita segunda petición)
+  user?: {
+    username: string
+    role?: "admin" | "docente"
+    carreras?: Array<{ id: string; nombre: string }>
+  }
 }
 
-// Respuesta de /api/auth/me
-interface BackendUserResponse {
-  username: string
-  email: string | null
-  full_name: string | null
-  disabled: boolean | null
-}
-
-const API_BASE = "http://172.29.137.160:4000"
+const API_BASE = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000"
 const TOKEN_KEY = "uninet_token"
 const USER_KEY = "uninet_user"
-
-// MODO MOCK: Simular login sin backend
-const USE_MOCK = true
-const MOCK_USERS = [
-  { username: "administrador", password: "admin123", role: "admin" as const, carrera_id: null },
-  { username: "docente", password: "docente123", role: "docente" as const, carrera_id: "sistemas" },
-]
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<AuthUser | null>(null)
   const [token, setToken] = React.useState<string | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [needsCarreraSelection, setNeedsCarreraSelection] = React.useState(false)
 
   // Cargar sesión desde localStorage al iniciar
   React.useEffect(() => {
@@ -44,10 +46,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (savedToken && savedUser) {
       try {
+        const parsedUser = JSON.parse(savedUser) as AuthUser
         setToken(savedToken)
-        setUser(JSON.parse(savedUser))
+        setUser(parsedUser)
+
+        // Si es docente sin carrera activa, necesita seleccionar
+        if (parsedUser.role === 'docente' && !parsedUser.carrera_activa && parsedUser.carreras.length > 0) {
+          setNeedsCarreraSelection(true)
+        }
       } catch {
-        // Token inválido, limpiar
         localStorage.removeItem(TOKEN_KEY)
         localStorage.removeItem(USER_KEY)
       }
@@ -59,39 +66,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true)
 
     try {
-      // MODO MOCK
-      if (USE_MOCK) {
-        await new Promise(resolve => setTimeout(resolve, 500)) // Simular delay
-
-        const mockUser = MOCK_USERS.find(
-          u => u.username === credentials.username && u.password === credentials.password
-        )
-
-        if (!mockUser) {
-          throw new Error("Usuario o contraseña incorrectos")
-        }
-
-        // Para docentes, usar la carrera seleccionada en el login
-        const carreraId = mockUser.role === 'docente'
-          ? credentials.carrera_id || null
-          : null
-
-        const authUser: AuthUser = {
-          username: mockUser.username,
-          role: mockUser.role,
-          carrera_id: carreraId,
-        }
-
-        const mockToken = `mock_token_${Date.now()}`
-        localStorage.setItem(TOKEN_KEY, mockToken)
-        localStorage.setItem(USER_KEY, JSON.stringify(authUser))
-
-        setToken(mockToken)
-        setUser(authUser)
-        return
-      }
-
-      // MODO REAL (cuando backend esté listo)
       const formData = new URLSearchParams()
       formData.append("username", credentials.username)
       formData.append("password", credentials.password)
@@ -106,27 +80,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!loginResponse.ok) {
         const error = await loginResponse.json().catch(() => ({}))
-        throw new Error(error.detail || "Credenciales invalidas")
+        throw new Error(error.detail || "Credenciales inválidas")
       }
 
       const loginData: BackendLoginResponse = await loginResponse.json()
 
-      const meResponse = await fetch(`${API_BASE}/api/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${loginData.access_token}`,
-        },
-      })
+      let authUser: AuthUser
 
-      if (!meResponse.ok) {
-        throw new Error("Error al obtener datos del usuario")
-      }
+      // Si el backend incluye datos del usuario en la respuesta del login, usarlos directamente
+      // Esto evita una segunda petición y acelera el login
+      if (loginData.user) {
+        authUser = {
+          username: loginData.user.username,
+          role: loginData.user.role || "admin",
+          carreras: loginData.user.carreras || [],
+          carrera_activa: loginData.user.carreras?.length === 1 ? loginData.user.carreras[0] : null
+        }
+      } else {
+        // Fallback: obtener datos del usuario con petición separada
+        const meResponse = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${loginData.access_token}`,
+          },
+        })
 
-      const userData: BackendUserResponse = await meResponse.json()
+        if (!meResponse.ok) {
+          throw new Error("Error al obtener datos del usuario")
+        }
 
-      const authUser: AuthUser = {
-        username: userData.username,
-        role: "admin",
-        carrera_id: null,
+        const userData: MeResponse = await meResponse.json()
+
+        authUser = {
+          username: userData.username,
+          role: userData.role || "admin",
+          carreras: userData.carreras || [],
+          carrera_activa: userData.carreras?.length === 1 ? userData.carreras[0] : null
+        }
       }
 
       localStorage.setItem(TOKEN_KEY, loginData.access_token)
@@ -134,6 +123,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setToken(loginData.access_token)
       setUser(authUser)
+
+      // Si es docente con múltiples carreras, necesita seleccionar
+      if (authUser.role === 'docente' && authUser.carreras.length > 1) {
+        setNeedsCarreraSelection(true)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -144,6 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(USER_KEY)
     setToken(null)
     setUser(null)
+    setNeedsCarreraSelection(false)
   }, [])
 
   const checkAuth = React.useCallback(async () => {
@@ -163,26 +158,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (!response.ok) {
-        throw new Error("Token invalido")
+        throw new Error("Token inválido")
       }
 
-      const userData: BackendUserResponse = await response.json()
+      const userData: MeResponse = await response.json()
 
-      // Construir AuthUser
       const authUser: AuthUser = {
         username: userData.username,
-        role: "admin", // TODO: Obtener del backend
-        carrera_id: null,
+        role: userData.role || "admin",
+        carreras: userData.carreras || [],
+        carrera_activa: user?.carrera_activa || (userData.carreras?.length === 1 ? userData.carreras[0] : null)
       }
 
       setUser(authUser)
       setToken(savedToken)
       localStorage.setItem(USER_KEY, JSON.stringify(authUser))
     } catch {
-      // Token inválido, limpiar sesión
       logout()
     }
-  }, [logout])
+  }, [logout, user?.carrera_activa])
+
+  const selectCarrera = React.useCallback((carrera: CarreraAsignada) => {
+    if (!user) return
+
+    const updatedUser: AuthUser = {
+      ...user,
+      carrera_activa: carrera
+    }
+
+    setUser(updatedUser)
+    localStorage.setItem(USER_KEY, JSON.stringify(updatedUser))
+    setNeedsCarreraSelection(false)
+  }, [user])
 
   const value = React.useMemo<AuthContextValue>(
     () => ({
@@ -190,11 +197,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       isAuthenticated: !!user && !!token,
       isLoading,
+      needsCarreraSelection,
       login,
       logout,
       checkAuth,
+      selectCarrera,
     }),
-    [user, token, isLoading, login, logout, checkAuth]
+    [user, token, isLoading, needsCarreraSelection, login, logout, checkAuth, selectCarrera]
   )
 
   return (

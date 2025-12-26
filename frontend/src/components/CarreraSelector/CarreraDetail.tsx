@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { AnimatedDottedLine } from './AnimatedDottedLine';
 import { AtmosphericBackground } from './AtmosphericBackground';
 import { useCarrera } from '@/contexts/CarreraContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Monitor,
   Factory,
@@ -21,6 +22,7 @@ import {
   MonitorSmartphone,
   Users,
   Circle,
+  Lock,
 } from 'lucide-react';
 
 // ==========================================
@@ -56,10 +58,15 @@ interface CarreraDetailProps {
 
 export function CarreraDetail({ carrera }: CarreraDetailProps) {
   const navigate = useNavigate();
-  const { setSelectedCarrera } = useCarrera();
+  const { setSelectedCarrera, selectedCarrera: carreraActiva } = useCarrera();
+  const { user } = useAuth();
+
+  // Docente solo puede gestionar su carrera activa (la que seleccionó al iniciar sesión)
+  const isDocente = user?.role === 'docente';
+  const isLocked = isDocente && carreraActiva && carrera?.id !== carreraActiva.id;
 
   const handleGestionarDashboard = () => {
-    if (carrera) {
+    if (carrera && !isLocked) {
       setSelectedCarrera(carrera);
       navigate('/dashboard');
     }
@@ -188,15 +195,31 @@ export function CarreraDetail({ carrera }: CarreraDetailProps) {
       {/* Botón Gestionar - Posición fija inferior derecha */}
       <button
         onClick={handleGestionarDashboard}
-        className="absolute bottom-6 right-6 z-20 flex items-center gap-4 px-10 py-5
-                   bg-white text-black font-medium rounded-xl
-                   hover:bg-white/90 transition-colors shadow-lg"
+        disabled={isLocked}
+        className={cn(
+          "absolute bottom-6 right-6 z-20 flex items-center gap-4 px-10 py-5",
+          "font-medium rounded-xl transition-colors shadow-lg",
+          isLocked
+            ? "bg-white/20 text-white/50 cursor-not-allowed"
+            : "bg-white text-black hover:bg-white/90"
+        )}
       >
-        <Circle className="w-6 h-6" strokeWidth={2} />
+        {isLocked ? (
+          <Lock className="w-6 h-6" strokeWidth={2} />
+        ) : (
+          <Circle className="w-6 h-6" strokeWidth={2} />
+        )}
         <span className="text-sm font-semibold tracking-wide uppercase">
-          Gestionar Dashboard
+          {isLocked ? 'Carrera Bloqueada' : 'Gestionar Dashboard'}
         </span>
       </button>
+
+      {/* Mensaje para docentes cuando está bloqueado */}
+      {isLocked && (
+        <div className="absolute bottom-6 left-6 z-20 text-xs text-white/40">
+          Para cambiar de carrera, cierra sesión
+        </div>
+      )}
     </div>
   );
 }

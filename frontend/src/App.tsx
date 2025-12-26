@@ -7,13 +7,18 @@ import { UsersPage } from '@/pages/UsersPage'
 import { NetworkPage } from '@/pages/NetworkPage'
 import { LogsPage } from '@/pages/LogsPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { CarreraSelectModal } from '@/components/CarreraSelectModal'
 import { useAuth } from '@/contexts/AuthContext'
 
 function App() {
   const { isAuthenticated } = useAuth()
 
   return (
-    <Routes>
+    <>
+      {/* Modal selector de carrera (post-login para docentes) */}
+      <CarreraSelectModal />
+
+      <Routes>
       {/* Ruta publica: Login */}
       <Route
         path="/login"
@@ -39,6 +44,7 @@ function App() {
       {/* Ruta por defecto */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }
 

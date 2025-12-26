@@ -6,7 +6,10 @@ import { useAuth } from '@/contexts/AuthContext';
 
 // ==========================================
 // Carrera Context - Estado Global de Carreras
+// ACTUALIZADO: Compatible con nuevo AuthContext
 // ==========================================
+
+const SELECTED_CARRERA_KEY = 'uninet_selected_carrera';
 
 interface CarreraContextType {
   carreras: Carrera[];              // Todas las carreras (para admin)
@@ -14,7 +17,7 @@ interface CarreraContextType {
   selectedCarrera: Carrera | null;
   setSelectedCarrera: (carrera: Carrera | null) => void;
   isHome: boolean;
-  userCarrera: Carrera | null;      // Carrera del docente (null para admin)
+  userCarreras: Carrera[];          // Carreras del docente (vacío para admin)
   isRestricted: boolean;            // true si el usuario tiene restricción de carrera
 }
 
@@ -25,23 +28,77 @@ interface CarreraProviderProps {
 }
 
 export function CarreraProvider({ children }: CarreraProviderProps) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [carreras] = useState<Carrera[]>(mockCarreras);
-  const [selectedCarrera, setSelectedCarrera] = useState<Carrera | null>(null);
+  const [selectedCarrera, setSelectedCarreraState] = useState<Carrera | null>(null);
 
-  const isHome = selectedCarrera === null;
-
-  // Resetear carrera seleccionada cuando cambia el usuario (logout/login)
+  // Cargar carrera seleccionada de localStorage al inicio
   useEffect(() => {
-    setSelectedCarrera(null);
-  }, [user?.username, user?.carrera_id]);
+    if (isAuthenticated && user) {
+      const saved = localStorage.getItem(SELECTED_CARRERA_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const found = carreras.find(c => c.id === parsed.id);
+          if (found) {
+            setSelectedCarreraState(found);
+            return;
+          }
+        } catch {
+          // Ignorar errores de parsing
+        }
+      }
 
-  // Carrera del docente (basada en carrera_id del login)
-  const userCarrera = useMemo(() => {
-    if (user?.role === 'docente' && user.carrera_id) {
-      return carreras.find(c => c.id === user.carrera_id) || null;
+      // Si no hay carrera guardada, auto-seleccionar para admin
+      // o la primera carrera disponible para docente
+      if (user.role === 'admin') {
+        // Admin: seleccionar la primera carrera por defecto
+        if (carreras.length > 0) {
+          setSelectedCarreraState(carreras[0]);
+          localStorage.setItem(SELECTED_CARRERA_KEY, JSON.stringify(carreras[0]));
+        }
+      } else if (user.role === 'docente' && user.carrera_activa) {
+        // Docente: usar su carrera activa
+        const found = carreras.find(c => c.id === user.carrera_activa?.id);
+        if (found) {
+          setSelectedCarreraState(found);
+          localStorage.setItem(SELECTED_CARRERA_KEY, JSON.stringify(found));
+        }
+      }
     }
-    return null;
+  }, [isAuthenticated, user, carreras]);
+
+  // Limpiar al hacer logout
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setSelectedCarreraState(null);
+      localStorage.removeItem(SELECTED_CARRERA_KEY);
+    }
+  }, [isAuthenticated]);
+
+  // Función para cambiar carrera (guarda en localStorage)
+  const setSelectedCarrera = (carrera: Carrera | null) => {
+    setSelectedCarreraState(carrera);
+    if (carrera) {
+      localStorage.setItem(SELECTED_CARRERA_KEY, JSON.stringify(carrera));
+    } else {
+      localStorage.removeItem(SELECTED_CARRERA_KEY);
+    }
+  };
+
+  // isHome ahora considera si el usuario está autenticado
+  // Admin siempre tiene carrera seleccionada, así que nunca está en "home"
+  const isHome = !isAuthenticated || selectedCarrera === null;
+
+  // Carreras del docente (mapeadas desde auth)
+  const userCarreras = useMemo(() => {
+    if (user?.role === 'docente' && user.carreras && user.carreras.length > 0) {
+      // Mapear las carreras del auth a las carreras completas
+      return user.carreras
+        .map(uc => carreras.find(c => c.id === uc.id))
+        .filter((c): c is Carrera => c !== undefined);
+    }
+    return [];
   }, [user, carreras]);
 
   // Carreras disponibles según el rol
@@ -50,16 +107,16 @@ export function CarreraProvider({ children }: CarreraProviderProps) {
     if (user?.role === 'admin') {
       return carreras;
     }
-    // Docente solo ve su carrera asignada
-    if (user?.role === 'docente' && userCarrera) {
-      return [userCarrera];
+    // Docente solo ve sus carreras asignadas
+    if (user?.role === 'docente' && userCarreras.length > 0) {
+      return userCarreras;
     }
-    // Sin usuario o sin carrera asignada
+    // Sin usuario o sin carrera asignada - mostrar todas
     return carreras;
-  }, [user, carreras, userCarrera]);
+  }, [user, carreras, userCarreras]);
 
   // Si el usuario tiene restricción de carrera
-  const isRestricted = user?.role === 'docente' && !!userCarrera;
+  const isRestricted = user?.role === 'docente' && userCarreras.length > 0;
 
   return (
     <CarreraContext.Provider
@@ -69,7 +126,7 @@ export function CarreraProvider({ children }: CarreraProviderProps) {
         selectedCarrera,
         setSelectedCarrera,
         isHome,
-        userCarrera,
+        userCarreras,
         isRestricted,
       }}
     >

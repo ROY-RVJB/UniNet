@@ -1,4 +1,4 @@
-import type { LDAPUser, UserGroup } from '@/types';
+import type { LDAPUser } from '@/types';
 import { Plus, Pencil, Trash2, RefreshCw, Search } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { CreateUserModal } from '@/components/CreateUserModal';
@@ -10,23 +10,8 @@ import { useToast } from '@/contexts/ToastContext';
 import { cn } from '@/lib/utils';
 
 // ==========================================
-// UserTable - Estilo Minimalista Vercel
+// UserTable - Usuarios LDAP
 // ==========================================
-
-// Tabs de filtro
-type FilterTab = 'todos' | 'alumnos' | 'docentes';
-
-const filterTabs: { id: FilterTab; label: string }[] = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'alumnos', label: 'Alumnos' },
-  { id: 'docentes', label: 'Docentes' },
-];
-
-// Colores de rol (solo texto, minimalista)
-const roleColors: Record<UserGroup, string> = {
-  alumnos: 'text-emerald-400',
-  docentes: 'text-amber-400',
-};
 
 // Generar iniciales del nombre
 function getInitials(name: string): string {
@@ -58,43 +43,25 @@ interface UserTableProps {
 export function UserTable({ users, onRefresh }: UserTableProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<LDAPUser | null>(null);
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [userToDelete, setUserToDelete] = useState<LDAPUser | null>(null);
   const { showToast, hideToast } = useToast();
 
-  // Filtrar usuarios por grupo y búsqueda
+  // Filtrar usuarios por búsqueda
   const filteredUsers = useMemo(() => {
-    let result = users;
+    if (!searchQuery.trim()) return users;
 
-    // Filtro por grupo
-    if (activeFilter !== 'todos') {
-      result = result.filter(user => user.group === activeFilter);
-    }
-
-    // Filtro por búsqueda
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(user =>
-        user.username.toLowerCase().includes(query) ||
-        (user.full_name?.toLowerCase().includes(query)) ||
-        (user.email?.toLowerCase().includes(query))
-      );
-    }
-
-    return result;
-  }, [users, activeFilter, searchQuery]);
-
-  // Stats de usuarios
-  const userStats = useMemo(() => ({
-    total: users.length,
-    alumnos: users.filter(u => u.group === 'alumnos').length,
-    docentes: users.filter(u => u.group === 'docentes').length,
-  }), [users]);
+    const query = searchQuery.toLowerCase();
+    return users.filter(user =>
+      user.username.toLowerCase().includes(query) ||
+      (user.full_name?.toLowerCase().includes(query)) ||
+      (user.email?.toLowerCase().includes(query))
+    );
+  }, [users, searchQuery]);
 
   const handleCreateUser = async (userData: UserFormData) => {
     const loadingId = showToast('loading', 'Creando usuario...');
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
+    const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000";
 
     // Construir nombre completo desde los campos individuales
     const fullName = `${userData.nombres} ${userData.apellidoPaterno} ${userData.apellidoMaterno}`.trim();
@@ -234,39 +201,10 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
       <div className="space-y-6">
         {/* Header minimalista */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-3">
             {/* Título */}
-            <h2 className="text-xl font-semibold text-white">Usuarios</h2>
-
-            {/* Tabs con underline */}
-            <div className="flex items-center gap-1">
-              {filterTabs.map((tab) => {
-                const count = tab.id === 'todos' ? userStats.total : userStats[tab.id];
-                const isActive = activeFilter === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveFilter(tab.id)}
-                    className={cn(
-                      'relative px-3 py-2 text-sm font-medium transition-colors',
-                      isActive ? 'text-white' : 'text-white/40 hover:text-white/70'
-                    )}
-                  >
-                    {tab.label}
-                    <span className={cn(
-                      'ml-1.5 text-xs',
-                      isActive ? 'text-white/60' : 'text-white/30'
-                    )}>
-                      {count}
-                    </span>
-                    {/* Underline activo */}
-                    {isActive && (
-                      <span className="absolute bottom-0 left-0 right-0 h-px bg-white" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <h2 className="text-xl font-semibold text-white">Usuarios LDAP</h2>
+            <span className="text-sm text-white/40">{users.length}</span>
           </div>
 
           {/* Acciones header */}
@@ -321,9 +259,6 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                 <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">
                   Código
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">
-                  Rol
-                </th>
                 <th className="px-4 py-3 w-24" />
               </tr>
             </thead>
@@ -332,13 +267,11 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center">
+                  <td colSpan={4} className="px-4 py-12 text-center">
                     <p className="text-white/30 text-sm">
                       {searchQuery.trim()
                         ? `Sin resultados para "${searchQuery}"`
-                        : users.length === 0
-                          ? 'Sin usuarios registrados'
-                          : `Sin ${activeFilter} registrados`
+                        : 'Sin usuarios registrados'
                       }
                     </p>
                   </td>
@@ -378,17 +311,6 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                       <span className="text-sm text-white/50 font-mono">
                         {user.codigo || '—'}
                       </span>
-                    </td>
-
-                    {/* Rol - solo texto coloreado */}
-                    <td className="px-4 py-4">
-                      {user.group ? (
-                        <span className={cn('text-sm font-medium', roleColors[user.group])}>
-                          {user.group === 'alumnos' ? 'Alumno' : 'Docente'}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-white/20">—</span>
-                      )}
                     </td>
 
                     {/* Acciones - visibles en hover */}

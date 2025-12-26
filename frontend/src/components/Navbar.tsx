@@ -33,7 +33,7 @@ export function Navbar() {
   // Check server status every 5 seconds
   useEffect(() => {
     const checkServer = async () => {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://172.29.137.160:4000';
+      const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000";
       
       try {
         const controller = new AbortController();

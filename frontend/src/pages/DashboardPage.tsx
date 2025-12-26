@@ -54,7 +54,7 @@ export function DashboardPage() {
 
   // Poll server status
   useEffect(() => {
-    const serverUrl = import.meta.env.VITE_STATUS_SERVER_URL || 'http://172.29.137.160:4000/api/status'
+    const serverUrl = import.meta.env.VITE_STATUS_SERVER_URL || "http://10.12.195.223:4000";
 
     const fetchStatus = async () => {
       try {

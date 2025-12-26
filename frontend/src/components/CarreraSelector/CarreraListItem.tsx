@@ -15,6 +15,7 @@ import {
   GraduationCap,
   Mountain,
   MonitorSmartphone,
+  Lock,
 } from 'lucide-react';
 
 // ==========================================
@@ -47,17 +48,18 @@ const statusConfig: Record<string, { color: string; label: string; animation: st
 interface CarreraListItemProps {
   carrera: Carrera;
   isSelected: boolean;
+  isLocked?: boolean;
   onSelect: () => void;
 }
 
-export function CarreraListItem({ carrera, isSelected, onSelect }: CarreraListItemProps) {
+export function CarreraListItem({ carrera, isSelected, isLocked = false, onSelect }: CarreraListItemProps) {
   const IconComponent = iconMap[carrera.icon] || Monitor;
   const facultyColor = FACULTY_COLORS[carrera.faculty];
   const facultyLabel = FACULTY_LABELS[carrera.faculty];
   const status = statusConfig[carrera.status] || statusConfig.offline;
 
-  // Estilo de glow dinámico basado en color de facultad
-  const glowStyle = isSelected
+  // Estilo de glow dinámico basado en color de facultad (solo si no está bloqueado)
+  const glowStyle = isSelected && !isLocked
     ? { boxShadow: `0 0 20px ${facultyColor}30, 0 0 40px ${facultyColor}15` }
     : undefined;
 
@@ -69,10 +71,12 @@ export function CarreraListItem({ carrera, isSelected, onSelect }: CarreraListIt
         // Base
         'w-full text-left p-3 rounded-lg transition-all duration-200',
         'border border-transparent',
-        // Hover
-        'hover:bg-white/5',
+        // Bloqueado
+        isLocked && 'opacity-50',
+        // Hover (solo si no está bloqueado)
+        !isLocked && 'hover:bg-white/5',
         // Seleccionado
-        isSelected && 'bg-white/5 border-white/20'
+        isSelected && !isLocked && 'bg-white/5 border-white/20'
       )}
     >
       <div className="flex items-start gap-3">
@@ -112,17 +116,26 @@ export function CarreraListItem({ carrera, isSelected, onSelect }: CarreraListIt
               <MonitorSmartphone className="w-3.5 h-3.5" />
               <span>{carrera.pcsCount} PCs</span>
             </div>
-            {/* Status indicator con animación */}
-            <div className="flex items-center gap-1.5">
-              <div className={cn(
-                'w-2 h-2 rounded-full',
-                status.color,
-                status.animation
-              )} />
-              <span>{status.label}</span>
-            </div>
+            {/* Status indicator con animación (oculto si bloqueado) */}
+            {!isLocked && (
+              <div className="flex items-center gap-1.5">
+                <div className={cn(
+                  'w-2 h-2 rounded-full',
+                  status.color,
+                  status.animation
+                )} />
+                <span>{status.label}</span>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Candado para carreras bloqueadas */}
+        {isLocked && (
+          <div className="flex items-center justify-center shrink-0">
+            <Lock className="w-4 h-4 text-white/30" />
+          </div>
+        )}
       </div>
     </button>
   );
