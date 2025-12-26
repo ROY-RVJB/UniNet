@@ -20,6 +20,7 @@ BEGIN { OFS="|" }
 /^dn:/ { dn=$2; for(i=3;i<=NF;i++) dn=dn" "$i }
 /^uid:/ { uid=$2 }
 /^employeeNumber:/ { codigo=$2 }
+/^cn:/ { cn=$2; for(i=3;i<=NF;i++) cn=cn" "$i }
 /^givenName:/ { nombres=$2; for(i=3;i<=NF;i++) nombres=nombres" "$i }
 /^sn:/ { apellido_p=$2; for(i=3;i<=NF;i++) apellido_p=apellido_p" "$i }
 /^description:/ { 
@@ -33,15 +34,35 @@ BEGIN { OFS="|" }
 /^mail:/ { mail=$2 }
 /^$/ { 
     if (uid != "") {
-        # Extraer apellido materno del cn si es necesario
-        # Por ahora, usamos solo apellido_p como apellido completo
-        print uid, (codigo?codigo:""), (nombres?nombres:""), (apellido_p?apellido_p:""), "", (dni?dni:""), (carrera?carrera:""), (mail?mail:""), dn
-        uid=""; codigo=""; nombres=""; apellido_p=""; dni=""; carrera=""; mail=""; dn=""
+        # Si no hay givenName/sn, usar cn completo
+        if (!nombres && cn) {
+            nombres = cn
+        }
+        if (!apellido_p && cn) {
+            apellido_p = cn
+        }
+        
+        # Si no hay email, generar uno por defecto
+        if (!mail) {
+            mail = uid "@universidad.edu.pe"
+        }
+        
+        print uid, (codigo?codigo:"N/A"), (nombres?nombres:"N/A"), (apellido_p?apellido_p:"N/A"), "", (dni?dni:"N/A"), (carrera?carrera:"N/A"), mail, dn
+        uid=""; codigo=""; cn=""; nombres=""; apellido_p=""; dni=""; carrera=""; mail=""; dn=""
     }
 }
 END {
     if (uid != "") {
-        print uid, (codigo?codigo:""), (nombres?nombres:""), (apellido_p?apellido_p:""), "", (dni?dni:""), (carrera?carrera:""), (mail?mail:""), dn
+        if (!nombres && cn) {
+            nombres = cn
+        }
+        if (!apellido_p && cn) {
+            apellido_p = cn
+        }
+        if (!mail) {
+            mail = uid "@universidad.edu.pe"
+        }
+        print uid, (codigo?codigo:"N/A"), (nombres?nombres:"N/A"), (apellido_p?apellido_p:"N/A"), "", (dni?dni:"N/A"), (carrera?carrera:"N/A"), mail, dn
     }
 }
 '
