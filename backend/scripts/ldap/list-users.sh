@@ -26,8 +26,13 @@ BEGIN { OFS="|" }
 /^description:/ { 
     desc=$0
     sub(/^description: */, "", desc)
-    if (match(desc, /DNI: *([0-9]+)/, arr)) {
-        dni=arr[1]
+    # Extraer DNI sin usar arrays (compatible con todas las versiones de awk)
+    if (desc ~ /DNI: *[0-9]+/) {
+        split(desc, parts, "DNI: *")
+        if (length(parts) > 1) {
+            match(parts[2], /[0-9]+/)
+            dni = substr(parts[2], RSTART, RLENGTH)
+        }
     }
 }
 /^departmentNumber:/ { carrera=$2 }
@@ -44,7 +49,7 @@ BEGIN { OFS="|" }
         
         # Si no hay email, generar uno por defecto
         if (!mail) {
-            mail = uid "@universidad.edu.pe"
+            mail = uid"@universidad.edu.pe"
         }
         
         print uid, (codigo?codigo:"N/A"), (nombres?nombres:"N/A"), (apellido_p?apellido_p:"N/A"), "", (dni?dni:"N/A"), (carrera?carrera:"N/A"), mail, dn
@@ -60,7 +65,7 @@ END {
             apellido_p = cn
         }
         if (!mail) {
-            mail = uid "@universidad.edu.pe"
+            mail = uid"@universidad.edu.pe"
         }
         print uid, (codigo?codigo:"N/A"), (nombres?nombres:"N/A"), (apellido_p?apellido_p:"N/A"), "", (dni?dni:"N/A"), (carrera?carrera:"N/A"), mail, dn
     }
