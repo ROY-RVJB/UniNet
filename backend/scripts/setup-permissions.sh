@@ -106,7 +106,17 @@ chmod 644 "$UID_FILE"
 echo "   ✅ Permisos configurados (owner: $BACKEND_USER, mode: 644)"
 echo ""
 
-# 4. Verificación final
+# 4. Crear directorio de logs del proyecto
+BACKEND_DIR=$(cd "$(dirname "$0")/.." && pwd)
+LOGS_DIR="$BACKEND_DIR/logs"
+echo "📝 Configurando directorio de logs..."
+mkdir -p "$LOGS_DIR"
+chown "$BACKEND_USER:$BACKEND_USER" "$LOGS_DIR"
+chmod 755 "$LOGS_DIR"
+echo "   ✅ Directorio de logs creado: $LOGS_DIR"
+echo ""
+
+# 5. Verificación final
 echo "✨ Verificando configuración..."
 echo ""
 ls -la "$UNINET_DIR"
@@ -145,9 +155,10 @@ if [ $ERRORS -eq 0 ]; then
     echo "📋 Archivos configurados:"
     echo "   • $ADMIN_PASS_FILE (600, owner: $BACKEND_USER)"
     echo "   • $UID_FILE (644, owner: $BACKEND_USER)"
+    echo "   • $LOGS_DIR/ (755, owner: $BACKEND_USER)"
     echo ""
     echo "🚀 Ahora puedes iniciar el backend:"
-    echo "   cd /path/to/backend"
+    echo "   cd $(dirname "$BACKEND_DIR")"
     echo "   ./start-server.sh"
     echo ""
 else

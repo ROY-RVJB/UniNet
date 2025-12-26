@@ -23,10 +23,12 @@ def _read_kv_conf(path: str) -> dict:
 
 def _get_log_file() -> str:
     logs_conf = _read_kv_conf("/etc/uninet/logs.conf")
+    # Usar directorio del proyecto como fallback (más seguro)
+    project_log = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs", "carreras.log")
     return (
         os.environ.get("UNINET_LOG_FILE")
         or logs_conf.get("LOG_FILE")
-        or "/var/log/uninet/carreras.log"
+        or project_log  # Cambiado: usar logs/ dentro del proyecto
     )
 
 def _write_json_line(path: str, obj: dict) -> None:
