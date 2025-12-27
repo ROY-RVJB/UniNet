@@ -144,20 +144,21 @@ def init_db():
         )
     """)
 
-    # Insertar carreras por defecto
+    # Insertar carreras por defecto (IDs LDAP oficiales UNAMAD)
+    # 12 carreras oficiales UNAMAD (IDs LDAP)
     carreras_default = [
-        ('carrera-administracion', 'Administración y Negocios Internacionales'),
-        ('carrera-contabilidad', 'Contabilidad y Finanzas'),
-        ('carrera-derecho', 'Derecho y Ciencias Políticas'),
-        ('carrera-ecoturismo', 'Ecoturismo'),
-        ('carrera-inicial', 'Educación Inicial y Especial'),
-        ('carrera-matematicas', 'Educación Matemáticas y Computación'),
-        ('carrera-primaria', 'Educación Primaria e Informática'),
-        ('carrera-enfermeria', 'Enfermería'),
-        ('carrera-agroindustrial', 'Ingeniería Agroindustrial'),
-        ('carrera-sistemas', 'Ingeniería de Sistemas e Informática'),
-        ('carrera-forestal', 'Ingeniería Forestal y Medio Ambiente'),
-        ('carrera-veterinaria', 'Medicina Veterinaria y Zootecnia'),
+        ('5001', 'Administración y Negocios Internacionales'),
+        ('5002', 'Contabilidad y Finanzas'),
+        ('5003', 'Derecho y Ciencias Políticas'),
+        ('5004', 'Ecoturismo'),
+        ('5005', 'Educación Inicial y Especial'),
+        ('5006', 'Educación Matemáticas y Computación'),
+        ('5007', 'Educación Primaria e Informática'),
+        ('5008', 'Enfermería'),
+        ('5009', 'Ingeniería Agroindustrial'),
+        ('5010', 'Ingeniería de Sistemas e Informática'),
+        ('5011', 'Ingeniería Forestal y Medio Ambiente'),
+        ('5012', 'Medicina Veterinaria y Zootecnia'),
     ]
     for carrera_id, carrera_nombre in carreras_default:
         try:
@@ -165,6 +166,32 @@ def init_db():
                           (carrera_id, carrera_nombre))
         except sqlite3.IntegrityError:
             pass  # Ya existe
+
+    # Migración: Actualizar IDs viejos a IDs LDAP en docentes_carreras
+    migracion_ids = {
+        'carrera-administracion': '5001',
+        'carrera-contabilidad': '5002',
+        'carrera-derecho': '5003',
+        'carrera-ecoturismo': '5004',
+        'carrera-inicial': '5005',
+        'carrera-matematicas': '5006',
+        'carrera-primaria': '5007',
+        'carrera-enfermeria': '5008',
+        'carrera-agroindustrial': '5009',
+        'carrera-sistemas': '5010',
+        'carrera-forestal': '5011',
+        'carrera-veterinaria': '5012',
+    }
+    for old_id, new_id in migracion_ids.items():
+        cursor.execute("UPDATE docentes_carreras SET carrera_id = ? WHERE carrera_id = ?", (new_id, old_id))
+
+    # Eliminar duplicados después de migración (educación se consolidó)
+    cursor.execute('''
+        DELETE FROM docentes_carreras
+        WHERE rowid NOT IN (
+            SELECT MIN(rowid) FROM docentes_carreras GROUP BY docente_id, carrera_id
+        )
+    ''')
 
     # Agregar columna role si no existe (migración)
     try:
