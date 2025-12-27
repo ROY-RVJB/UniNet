@@ -45,9 +45,10 @@ function getAvatarColor(name: string): string {
 interface UserTableProps {
   users: LDAPUser[];
   onRefresh: () => void;
+  carreraCode: string; // Código LDAP de la carrera (5001-5012)
 }
 
-export function UserTable({ users, onRefresh }: UserTableProps) {
+export function UserTable({ users, onRefresh, carreraCode }: UserTableProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<LDAPUser | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -353,7 +354,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateUser}
-        defaultCarrera={selectedCarrera?.id}
+        carreraCode={carreraCode}
       />
 
       {/* Modal Editar Usuario */}

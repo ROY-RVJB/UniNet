@@ -116,7 +116,19 @@ export function UsersPage() {
   return (
     <div className="space-y-12">
       {/* Tabla de usuarios LDAP */}
-      <UserTable users={users} onRefresh={fetchUsers} />
+      {selectedCarrera && (
+        <UserTable 
+          users={users} 
+          onRefresh={fetchUsers} 
+          carreraCode={selectedCarrera.id}
+        />
+      )}
+      
+      {!selectedCarrera && (
+        <div className="text-center text-white/50 py-12">
+          Selecciona una carrera para gestionar usuarios
+        </div>
+      )}
 
       {/* Tabla de docentes del sistema - Solo visible para admin */}
       {user?.role === 'admin' && (

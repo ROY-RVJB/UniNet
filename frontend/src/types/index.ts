@@ -4,8 +4,11 @@
 
 /**
  * Estados posibles de una PC del laboratorio
+ * - online: PC encendida y conectada, sin usuario activo
+ * - offline: PC apagada o sin conexión (>60s sin heartbeat)
+ * - inUse: PC encendida con usuario activo
  */
-export type PCStatus = 'online' | 'offline' | 'inUse' | 'examMode';
+export type PCStatus = 'online' | 'offline' | 'inUse';
 
 /**
  * Interfaz de PC del Laboratorio

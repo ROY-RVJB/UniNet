@@ -208,7 +208,27 @@ async def create_user(user_data: UserCreate):
 async def list_users(carrera: Optional[str] = None):
     """
     Lista usuarios LDAP, opcionalmente filtrados por carrera
-    Query param: ?carrera=5001 (solo muestra Ingeniería de Sistemas)
+    
+    Query param: ?carrera=5001 (solo muestra usuarios de esa carrera)
+    
+    **Códigos de Carrera (departmentNumber en LDAP):**
+    - 5001: Administración y Negocios Internacionales
+    - 5002: Contabilidad y Finanzas
+    - 5003: Derecho y Ciencias Políticas
+    - 5004: Ecoturismo
+    - 5005: Educación Inicial y Especial
+    - 5006: Educación Matemáticas y Computación
+    - 5007: Educación Primaria e Informática
+    - 5008: Enfermería
+    - 5009: Ingeniería Agroindustrial
+    - 5010: Ingeniería de Sistemas e Informática (por defecto)
+    - 5011: Ingeniería Forestal y Medio Ambiente
+    - 5012: Medicina Veterinaria y Zootecnia
+    - N/A: Usuario sin carrera asignada (usuarios antiguos)
+    
+    **GID (grupos LDAP):**
+    - 5000: Alumnos (todos los estudiantes)
+    - 6000: Docentes
     """
     script_path = os.path.join(SCRIPT_DIR, "list-users.sh")
 
@@ -260,6 +280,12 @@ async def list_users(carrera: Optional[str] = None):
 async def list_users_with_carreras():
     """
     Lista usuarios LDAP e incluye las carreras (grupos) de cada uno.
+    
+    **Nota:** Este endpoint incluye el campo `carreras` que lista los grupos LDAP
+    a los que pertenece cada usuario. Diferente al campo `carrera` que es el código
+    de departamento (5001-5012).
+    
+    **Códigos de Carrera:** Ver documentación en /api/users/list
     """
     base_users = await list_users()
 

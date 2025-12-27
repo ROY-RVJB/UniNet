@@ -6,7 +6,7 @@ interface CreateUserModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (userData: UserFormData) => Promise<void>
-  defaultCarrera?: string // ID de carrera pre-seleccionada
+  carreraCode: string // Código LDAP de la carrera (5001-5012)
 }
 
 export interface UserFormData {
@@ -19,7 +19,7 @@ export interface UserFormData {
   dni: string
   password: string
   confirmPassword: string
-  carrera: string
+  carrera: string // Código LDAP asignado dinámicamente según dashboard - no visible en UI
 }
 
 interface FormErrors {
@@ -40,21 +40,7 @@ interface FormErrors {
 // CreateUserModal - Estilo Minimalista Vercel
 // ==========================================
 
-// 12 carreras oficiales UNAMAD (IDs LDAP: departmentNumber)
-const CARRERA_OPTIONS = [
-  { value: "5001", label: "Administración y Negocios Internacionales" },
-  { value: "5002", label: "Contabilidad y Finanzas" },
-  { value: "5003", label: "Derecho y Ciencias Políticas" },
-  { value: "5004", label: "Ecoturismo" },
-  { value: "5005", label: "Educación Inicial y Especial" },
-  { value: "5006", label: "Educación Matemáticas y Computación" },
-  { value: "5007", label: "Educación Primaria e Informática" },
-  { value: "5008", label: "Enfermería" },
-  { value: "5009", label: "Ingeniería Agroindustrial" },
-  { value: "5010", label: "Ingeniería de Sistemas e Informática" },
-  { value: "5011", label: "Ingeniería Forestal y Medio Ambiente" },
-  { value: "5012", label: "Medicina Veterinaria y Zootecnia" },
-]
+// Carrera se asigna automáticamente según dashboard activo (carreraCode prop)
 
 // ==========================================
 // Utilidades para generar username
@@ -433,7 +419,7 @@ function CommandSelect({
   )
 }
 
-export function CreateUserModal({ isOpen, onClose, onSubmit, defaultCarrera }: CreateUserModalProps) {
+export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: CreateUserModalProps) {
   const [formData, setFormData] = React.useState<UserFormData>({
     codigo: "",
     nombres: "",
@@ -444,7 +430,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, defaultCarrera }: C
     dni: "",
     password: "",
     confirmPassword: "",
-    carrera: defaultCarrera || "",
+    carrera: carreraCode, // Usar código de carrera del dashboard activo
   })
   const [errors, setErrors] = React.useState<FormErrors>({})
   const [isLoading, setIsLoading] = React.useState(false)
@@ -462,33 +448,27 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, defaultCarrera }: C
 
   // Reset form when modal opens/closes
   React.useEffect(() => {
-    if (isOpen) {
-      // Al abrir: pre-llenar carrera si hay una seleccionada
-      setFormData(prev => ({
-        ...prev,
-        carrera: defaultCarrera || "",
-      }))
-    } else {
-      // Al cerrar: limpiar todo
-      setFormData({
-        codigo: "",
-        nombres: "",
-        apellidoPaterno: "",
-        apellidoMaterno: "",
-        username: "",
-        email: "",
-        dni: "",
-        password: "",
-        confirmPassword: "",
-        carrera: "",
-      })
-      setErrors({})
-      setTouched({})
-      setIsLoading(false)
-      setUsernameStatus({ checking: false, available: null, usedCode: false })
-      setUsernameManuallyEdited(false)
-    }
-  }, [isOpen, defaultCarrera])
+    if (!isOpen) return // Solo actuar cuando se abre
+
+    // Al abrir el modal, resetear con carrera ya asignada
+    setFormData({
+      codigo: "",
+      nombres: "",
+      apellidoPaterno: "",
+      apellidoMaterno: "",
+      username: "",
+      email: "",
+      dni: "",
+      password: "",
+      confirmPassword: "",
+      carrera: carreraCode,
+    })
+    setErrors({})
+    setTouched({})
+    setIsLoading(false)
+    setUsernameStatus({ checking: false, available: null, usedCode: false })
+    setUsernameManuallyEdited(false)
+  }, [isOpen, carreraCode])
 
   // Auto-generar username cuando cambian nombres o apellidos
   React.useEffect(() => {
@@ -592,10 +572,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, defaultCarrera }: C
         if (value !== formData.password) return "Las contraseñas no coinciden"
         return undefined
 
-      case "carrera":
-        if (!value) return "Selecciona una carrera"
-        return undefined
-
+      // carrera ya no se valida porque se asigna automáticamente
       default:
         return undefined
     }
@@ -659,7 +636,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, defaultCarrera }: C
       dni: true,
       password: true,
       confirmPassword: true,
-      carrera: true,
+      // carrera no se marca porque ya está asignada automáticamente
     })
 
     if (!validateForm()) return
@@ -685,7 +662,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, defaultCarrera }: C
       formData.dni.length === 8 &&
       formData.password.length >= 6 &&
       formData.confirmPassword === formData.password &&
-      formData.carrera !== "" &&
+      // carrera siempre es "5010", no necesita validación
       usernameStatus.available !== false &&
       !usernameStatus.checking
     )
@@ -852,16 +829,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, defaultCarrera }: C
               />
             </div>
 
-            {/* Carrera */}
-            <CommandSelect
-              label="Carrera Profesional"
-              value={formData.carrera}
-              onChange={(value) => handleChange("carrera", value)}
-              options={CARRERA_OPTIONS}
-              placeholder="Buscar carrera..."
-              error={touched.carrera ? errors.carrera : undefined}
-              disabled={isLoading}
-            />
+            {/* Carrera asignada automáticamente a 5010 (Ingeniería de Sistemas) - no visible */}
 
             {/* Footer buttons */}
             <div className="flex gap-3 pt-2">
