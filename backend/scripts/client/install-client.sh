@@ -50,43 +50,63 @@ echo ""
 # ==========================================
 # SELECCIÓN DE LABORATORIO/CARRERA
 # ==========================================
-echo -e "${BLUE}🏫 Selecciona el laboratorio al que pertenece esta PC:${NC}"
-echo ""
-echo "  1) Administración y Negocios Internacionales"
-echo "  2) Contabilidad y Finanzas"
-echo "  3) Derecho y Ciencias Políticas"
-echo "  4) Ecoturismo"
-echo "  5) Educación Inicial y Especial"
-echo "  6) Educación Matemáticas y Computación"
-echo "  7) Educación Primaria e Informática"
-echo "  8) Enfermería"
-echo "  9) Ingeniería Agroindustrial"
-echo " 10) Ingeniería de Sistemas e Informática"
-echo " 11) Ingeniería Forestal y Medio Ambiente"
-echo " 12) Medicina Veterinaria y Zootecnia"
-echo ""
 
-CARRERA_CODE=""
-while [ -z "$CARRERA_CODE" ]; do
-    read -p "Selecciona (1-12): " CARRERA_OPTION
-    case $CARRERA_OPTION in
-        1) CARRERA_CODE="5001" ;;
-        2) CARRERA_CODE="5002" ;;
-        3) CARRERA_CODE="5003" ;;
-        4) CARRERA_CODE="5004" ;;
-        5) CARRERA_CODE="5005" ;;
-        6) CARRERA_CODE="5006" ;;
-        7) CARRERA_CODE="5007" ;;
-        8) CARRERA_CODE="5008" ;;
-        9) CARRERA_CODE="5009" ;;
-        10) CARRERA_CODE="5010" ;;
-        11) CARRERA_CODE="5011" ;;
-        12) CARRERA_CODE="5012" ;;
-        *) echo -e "${RED}❌ Opción inválida. Intenta de nuevo.${NC}" ;;
-    esac
-done
+# Verificar si se pasó la carrera como variable de entorno
+if [ -n "$CARRERA" ]; then
+    CARRERA_CODE="$CARRERA"
+    echo -e "${GREEN}✅ Carrera preconfigurada: $CARRERA_CODE${NC}"
+else
+    # Detectar si estamos en modo interactivo (terminal TTY)
+    if [ -t 0 ]; then
+        # Modo interactivo: preguntar
+        echo -e "${BLUE}🏫 Selecciona el laboratorio al que pertenece esta PC:${NC}"
+        echo ""
+        echo "  1) Administración y Negocios Internacionales"
+        echo "  2) Contabilidad y Finanzas"
+        echo "  3) Derecho y Ciencias Políticas"
+        echo "  4) Ecoturismo"
+        echo "  5) Educación Inicial y Especial"
+        echo "  6) Educación Matemáticas y Computación"
+        echo "  7) Educación Primaria e Informática"
+        echo "  8) Enfermería"
+        echo "  9) Ingeniería Agroindustrial"
+        echo " 10) Ingeniería de Sistemas e Informática"
+        echo " 11) Ingeniería Forestal y Medio Ambiente"
+        echo " 12) Medicina Veterinaria y Zootecnia"
+        echo ""
 
-echo -e "${GREEN}✅ Laboratorio seleccionado: código $CARRERA_CODE${NC}"
+        CARRERA_CODE=""
+        while [ -z "$CARRERA_CODE" ]; do
+            read -p "Selecciona (1-12): " CARRERA_OPTION
+            case $CARRERA_OPTION in
+                1) CARRERA_CODE="5001" ;;
+                2) CARRERA_CODE="5002" ;;
+                3) CARRERA_CODE="5003" ;;
+                4) CARRERA_CODE="5004" ;;
+                5) CARRERA_CODE="5005" ;;
+                6) CARRERA_CODE="5006" ;;
+                7) CARRERA_CODE="5007" ;;
+                8) CARRERA_CODE="5008" ;;
+                9) CARRERA_CODE="5009" ;;
+                10) CARRERA_CODE="5010" ;;
+                11) CARRERA_CODE="5011" ;;
+                12) CARRERA_CODE="5012" ;;
+                *) echo -e "${RED}❌ Opción inválida. Intenta de nuevo.${NC}" ;;
+            esac
+        done
+        echo -e "${GREEN}✅ Laboratorio seleccionado: código $CARRERA_CODE${NC}"
+    else
+        # Modo no-interactivo (pipe desde curl): usar valor por defecto
+        CARRERA_CODE="5010"  # Default: Sistemas
+        echo -e "${YELLOW}⚠️  Modo no-interactivo detectado${NC}"
+        echo -e "${YELLOW}⚠️  Usando carrera por defecto: Sistemas (5010)${NC}"
+        echo ""
+        echo -e "${BLUE}💡 Para especificar otra carrera, usa:${NC}"
+        echo -e "   ${GREEN}CARRERA=5002 curl -sSL http://$SERVER_IP:4000/install | sudo -E bash${NC}"
+        echo ""
+    fi
+fi
+
 echo ""
 
 # Verificar que curl está instalado
