@@ -201,6 +201,18 @@ sed -i 's/^passwd:.*/passwd:         files ldap/' /etc/nsswitch.conf
 sed -i 's/^group:.*/group:          files ldap/' /etc/nsswitch.conf
 sed -i 's/^shadow:.*/shadow:         files ldap/' /etc/nsswitch.conf
 
+# Crear grupos LDAP locales si no existen
+echo -e "${BLUE}⚙️  Creando grupos LDAP...${NC}"
+if ! getent group 5000 > /dev/null 2>&1; then
+    groupadd -g 5000 alumnos
+    echo -e "${GREEN}✅ Grupo 'alumnos' (GID 5000) creado${NC}"
+fi
+
+if ! getent group 6000 > /dev/null 2>&1; then
+    groupadd -g 6000 docentes
+    echo -e "${GREEN}✅ Grupo 'docentes' (GID 6000) creado${NC}"
+fi
+
 # Configurar PAM para autenticación LDAP
 echo -e "${BLUE}⚙️  Configurando PAM...${NC}"
 
