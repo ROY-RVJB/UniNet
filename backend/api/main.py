@@ -57,12 +57,21 @@ SCRIPTS_DIR = Path(__file__).parent.parent / "scripts" / "client"
 async def get_install_script(request: Request):
     """
     Sirve el script de instalación con auto-detección de IP del servidor
-    URL: curl -sSL http://IP_SERVIDOR:4000/install | bash
+    URL: curl -sSL http://IP_SERVIDOR:4000/install | sudo bash
     """
-    # Obtener la IP del servidor desde la request
-    server_ip = request.client.host if request.client else "localhost"
-    # Mejor aún, usar el host de la request
-    server_host = request.url.hostname or server_ip
+    # Obtener la IP del servidor desde el header Host de la request
+    # Este header contiene exactamente lo que el cliente usó en la URL
+    host_header = request.headers.get("host", "")
+    
+    # Separar host y puerto si están presentes (ej: "172.29.137.160:4000" -> "172.29.137.160")
+    if ":" in host_header:
+        server_host = host_header.split(":")[0]
+    else:
+        server_host = host_header
+    
+    # Si no hay host header (no debería pasar), usar fallback
+    if not server_host:
+        server_host = request.url.hostname or "localhost"
     
     # Leer el template del script de instalación
     install_template_path = SCRIPTS_DIR / "install-client.sh"
