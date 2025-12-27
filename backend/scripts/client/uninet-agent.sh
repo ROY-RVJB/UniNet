@@ -3,8 +3,22 @@
 # UniNet Agent - Cliente de monitoreo de estado de PCs
 # Este script se ejecuta periódicamente para reportar el estado de la máquina cliente
 
-# Configuración del servidor
-SERVER_URL="http://172.29.137.160:4000/api/monitoring/heartbeat"
+# Configuración del servidor (se establece durante la instalación)
+CONFIG_FILE="/etc/uninet/config"
+
+# Cargar configuración
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+else
+    echo "Error: Archivo de configuración no encontrado en $CONFIG_FILE"
+    exit 1
+fi
+
+# Validar que SERVER_URL esté configurado
+if [ -z "$SERVER_URL" ]; then
+    echo "Error: SERVER_URL no está configurado"
+    exit 1
+fi
 
 # Obtener hostname
 HOSTNAME=$(hostname)

@@ -2,7 +2,27 @@
 
 Este directorio contiene los scripts necesarios para configurar el monitoreo automático de las máquinas cliente (VMs de estudiantes).
 
-## 📋 Descripción
+---
+
+## 🎯 Instalación Rápida (Recomendado)
+
+### Para Usuarios/Estudiantes:
+
+**Solo ejecuta este comando en tu VM Ubuntu:**
+
+```bash
+curl -sSL http://IP_DEL_SERVIDOR:4000/install | sudo bash
+```
+
+> Reemplaza `IP_DEL_SERVIDOR` con la IP que te proporcione el administrador
+
+**¡Eso es todo!** Tu PC se registrará automáticamente y empezará a enviar su estado cada 30 segundos.
+
+📖 **Ver guía detallada:** [QUICK-INSTALL.md](QUICK-INSTALL.md)
+
+---
+
+## 📋 Descripción del Sistema
 
 El sistema de monitoreo funciona mediante **heartbeats** (latidos): cada máquina cliente envía su estado cada 30 segundos al servidor. El servidor determina el estado de cada máquina basándose en:
 
@@ -20,9 +40,13 @@ El sistema de monitoreo funciona mediante **heartbeats** (latidos): cada máquin
    - Se recibió heartbeat recientemente
    - Hay un usuario con sesión iniciada
 
-## 🚀 Instalación en Máquinas Cliente
+---
 
-### Opción 1: Instalación Automática
+## 🔧 Instalación Avanzada (Solo para Administradores)
+
+### Opción 1: Instalación Automática (Recomendado)
+
+El método estándar que usan los estudiantes también funciona para testing:
 
 En la máquina cliente (VM del estudiante), ejecutar:
 

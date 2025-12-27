@@ -1,6 +1,7 @@
 """
 Endpoints de monitoreo de estado de PCs
 Sistema de heartbeat para detección de estado en tiempo real
+Sistema de auto-registro dinámico de clientes
 """
 
 import subprocess
@@ -11,16 +12,9 @@ from typing import List, Optional, Dict
 
 router = APIRouter()
 
-# Estado de clientes en memoria (key: hostname, value: estado)
+# Estado de clientes en memoria (key: hostname, value: estado completo)
+# Auto-registro: cualquier PC que envíe heartbeat se registra automáticamente
 clients_state: Dict[str, dict] = {}
-
-# Lista de hosts esperados (para inicialización)
-EXPECTED_HOSTS = [
-    {"id": "pc-01", "name": "PC-LAB-01", "ip": "172.29.2.37"},
-    {"id": "pc-02", "name": "PC-LAB-02", "ip": "172.29.157.94"},
-    {"id": "pc-03", "name": "PC-LAB-03", "ip": "172.29.177.20"},
-    {"id": "pc-04", "name": "PC-LAB-04", "ip": "172.29.104.181"},
-]
 
 
 class HeartbeatData(BaseModel):
@@ -46,24 +40,48 @@ async def receive_heartbeat(data: HeartbeatData):
     Recibe heartbeat de VM cliente con estado actual
     Se ejecuta cada 30 segundos desde el agente del cliente
     
+    Sistema de auto-registro:
+    - Si el hostname es nuevo, se registra automáticamente
+    - Actualiza estado, IP y usuario en cada heartbeat
+    
     Args:
         data: Datos del cliente (hostname, ip, usuario activo)
     
     Returns:
-        Confirmación de recepción
+        Confirmación de recepción con ID asignado
     """
-    clients_state[data.hostname] = {
-        "ip": data.ip,
-        "user": data.user,
-        "last_seen": datetime.now()
+    # Auto-registro: asignar ID si es nuevo
+    if data.hostname not in clients_state:
+        # Generar ID basado en cantidad de hosts registrados
+        host_id = f"pc-{len(clients_state) + 1:02d}"
+        clients_state[data.hostname] = {
+            "id": host_id,
+            "ip": data.ip,
+            "user": data.user,
+            "last_seen": datetime.now(),
+            "first_seen": datetime.now()
+        }
+    else:
+        # Actualizar estado existente
+        clients_state[data.hostname].update({
+            "ip": data.ip,
+            "user": data.user,
+            "last_seen": datetime.now()
+        })
+    
+    return {
+        "status": "ok", 
+        "received_at": datetime.now().isoformat(),
+        "host_id": clients_state[data.hostname]["id"]
     }
-    return {"status": "ok", "received_at": datetime.now().isoformat()}
 
 
 @router.get("/status")
 async def get_status():
     """
-    Obtiene el estado consolidado de todos los clientes
+    Obtiene el estado consolidado de todos los clientes registrados
+    
+    Sistema dinámico: solo muestra PCs que han enviado al menos un heartbeat
     
     Estados:
     - offline: No ha enviado heartbeat en los últimos 60 segundos
@@ -71,23 +89,13 @@ async def get_status():
     - inUse: Envía heartbeat y tiene sesión de usuario activa
     
     Returns:
-        Diccionario con hostname como clave y estado como valor
+        Lista de objetos con información de cada host
     """
-    results = {}
+    results = []
     now = datetime.now()
     timeout_threshold = timedelta(seconds=60)
     
-    # Primero agregar todos los hosts esperados como offline
-    for expected in EXPECTED_HOSTS:
-        hostname = expected["name"]
-        results[hostname] = {
-            "status": "offline",
-            "user": None,
-            "last_seen": None,
-            "ip": expected["ip"]
-        }
-    
-    # Luego actualizar con los clientes que han enviado heartbeat
+    # Procesar todos los clientes registrados
     for hostname, state in clients_state.items():
         time_since_last_seen = now - state["last_seen"]
         is_alive = time_since_last_seen < timeout_threshold
@@ -100,17 +108,66 @@ async def get_status():
         else:
             status = "online"
         
-        results[hostname] = {
+        results.append({
+            "id": state["id"],
+            "name": hostname,
+            "ip": state["ip"],
             "status": status,
             "user": state["user"] if state["user"] else None,
-            "last_seen": state["last_seen"].isoformat(),
-            "ip": state["ip"]
-        }
+            "lastSeen": state["last_seen"].isoformat()
+        })
+    
+    # Ordenar por ID para presentación consistente
+    results.sort(key=lambda x: x["id"])
     
     return results
 
 
 @router.get("/hosts")
 async def get_hosts():
-    """Retorna la lista de hosts esperados"""
-    return EXPECTED_HOSTS
+    """
+    Retorna la lista de todos los hosts registrados (activos e inactivos)
+    Compatible con el endpoint anterior pero ahora dinámico
+    """
+    hosts = []
+    for hostname, state in clients_state.items():
+        hosts.append({
+            "id": state["id"],
+            "name": hostname,
+            "ip": state["ip"]
+        })
+    
+    hosts.sort(key=lambda x: x["id"])
+    return hosts
+
+
+@router.get("/stats")
+async def get_stats():
+    """
+    Estadísticas generales del sistema de monitoreo
+    """
+    now = datetime.now()
+    timeout_threshold = timedelta(seconds=60)
+    
+    total = len(clients_state)
+    online_count = 0
+    in_use_count = 0
+    offline_count = 0
+    
+    for state in clients_state.values():
+        time_since_last_seen = now - state["last_seen"]
+        is_alive = time_since_last_seen < timeout_threshold
+        
+        if not is_alive:
+            offline_count += 1
+        elif state["user"]:
+            in_use_count += 1
+        else:
+            online_count += 1
+    
+    return {
+        "total": total,
+        "online": online_count,
+        "inUse": in_use_count,
+        "offline": offline_count
+    }
