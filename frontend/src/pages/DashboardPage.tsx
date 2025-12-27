@@ -6,42 +6,10 @@ import { PCStatusFilter, type FilterStatus } from '@/components/PCStatusFilter'
 import { useCarrera } from '@/contexts/CarreraContext'
 import type { PC } from '@/types'
 
-// COMPUTADORAS FÍSICAS QUE EXISTEN EN EL LABORATORIO
-// Estas SIEMPRE se muestran, sin importar si el backend está corriendo
-const PHYSICAL_PCS: PC[] = [
-  { id: 'pc-01', name: 'PC-LAB-01', ip: '192.168.1.101', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-02', name: 'PC-LAB-02', ip: '192.168.1.102', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-03', name: 'PC-LAB-03', ip: '192.168.1.103', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-04', name: 'PC-LAB-04', ip: '192.168.1.104', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-05', name: 'PC-LAB-05', ip: '192.168.1.105', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-06', name: 'PC-LAB-06', ip: '192.168.1.106', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-07', name: 'PC-LAB-07', ip: '192.168.1.107', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-08', name: 'PC-LAB-08', ip: '192.168.1.108', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-09', name: 'PC-LAB-09', ip: '192.168.1.109', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-10', name: 'PC-LAB-10', ip: '192.168.1.110', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-11', name: 'PC-LAB-11', ip: '192.168.1.111', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-12', name: 'PC-LAB-12', ip: '192.168.1.112', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-13', name: 'PC-LAB-13', ip: '192.168.1.113', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-14', name: 'PC-LAB-14', ip: '192.168.1.114', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-15', name: 'PC-LAB-15', ip: '192.168.1.115', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-16', name: 'PC-LAB-16', ip: '192.168.1.116', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-17', name: 'PC-LAB-17', ip: '192.168.1.117', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-18', name: 'PC-LAB-18', ip: '192.168.1.118', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-19', name: 'PC-LAB-19', ip: '192.168.1.119', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-20', name: 'PC-LAB-20', ip: '192.168.1.120', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-21', name: 'PC-LAB-21', ip: '192.168.1.121', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-22', name: 'PC-LAB-22', ip: '192.168.1.122', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-23', name: 'PC-LAB-23', ip: '192.168.1.123', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-24', name: 'PC-LAB-24', ip: '192.168.1.124', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-25', name: 'PC-LAB-25', ip: '192.168.1.125', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-26', name: 'PC-LAB-26', ip: '192.168.1.126', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-27', name: 'PC-LAB-27', ip: '192.168.1.127', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-  { id: 'pc-28', name: 'PC-LAB-28', ip: '192.168.1.128', status: 'offline', user: null, lastSeen: new Date(0), laboratoryId: 'lab-sistemas' },
-];
-
 export function DashboardPage() {
-  // Inicializar con las computadoras físicas que SIEMPRE existen
-  const [pcs, setPcs] = useState<PC[]>(PHYSICAL_PCS)
+  // Estado dinámico de PCs - se obtiene del backend
+  const [pcs, setPcs] = useState<PC[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const { selectedCarrera } = useCarrera()
 
   // Estado para el panel de detalles de PC
@@ -67,7 +35,7 @@ export function DashboardPage() {
     return pcs.filter(pc => pc.status === statusFilter)
   }, [pcs, statusFilter])
 
-  // Stats - siempre usar el array real de PCs
+  // Stats
   const stats = useMemo(() => {
     return {
       total: pcs.length,
@@ -77,71 +45,102 @@ export function DashboardPage() {
     }
   }, [pcs])
 
-  // Poll server status - SOLO actualiza el estado de las PCs, no las crea/elimina
+  // Fetch dinámico de PCs desde el backend
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL;
     if (!apiUrl) {
-      console.warn('VITE_API_URL no está configurado - PCs se mostrarán como offline');
+      console.error('VITE_API_URL no está configurado');
+      setIsLoading(false);
       return;
     }
 
     const fetchStatus = async () => {
       try {
-        const res = await fetch(`${apiUrl}/api/monitoring/status`);
+        // Usar el nuevo endpoint que devuelve array
+        const res = await fetch(`${apiUrl}/api/status`);
         if (!res.ok) {
-          console.warn('Backend no responde - PCs se mantienen como offline');
+          console.warn('Backend no responde:', res.status);
+          setIsLoading(false);
           return;
         }
-        const data: Record<string, { status: string; user?: string; last_seen: string; ip: string }> = await res.json();
+        
+        const data: Array<{
+          id: string;
+          name: string;
+          ip: string;
+          status: 'online' | 'offline' | 'inUse';
+          user: string | null;
+          lastSeen: string;
+        }> = await res.json();
 
-        // ACTUALIZAR el estado de las PCs físicas que ya existen
-        setPcs(prev =>
-          prev.map(pc => {
-            const statusData = data[pc.name];
-            if (!statusData) {
-              // Si no hay datos del backend, mantener offline
-              return pc;
-            }
+        // Transformar datos del backend al formato del frontend
+        const transformedPCs: PC[] = data.map(pc => ({
+          id: pc.id,
+          name: pc.name,
+          ip: pc.ip,
+          status: pc.status,
+          user: pc.user,
+          lastSeen: new Date(pc.lastSeen),
+          laboratoryId: 'lab-sistemas', // Default laboratory
+        }));
 
-            // Actualizar solo el estado, no crear/eliminar la PC
-            return {
-              ...pc,
-              status: statusData.status as 'online' | 'offline' | 'inUse',
-              user: statusData.user || null,
-              lastSeen: statusData.last_seen ? new Date(statusData.last_seen) : pc.lastSeen,
-            };
-          })
-        );
+        setPcs(transformedPCs);
+        setIsLoading(false);
       } catch (err) {
-        console.warn('Error conectando con backend - PCs se mantienen como offline:', err);
+        console.error('Error conectando con backend:', err);
+        setIsLoading(false);
       }
     };
 
+    // Fetch inicial
     fetchStatus();
-    const id = setInterval(fetchStatus, 5000); // Poll cada 5 segundos
-    return () => clearInterval(id);
+
+    // Polling cada 10 segundos para actualizar el estado
+    const interval = setInterval(fetchStatus, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
     <>
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-tech-text flex items-center gap-2">
-            <Monitor className="h-6 w-6 text-tech-text" />
-            {selectedCarrera?.name || 'Dashboard'}
-          </h2>
-          <p className="text-tech-textDim mt-1">
-            Monitoreo en tiempo real de los clientes Ubuntu
-          </p>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-600 rounded-lg">
+              <Monitor className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+              <p className="text-sm text-gray-400">
+                {selectedCarrera ? selectedCarrera.name : 'Monitoreo en tiempo real de los clientes Ubuntu'}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <PCStatusFilter
-          activeFilter={statusFilter}
-          onFilterChange={setStatusFilter}
-          stats={stats}
-        />
+        {/* Mostrar mensaje si no hay PCs */}
+        {isLoading ? (
+          <div className="text-center py-12 text-gray-400">
+            <Monitor className="w-16 h-16 mx-auto mb-4 opacity-50" />
+            <p className="text-lg">Cargando equipos...</p>
+          </div>
+        ) : pcs.length === 0 ? (
+          <div className="text-center py-12 text-gray-400">
+            <Monitor className="w-16 h-16 mx-auto mb-4 opacity-50" />
+            <p className="text-lg">No hay equipos registrados</p>
+            <p className="text-sm mt-2">Los equipos aparecerán automáticamente cuando envíen su primer heartbeat</p>
+          </div>
+        ) : (
+          <>
+            <PCStatusFilter
+              activeFilter={statusFilter}
+              onFilterChange={setStatusFilter}
+              stats={stats}
+            />
 
-        <PCGrid pcs={filteredPCs} onPCClick={handlePCClick} />
+            <PCGrid pcs={filteredPCs} onPCClick={handlePCClick} />
+          </>
+        )}
       </div>
 
       <PCDetailPanel

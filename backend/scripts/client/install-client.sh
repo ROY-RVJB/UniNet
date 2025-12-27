@@ -115,10 +115,20 @@ chmod +x "$CRON_WRAPPER"
 # Agregar tarea a cron (se ejecuta cada minuto, pero el wrapper lo hace cada 30s)
 CRON_JOB="* * * * * $CRON_WRAPPER >/dev/null 2>&1"
 
+# Configurar crontab para root (ya que el script se ejecuta con sudo)
 # Verificar si ya existe la entrada
-if ! crontab -l 2>/dev/null | grep -q "uninet-agent-runner"; then
-    (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
+CURRENT_CRONTAB=$(crontab -l 2>/dev/null || echo "")
+if ! echo "$CURRENT_CRONTAB" | grep -q "uninet-agent-runner"; then
+    # Agregar la tarea al crontab
+    (echo "$CURRENT_CRONTAB"; echo "$CRON_JOB") | crontab -
     echo -e "${GREEN}✅ Monitoreo automático configurado (heartbeat cada 30 segundos)${NC}"
+    
+    # Verificar que se agregó correctamente
+    if crontab -l 2>/dev/null | grep -q "uninet-agent-runner"; then
+        echo -e "${GREEN}   ✓ Crontab verificado correctamente${NC}"
+    else
+        echo -e "${RED}   ✗ Advertencia: No se pudo verificar el crontab${NC}"
+    fi
 else
     echo -e "${YELLOW}⚠️  Monitoreo automático ya estaba configurado${NC}"
 fi
