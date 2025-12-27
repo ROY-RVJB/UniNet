@@ -3,19 +3,25 @@ import { CarreraListItem } from './CarreraListItem';
 import { useCarrera } from '@/contexts/CarreraContext';
 import { useAuth } from '@/contexts/AuthContext';
 
+// ==========================================
+// CarreraList - Lista scrolleable de carreras
+// ==========================================
+
 interface CarreraListProps {
   carreras: Carrera[];
-  selectedId?: string | null; 
-  onSelect?: (carrera: Carrera) => void; 
+  selectedId: string | null;
+  onSelect: (carrera: Carrera) => void;
 }
 
 export function CarreraList({ carreras, selectedId, onSelect }: CarreraListProps) {
   const { selectedCarrera: carreraActiva } = useCarrera();
   const { user } = useAuth();
+
+  // Docente tiene restricción de carrera
   const isDocente = user?.role === 'docente';
 
   return (
-    <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+    <div className="flex-1 overflow-y-auto p-2 scrollbar-thin">
       <div className="space-y-1">
         {carreras.map((carrera) => {
           // Para docentes: bloquear carreras que no son la activa
@@ -27,7 +33,7 @@ export function CarreraList({ carreras, selectedId, onSelect }: CarreraListProps
               carrera={carrera}
               isSelected={carrera.id === selectedId}
               isLocked={isLocked}
-              onSelect={() => onSelect && onSelect(carrera)}
+              onSelect={() => onSelect(carrera)}
             />
           );
         })}

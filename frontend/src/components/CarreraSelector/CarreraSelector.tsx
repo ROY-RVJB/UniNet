@@ -1,80 +1,99 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import type { Carrera, Faculty } from '@/types';
+import { useCarrera } from '@/contexts/CarreraContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { FacultyFilter } from './FacultyFilter';
 import { CarreraList } from './CarreraList';
-import { CarreraDetail } from './CarreraDetail'; // Asumo que tienes este componente basado en tu imagen
-import type { Carrera } from '@/types'; // O define la interfaz aquí si no la tienes en types
+import { CarreraDetail } from './CarreraDetail';
 
-// Asegúrate de que esta línea empiece con "export function" (NO default)
+// ==========================================
+// CarreraSelector - Layout de dos paneles
+// ==========================================
+
 export function CarreraSelector() {
-  const [carreras, setCarreras] = useState<Carrera[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { availableCarreras, isRestricted, selectedCarrera: contextCarrera, setSelectedCarrera: setContextCarrera } = useCarrera();
+  const { user } = useAuth();
   const [selectedCarrera, setSelectedCarrera] = useState<Carrera | null>(null);
+  const [selectedFaculty, setSelectedFaculty] = useState<Faculty | 'todas'>('todas');
 
+  // Sincronizar con carrera_activa del docente o carrera del contexto
   useEffect(() => {
-    const fetchCarreras = async () => {
-      try {
-        const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
-        const response = await fetch(`${baseUrl}/api/carreras/listar`);
-        
-        if (!response.ok) throw new Error('Error de red');
-        
-        const data = await response.json();
-        setCarreras(data);
-        
-        // Opcional: Seleccionar la primera carrera automáticamente al cargar
-        if (data.length > 0) {
-           setSelectedCarrera(data[0]);
-        }
-      } catch (error) {
-        console.error("Error cargando carreras:", error);
-      } finally {
-        setLoading(false);
+    // Si es docente con carrera_activa, buscar esa carrera
+    if (user?.role === 'docente' && user.carrera_activa) {
+      const carreraActiva = availableCarreras.find(c => c.id === user.carrera_activa?.id);
+      if (carreraActiva) {
+        setSelectedCarrera(carreraActiva);
+        setContextCarrera(carreraActiva);
+        return;
       }
-    };
+    }
 
-    fetchCarreras();
-  }, []);
+    // Si hay carrera en el contexto, usarla
+    if (contextCarrera) {
+      setSelectedCarrera(contextCarrera);
+      return;
+    }
 
-  if (loading) return <div className="p-10 text-center text-gray-400">Cargando sistema...</div>;
+    // Fallback: primera carrera disponible
+    if (availableCarreras.length > 0 && !selectedCarrera) {
+      setSelectedCarrera(availableCarreras[0]);
+    }
+  }, [availableCarreras, user?.carrera_activa, contextCarrera]);
+
+  // Filtrar carreras por facultad (solo aplica si no está restringido)
+  const filteredCarreras = useMemo(() => {
+    if (isRestricted) {
+      // Docente: solo ve su carrera, ignorar filtro de facultad
+      return availableCarreras;
+    }
+    if (selectedFaculty === 'todas') {
+      return availableCarreras;
+    }
+    return availableCarreras.filter((c) => c.faculty === selectedFaculty);
+  }, [selectedFaculty, availableCarreras, isRestricted]);
+
+  // Total de carreras para el contador
+  const totalCarreras = filteredCarreras.length;
 
   return (
-    // CONTENEDOR PRINCIPAL: Divide la pantalla en 2 paneles
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden">
-      
-      {/* 🟢 PANEL IZQUIERDO (SIDEBAR) */}
-      <div className="w-80 flex flex-col border-r border-white/10 bg-black/20">
-        
-        {/* Header del Sidebar */}
-        <div className="p-4 border-b border-white/5">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-            Nodos (LDAP)
-          </h2>
-          {/* Aquí podrías poner tus filtros (Todas, Ingeniería, etc.) si los tienes */}
-          <div className="flex gap-2">
-             <span className="text-xs bg-white/10 px-2 py-1 rounded text-white">Todas</span>
+    <div className="bg-black">
+      {/* Layout de dos columnas con altura fija */}
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 h-[calc(100vh-180px)]">
+        {/* Panel Izquierdo - Lista con scroll propio */}
+        <div className="flex flex-col bg-black border border-border rounded-lg overflow-hidden min-h-0">
+          {/* Header del panel - fijo */}
+          <div className="flex-shrink-0 p-4 border-b border-border">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-semibold text-subtle uppercase tracking-wider">
+                {isRestricted ? 'Tu Carrera Asignada' : 'Nodos de Infraestructura'}
+              </h2>
+              {!isRestricted && (
+                <span className="text-xs text-subtle">
+                  {totalCarreras} Unidades
+                </span>
+              )}
+            </div>
+            {/* Filtros por facultad - solo para admin */}
+            {!isRestricted && (
+              <FacultyFilter
+                selected={selectedFaculty}
+                onSelect={setSelectedFaculty}
+              />
+            )}
           </div>
-        </div>
-
-        {/* Lista Scrollable */}
-        <div className="flex-1 overflow-hidden">
-          <CarreraList 
-            carreras={carreras} 
-            selectedId={selectedCarrera?.id}
+          {/* Lista de carreras - scrolleable */}
+          <CarreraList
+            carreras={filteredCarreras}
+            selectedId={selectedCarrera?.id ?? null}
             onSelect={setSelectedCarrera}
           />
         </div>
-      </div>
 
-      {/* 🔵 PANEL DERECHO (DETALLES) */}
-      <div className="flex-1 overflow-y-auto bg-black/40 p-6">
-        {selectedCarrera ? (
+        {/* Panel Derecho - Detalle con scroll propio */}
+        <div className="min-h-0 overflow-hidden">
           <CarreraDetail carrera={selectedCarrera} />
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            Selecciona una carrera para ver detalles
-          </div>
-        )}
+        </div>
       </div>
-      
     </div>
   );
 }
