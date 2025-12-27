@@ -25,7 +25,7 @@ export function CarreraList({ carreras, selectedId, onSelect }: CarreraListProps
       <div className="space-y-1">
         {carreras.map((carrera) => {
           // Para docentes: bloquear carreras que no son la activa
-          const isLocked = isDocente && carreraActiva && carrera.id !== carreraActiva.id;
+          const isLocked = !!(isDocente && carreraActiva && carrera.id !== carreraActiva.id);
 
           return (
             <CarreraListItem

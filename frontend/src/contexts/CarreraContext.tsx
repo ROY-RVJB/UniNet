@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 // ==========================================
 
 const SELECTED_CARRERA_KEY = 'uninet_selected_carrera';
+const ALL_CARRERAS_VALUE = 'ALL'; // Valor especial para "Todas las Carreras"
 
 interface CarreraContextType {
   carreras: Carrera[];              // Todas las carreras (para admin)
@@ -19,6 +20,7 @@ interface CarreraContextType {
   isHome: boolean;
   userCarreras: Carrera[];          // Carreras del docente (vacío para admin)
   isRestricted: boolean;            // true si el usuario tiene restricción de carrera
+  isCarreraReady: boolean;          // true cuando la carrera ha sido inicializada
 }
 
 const CarreraContext = createContext<CarreraContextType | undefined>(undefined);
@@ -28,53 +30,79 @@ interface CarreraProviderProps {
 }
 
 export function CarreraProvider({ children }: CarreraProviderProps) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [carreras] = useState<Carrera[]>(mockCarreras);
   const [selectedCarrera, setSelectedCarreraState] = useState<Carrera | null>(null);
+  const [isCarreraReady, setIsCarreraReady] = useState(false);
 
   // Cargar carrera seleccionada de localStorage al inicio
+  // Esperar a que Auth termine de cargar antes de inicializar
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const saved = localStorage.getItem(SELECTED_CARRERA_KEY);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          const found = carreras.find(c => c.id === parsed.id);
-          if (found) {
-            setSelectedCarreraState(found);
-            return;
-          }
-        } catch {
-          // Ignorar errores de parsing
-        }
+    // No hacer nada mientras auth está cargando
+    if (isAuthLoading) {
+      return;
+    }
+
+    // Si no está autenticado, marcar como listo (sin carrera)
+    if (!isAuthenticated || !user) {
+      setIsCarreraReady(true);
+      return;
+    }
+
+    // Usuario autenticado - cargar carrera
+    const saved = localStorage.getItem(SELECTED_CARRERA_KEY);
+
+    if (saved) {
+      // Caso especial: "Todas las Carreras" guardado como "ALL"
+      if (saved === ALL_CARRERAS_VALUE) {
+        // Admin eligió "Todas las Carreras" - mantener null
+        setSelectedCarreraState(null);
+        setIsCarreraReady(true);
+        return;
       }
 
-      // Si no hay carrera guardada, auto-seleccionar para admin
-      // o la primera carrera disponible para docente
-      if (user.role === 'admin') {
-        // Admin: seleccionar la primera carrera por defecto
-        if (carreras.length > 0) {
-          setSelectedCarreraState(carreras[0]);
-          localStorage.setItem(SELECTED_CARRERA_KEY, JSON.stringify(carreras[0]));
-        }
-      } else if (user.role === 'docente' && user.carrera_activa) {
-        // Docente: usar su carrera activa
-        const found = carreras.find(c => c.id === user.carrera_activa?.id);
+      try {
+        const parsed = JSON.parse(saved);
+        const found = carreras.find(c => c.id === parsed.id);
         if (found) {
           setSelectedCarreraState(found);
-          localStorage.setItem(SELECTED_CARRERA_KEY, JSON.stringify(found));
+          setIsCarreraReady(true);
+          return;
         }
+      } catch {
+        // Ignorar errores de parsing
       }
     }
-  }, [isAuthenticated, user, carreras]);
 
-  // Limpiar al hacer logout
+    // Si no hay carrera guardada (primera vez), auto-seleccionar
+    if (user.role === 'admin') {
+      // Admin primera vez: seleccionar la primera carrera por defecto
+      if (carreras.length > 0) {
+        setSelectedCarreraState(carreras[0]);
+        localStorage.setItem(SELECTED_CARRERA_KEY, JSON.stringify(carreras[0]));
+      }
+    } else if (user.role === 'docente' && user.carrera_activa) {
+      // Docente: usar su carrera activa
+      const found = carreras.find(c => c.id === user.carrera_activa?.id);
+      if (found) {
+        setSelectedCarreraState(found);
+        localStorage.setItem(SELECTED_CARRERA_KEY, JSON.stringify(found));
+      }
+    }
+
+    // Marcar como listo después de inicializar
+    setIsCarreraReady(true);
+  }, [isAuthLoading, isAuthenticated, user, carreras]);
+
+  // Limpiar al hacer logout (NO al refrescar)
+  // Solo borrar cuando auth terminó de cargar Y no está autenticado
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthLoading && !isAuthenticated) {
       setSelectedCarreraState(null);
+      setIsCarreraReady(false);
       localStorage.removeItem(SELECTED_CARRERA_KEY);
     }
-  }, [isAuthenticated]);
+  }, [isAuthLoading, isAuthenticated]);
 
   // Función para cambiar carrera (guarda en localStorage)
   const setSelectedCarrera = (carrera: Carrera | null) => {
@@ -82,7 +110,9 @@ export function CarreraProvider({ children }: CarreraProviderProps) {
     if (carrera) {
       localStorage.setItem(SELECTED_CARRERA_KEY, JSON.stringify(carrera));
     } else {
-      localStorage.removeItem(SELECTED_CARRERA_KEY);
+      // Guardar "ALL" para representar "Todas las Carreras"
+      // Así al refrescar se mantiene la selección
+      localStorage.setItem(SELECTED_CARRERA_KEY, ALL_CARRERAS_VALUE);
     }
   };
 
@@ -128,6 +158,7 @@ export function CarreraProvider({ children }: CarreraProviderProps) {
         isHome,
         userCarreras,
         isRestricted,
+        isCarreraReady,
       }}
     >
       {children}

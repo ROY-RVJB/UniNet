@@ -14,8 +14,8 @@ import { useToast } from '@/contexts/ToastContext'
 export interface DocenteSistema {
   id: string
   username: string
-  full_name: string
-  email: string
+  full_name: string | null
+  email: string | null
   carreras: { id: string; nombre: string }[]
   created_at: string
   active: boolean
@@ -160,8 +160,8 @@ export function DocentesTable({ docentes, onRefresh, onCreate, onDelete }: Docen
     const query = searchQuery.toLowerCase()
     return docentes.filter(docente =>
       docente.username.toLowerCase().includes(query) ||
-      docente.full_name.toLowerCase().includes(query) ||
-      docente.email.toLowerCase().includes(query) ||
+      (docente.full_name?.toLowerCase().includes(query) ?? false) ||
+      (docente.email?.toLowerCase().includes(query) ?? false) ||
       docente.carreras.some(c => c.nombre.toLowerCase().includes(query))
     )
   }, [docentes, searchQuery])

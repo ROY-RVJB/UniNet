@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { UserTable } from '@/components/UserTable'
-import { DocentesTable } from '@/components/DocentesTable'
+import { DocentesTable, type DocenteSistema, type DocenteFormData } from '@/components/DocentesTable'
 import { useAuth } from '@/contexts/AuthContext'
+import { useCarrera } from '@/contexts/CarreraContext'
 import type { LDAPUser } from '@/types'
 
 // ==========================================
@@ -10,35 +11,24 @@ import type { LDAPUser } from '@/types'
 // - Docentes del Sistema (solo admin)
 // ==========================================
 
-interface Docente {
-  id: string
-  username: string
-  full_name: string | null
-  email: string | null
-  carreras: Array<{ id: string; nombre: string }>
-  created_at: string
-  active: boolean
-}
-
-interface DocenteFormData {
-  username: string
-  full_name: string
-  email: string
-  password: string
-  carreras: string[]
-}
-
 export function UsersPage() {
   const [users, setUsers] = useState<LDAPUser[]>([])
-  const [docentes, setDocentes] = useState<Docente[]>([])
+  const [docentes, setDocentes] = useState<DocenteSistema[]>([])
   const { user } = useAuth()
+  const { selectedCarrera, isCarreraReady } = useCarrera()
 
   const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000"
 
-  // Fetch usuarios LDAP
+  // Fetch usuarios LDAP (filtrado por carrera si hay una seleccionada)
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${apiUrl}/api/users/list`)
+      // Construir URL con filtro de carrera si aplica
+      let url = `${apiUrl}/api/users/list`
+      if (selectedCarrera?.id) {
+        url += `?carrera=${selectedCarrera.id}`
+      }
+
+      const res = await fetch(url)
       if (!res.ok) {
         console.error('Error fetching users:', res.statusText)
         return
@@ -111,12 +101,17 @@ export function UsersPage() {
   }
 
   useEffect(() => {
+    // Esperar a que la carrera esté inicializada antes de hacer fetch
+    if (!isCarreraReady) {
+      return;
+    }
+
     fetchUsers()
     // Solo cargar docentes si es admin
     if (user?.role === 'admin') {
       fetchDocentes()
     }
-  }, [user?.role])
+  }, [user?.role, selectedCarrera?.id, isCarreraReady]) // Re-fetch cuando cambie la carrera
 
   return (
     <div className="space-y-12">

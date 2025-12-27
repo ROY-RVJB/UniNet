@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Bell, User, ChevronDown, LogOut } from 'lucide-react';
-import { useCarrera } from '@/contexts/CarreraContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { CarreraSelectorDropdown } from './CarreraSelectorDropdown';
 import { UniNetLogo } from './UniNetLogo';
@@ -24,7 +23,6 @@ const navTabs: { id: string; label: string; path: string; roles: UserRole[] }[] 
 export function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isHome } = useCarrera();
   const { user, logout } = useAuth();
   const [isBrandHovered, setIsBrandHovered] = useState(false);
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');

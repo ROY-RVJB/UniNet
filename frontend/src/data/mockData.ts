@@ -1,4 +1,4 @@
-import type { PC, LogEntry, LDAPUser, Carrera } from '@/types';
+import type { PC, LogEntry, Carrera } from '@/types';
 
 // ==========================================
 // DATOS MOCK - PCs
@@ -330,193 +330,6 @@ export const mockLogs: LogEntry[] = [
   },
 ];
 
-/**
- * Usuarios LDAP (simulados)
- */
-export const mockUsers: LDAPUser[] = [
-  // ========== LAB SISTEMAS ==========
-  {
-    username: 'juan.perez',
-    full_name: 'Juan Perez',
-    email: 'juan.p@uni.edu',
-    dn: 'uid=juan.perez,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-sistemas',
-    group: 'alumnos',
-    carrera: 'Sistemas',
-    status: 'active',
-  },
-  {
-    username: 'maria.garcia',
-    full_name: 'Maria Garcia',
-    email: 'm.garcia@uni.edu',
-    dn: 'uid=maria.garcia,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-sistemas',
-    group: 'docentes',
-    carrera: 'Sistemas',
-    status: 'active',
-  },
-  {
-    username: 'carlos.ruiz',
-    full_name: 'Carlos Ruiz',
-    email: 'c.ruiz@uni.edu',
-    dn: 'uid=carlos.ruiz,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-sistemas',
-    group: 'alumnos',
-    carrera: 'Sistemas',
-    status: 'active',
-  },
-
-  // ========== LAB REDES ==========
-  {
-    username: 'luis.network',
-    full_name: 'Luis Martinez',
-    email: 'luis.m@uni.edu',
-    dn: 'uid=luis.network,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-redes',
-    group: 'alumnos',
-    carrera: 'Telecomunicaciones',
-    status: 'active',
-  },
-  {
-    username: 'cisco.master',
-    full_name: 'Roberto Cisco',
-    email: 'r.cisco@uni.edu',
-    dn: 'uid=cisco.master,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-redes',
-    group: 'docentes',
-    carrera: 'Redes',
-    status: 'active',
-  },
-  {
-    username: 'andrea.lan',
-    full_name: 'Andrea Sanchez',
-    email: 'a.sanchez@uni.edu',
-    dn: 'uid=andrea.lan,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-redes',
-    group: 'alumnos',
-    carrera: 'Telecomunicaciones',
-    status: 'active',
-  },
-
-  // ========== LAB DISEÑO ==========
-  {
-    username: 'pablo.art',
-    full_name: 'Pablo Picasso Jr',
-    email: 'pablo.p@uni.edu',
-    dn: 'uid=pablo.art,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-diseno',
-    group: 'alumnos',
-    carrera: 'Diseño Gráfico',
-    status: 'active',
-  },
-  {
-    username: 'sofia.design',
-    full_name: 'Sofia Creative',
-    email: 's.creative@uni.edu',
-    dn: 'uid=sofia.design,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-diseno',
-    group: 'docentes',
-    carrera: 'Diseño',
-    status: 'active',
-  },
-  {
-    username: 'miguel.ux',
-    full_name: 'Miguel Torres',
-    email: 'm.torres@uni.edu',
-    dn: 'uid=miguel.ux,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-diseno',
-    group: 'alumnos',
-    carrera: 'Diseño UX',
-    status: 'active',
-  },
-
-  // ========== LAB FINANZAS ==========
-  {
-    username: 'warren.buff',
-    full_name: 'Warren Rodriguez',
-    email: 'w.rodriguez@uni.edu',
-    dn: 'uid=warren.buff,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-finanzas',
-    group: 'alumnos',
-    carrera: 'Finanzas',
-    status: 'active',
-  },
-  {
-    username: 'goldman.prof',
-    full_name: 'Dr. Goldman',
-    email: 'goldman@uni.edu',
-    dn: 'uid=goldman.prof,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-finanzas',
-    group: 'docentes',
-    carrera: 'Economía',
-    status: 'active',
-  },
-
-  // ========== LAB DESARROLLO ==========
-  {
-    username: 'dev.master',
-    full_name: 'Diego Developer',
-    email: 'd.dev@uni.edu',
-    dn: 'uid=dev.master,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-desarrollo',
-    group: 'alumnos',
-    carrera: 'Ingeniería Software',
-    status: 'active',
-  },
-  {
-    username: 'fullstack.pro',
-    full_name: 'Prof. Fullstack',
-    email: 'fullstack@uni.edu',
-    dn: 'uid=fullstack.pro,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-desarrollo',
-    group: 'docentes',
-    carrera: 'Desarrollo Web',
-    status: 'active',
-  },
-  {
-    username: 'react.ninja',
-    full_name: 'Ricardo React',
-    email: 'r.react@uni.edu',
-    dn: 'uid=react.ninja,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-desarrollo',
-    group: 'alumnos',
-    carrera: 'Frontend',
-    status: 'active',
-  },
-
-  // ========== LAB CIENCIAS ==========
-  {
-    username: 'einstein.jr',
-    full_name: 'Alberto Fisica',
-    email: 'a.fisica@uni.edu',
-    dn: 'uid=einstein.jr,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-ciencias',
-    group: 'alumnos',
-    carrera: 'Física',
-    status: 'active',
-  },
-  {
-    username: 'dr.quantum',
-    full_name: 'Dr. Quantum',
-    email: 'quantum@uni.edu',
-    dn: 'uid=dr.quantum,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-ciencias',
-    group: 'docentes',
-    carrera: 'Física Cuántica',
-    status: 'active',
-  },
-  {
-    username: 'marie.chem',
-    full_name: 'Marie Curie Jr',
-    email: 'm.curie@uni.edu',
-    dn: 'uid=marie.chem,ou=users,dc=uninet,dc=com',
-    laboratoryId: 'lab-ciencias',
-    group: 'alumnos',
-    carrera: 'Química',
-    status: 'active',
-  },
-];
-
 // ==========================================
 // DATOS MOCK - Carreras (Nodos de Infraestructura)
 // ==========================================
@@ -526,66 +339,9 @@ export const mockUsers: LDAPUser[] = [
  * Basado en las 12 carreras del documento TASK_LDAP-USUARIOS.md
  */
 export const mockCarreras: Carrera[] = [
-  // ========== INGENIERÍA ==========
+  // ========== CIENCIAS ECONÓMICAS ==========
   {
-    id: 'carrera-sistemas',
-    name: 'Ingeniería de Sistemas e Informática',
-    faculty: 'ingenieria',
-    icon: 'Monitor',
-    pcsCount: 45,
-    usersCount: 320,
-    status: 'online',
-    nodeId: 'NODE-ISI-01',
-    lastSync: new Date(Date.now() - 120000), // hace 2 min
-  },
-  {
-    id: 'carrera-agroindustrial',
-    name: 'Ingeniería Agroindustrial',
-    faculty: 'ingenieria',
-    icon: 'Factory',
-    pcsCount: 20,
-    usersCount: 145,
-    status: 'online',
-    nodeId: 'NODE-AGR-01',
-    lastSync: new Date(Date.now() - 180000),
-  },
-  {
-    id: 'carrera-forestal',
-    name: 'Ingeniería Forestal y Medio Ambiente',
-    faculty: 'ingenieria',
-    icon: 'TreePine',
-    pcsCount: 18,
-    usersCount: 98,
-    status: 'partial',
-    nodeId: 'NODE-FOR-01',
-    lastSync: new Date(Date.now() - 300000),
-  },
-
-  // ========== CIENCIAS ==========
-  {
-    id: 'carrera-matematicas',
-    name: 'Educación Matemáticas y Computación',
-    faculty: 'ciencias',
-    icon: 'Calculator',
-    pcsCount: 25,
-    usersCount: 156,
-    status: 'online',
-    nodeId: 'NODE-MAT-01',
-    lastSync: new Date(Date.now() - 90000),
-  },
-  {
-    id: 'carrera-contabilidad',
-    name: 'Contabilidad y Finanzas',
-    faculty: 'ciencias',
-    icon: 'Receipt',
-    pcsCount: 30,
-    usersCount: 280,
-    status: 'online',
-    nodeId: 'NODE-CON-01',
-    lastSync: new Date(Date.now() - 60000),
-  },
-  {
-    id: 'carrera-administracion',
+    id: '5001',  // Código LDAP: departmentNumber
     name: 'Administración y Negocios Internacionales',
     faculty: 'ciencias',
     icon: 'Briefcase',
@@ -596,7 +352,18 @@ export const mockCarreras: Carrera[] = [
     lastSync: new Date(Date.now() - 150000),
   },
   {
-    id: 'carrera-derecho',
+    id: '5002',
+    name: 'Contabilidad y Finanzas',
+    faculty: 'ciencias',
+    icon: 'Receipt',
+    pcsCount: 30,
+    usersCount: 280,
+    status: 'online',
+    nodeId: 'NODE-CON-01',
+    lastSync: new Date(Date.now() - 60000),
+  },
+  {
+    id: '5003',
     name: 'Derecho y Ciencias Políticas',
     faculty: 'ciencias',
     icon: 'Scale',
@@ -606,10 +373,56 @@ export const mockCarreras: Carrera[] = [
     nodeId: 'NODE-DER-01',
     lastSync: new Date(Date.now() - 240000),
   },
+  {
+    id: '5004',
+    name: 'Ecoturismo',
+    faculty: 'artes',
+    icon: 'Mountain',
+    pcsCount: 8,
+    usersCount: 67,
+    status: 'offline',
+    nodeId: 'NODE-ECO-01',
+    lastSync: new Date(Date.now() - 3600000),
+  },
+
+  // ========== EDUCACIÓN (3 carreras) ==========
+  {
+    id: '5005',
+    name: 'Educación Inicial y Especial',
+    faculty: 'educacion',
+    icon: 'Baby',
+    pcsCount: 18,
+    usersCount: 156,
+    status: 'online',
+    nodeId: 'NODE-EDU-01',
+    lastSync: new Date(Date.now() - 120000),
+  },
+  {
+    id: '5006',
+    name: 'Educación Matemáticas y Computación',
+    faculty: 'educacion',
+    icon: 'Calculator',
+    pcsCount: 22,
+    usersCount: 134,
+    status: 'online',
+    nodeId: 'NODE-EDU-02',
+    lastSync: new Date(Date.now() - 150000),
+  },
+  {
+    id: '5007',
+    name: 'Educación Primaria e Informática',
+    faculty: 'educacion',
+    icon: 'GraduationCap',
+    pcsCount: 20,
+    usersCount: 178,
+    status: 'online',
+    nodeId: 'NODE-EDU-03',
+    lastSync: new Date(Date.now() - 180000),
+  },
 
   // ========== SALUD ==========
   {
-    id: 'carrera-enfermeria',
+    id: '5008',
     name: 'Enfermería',
     faculty: 'salud',
     icon: 'Heart',
@@ -619,8 +432,45 @@ export const mockCarreras: Carrera[] = [
     nodeId: 'NODE-ENF-01',
     lastSync: new Date(Date.now() - 200000),
   },
+
+  // ========== INGENIERÍA ==========
   {
-    id: 'carrera-veterinaria',
+    id: '5009',
+    name: 'Ingeniería Agroindustrial',
+    faculty: 'ingenieria',
+    icon: 'Factory',
+    pcsCount: 20,
+    usersCount: 145,
+    status: 'online',
+    nodeId: 'NODE-AGR-01',
+    lastSync: new Date(Date.now() - 180000),
+  },
+  {
+    id: '5010',
+    name: 'Ingeniería de Sistemas e Informática',
+    faculty: 'ingenieria',
+    icon: 'Monitor',
+    pcsCount: 45,
+    usersCount: 320,
+    status: 'online',
+    nodeId: 'NODE-ISI-01',
+    lastSync: new Date(Date.now() - 120000),
+  },
+  {
+    id: '5011',
+    name: 'Ingeniería Forestal y Medio Ambiente',
+    faculty: 'ingenieria',
+    icon: 'TreePine',
+    pcsCount: 18,
+    usersCount: 98,
+    status: 'partial',
+    nodeId: 'NODE-FOR-01',
+    lastSync: new Date(Date.now() - 300000),
+  },
+
+  // ========== SALUD ==========
+  {
+    id: '5012',
     name: 'Medicina Veterinaria y Zootecnia',
     faculty: 'salud',
     icon: 'Stethoscope',
@@ -630,41 +480,6 @@ export const mockCarreras: Carrera[] = [
     nodeId: 'NODE-VET-01',
     lastSync: new Date(Date.now() - 600000),
   },
-
-  // ========== ARTES / EDUCACIÓN ==========
-  {
-    id: 'carrera-inicial',
-    name: 'Educación Inicial y Especial',
-    faculty: 'artes',
-    icon: 'Baby',
-    pcsCount: 10,
-    usersCount: 125,
-    status: 'online',
-    nodeId: 'NODE-EDI-01',
-    lastSync: new Date(Date.now() - 180000),
-  },
-  {
-    id: 'carrera-primaria',
-    name: 'Educación Primaria e Informática',
-    faculty: 'artes',
-    icon: 'GraduationCap',
-    pcsCount: 14,
-    usersCount: 142,
-    status: 'online',
-    nodeId: 'NODE-PRI-01',
-    lastSync: new Date(Date.now() - 120000),
-  },
-  {
-    id: 'carrera-ecoturismo',
-    name: 'Ecoturismo',
-    faculty: 'artes',
-    icon: 'Mountain',
-    pcsCount: 8,
-    usersCount: 67,
-    status: 'offline',
-    nodeId: 'NODE-ECO-01',
-    lastSync: new Date(Date.now() - 3600000), // hace 1 hora
-  },
 ];
 
 /**
@@ -672,9 +487,10 @@ export const mockCarreras: Carrera[] = [
  */
 export const FACULTY_COLORS: Record<string, string> = {
   ingenieria: '#0070f3',  // Azul Vercel
-  artes: '#ec4899',       // Rosa/Magenta
+  educacion: '#f59e0b',   // Amber/Naranja
   ciencias: '#06b6d4',    // Cyan
   salud: '#10b981',       // Verde
+  artes: '#ec4899',       // Rosa/Magenta
 };
 
 /**
@@ -682,7 +498,8 @@ export const FACULTY_COLORS: Record<string, string> = {
  */
 export const FACULTY_LABELS: Record<string, string> = {
   ingenieria: 'Ingeniería',
-  artes: 'Artes',
+  educacion: 'Educación',
   ciencias: 'Ciencias',
   salud: 'Salud',
+  artes: 'Artes',
 };

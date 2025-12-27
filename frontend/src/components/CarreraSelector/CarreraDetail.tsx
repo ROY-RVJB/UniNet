@@ -63,7 +63,7 @@ export function CarreraDetail({ carrera }: CarreraDetailProps) {
 
   // Docente solo puede gestionar su carrera activa (la que seleccionó al iniciar sesión)
   const isDocente = user?.role === 'docente';
-  const isLocked = isDocente && carreraActiva && carrera?.id !== carreraActiva.id;
+  const isLocked = !!(isDocente && carreraActiva && carrera?.id !== carreraActiva.id);
 
   const handleGestionarDashboard = () => {
     if (carrera && !isLocked) {

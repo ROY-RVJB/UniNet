@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown, Check, Lock } from 'lucide-react';
 import { useCarrera } from '@/contexts/CarreraContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +20,7 @@ const statusColors: Record<string, string> = {
 
 export function CarreraSelectorDropdown() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { availableCarreras, selectedCarrera, setSelectedCarrera} = useCarrera();
   const [isOpen, setIsOpen] = useState(false);
@@ -27,6 +28,7 @@ export function CarreraSelectorDropdown() {
 
   // Docente tiene restricción de carrera
   const isDocente = user?.role === 'docente';
+  const isAdmin = user?.role === 'admin';
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -55,8 +57,19 @@ export function CarreraSelectorDropdown() {
       }
       navigate('/');
     } else {
-      // Selecciona una carrera -> ir al Dashboard
+      // Selecciona una carrera
       setSelectedCarrera(carrera);
+
+      // Admin: solo navegar si está en Home, sino quedarse en la página actual
+      // Docente: siempre navegar al dashboard
+      const isOnMainPage = ['/dashboard', '/users', '/network', '/logs'].includes(location.pathname);
+
+      if (isAdmin && isOnMainPage) {
+        // Admin ya está en una página válida, no navegar (solo cambiar filtro)
+        return;
+      }
+
+      // En cualquier otro caso, ir al dashboard
       navigate('/dashboard');
     }
   };

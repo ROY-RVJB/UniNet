@@ -23,20 +23,20 @@ interface FormErrors {
   carreras?: string
 }
 
-// Lista de carreras disponibles
+// Lista de carreras disponibles (IDs LDAP oficiales UNAMAD)
 const CARRERAS_DISPONIBLES = [
-  { id: "carrera-administracion", nombre: "Administración y Negocios Internacionales" },
-  { id: "carrera-contabilidad", nombre: "Contabilidad y Finanzas" },
-  { id: "carrera-derecho", nombre: "Derecho y Ciencias Políticas" },
-  { id: "carrera-ecoturismo", nombre: "Ecoturismo" },
-  { id: "carrera-inicial", nombre: "Educación Inicial y Especial" },
-  { id: "carrera-matematicas", nombre: "Educación Matemáticas y Computación" },
-  { id: "carrera-primaria", nombre: "Educación Primaria e Informática" },
-  { id: "carrera-enfermeria", nombre: "Enfermería" },
-  { id: "carrera-agroindustrial", nombre: "Ingeniería Agroindustrial" },
-  { id: "carrera-sistemas", nombre: "Ingeniería de Sistemas e Informática" },
-  { id: "carrera-forestal", nombre: "Ingeniería Forestal y Medio Ambiente" },
-  { id: "carrera-veterinaria", nombre: "Medicina Veterinaria y Zootecnia" },
+  { id: "5001", nombre: "Administración y Negocios Internacionales" },
+  { id: "5002", nombre: "Contabilidad y Finanzas" },
+  { id: "5003", nombre: "Derecho y Ciencias Políticas" },
+  { id: "5004", nombre: "Ecoturismo" },
+  { id: "5005", nombre: "Educación" },
+  { id: "5006", nombre: "Enfermería" },
+  { id: "5007", nombre: "Ingeniería Agroindustrial" },
+  { id: "5008", nombre: "Ingeniería Ambiental" },
+  { id: "5009", nombre: "Ingeniería Forestal y Medio Ambiente" },
+  { id: "5010", nombre: "Ingeniería de Sistemas e Informática" },
+  { id: "5011", nombre: "Medicina Veterinaria y Zootecnia" },
+  { id: "5012", nombre: "Obstetricia" },
 ]
 
 // Input minimalista

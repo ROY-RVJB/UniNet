@@ -7,6 +7,7 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import type { UserFormData } from '@/components/CreateUserModal';
 import type { EditUserFormData } from '@/components/EditUserModal';
 import { useToast } from '@/contexts/ToastContext';
+import { useCarrera } from '@/contexts/CarreraContext';
 import { cn } from '@/lib/utils';
 
 // ==========================================
@@ -21,6 +22,12 @@ function getInitials(name: string): string {
     .join('')
     .toUpperCase()
     .slice(0, 2);
+}
+
+// Construir nombre completo desde campos separados
+function getFullName(user: LDAPUser): string {
+  const parts = [user.nombres, user.apellido_paterno, user.apellido_materno].filter(Boolean);
+  return parts.length > 0 ? parts.join(' ') : '';
 }
 
 // Generar color consistente basado en string
@@ -46,6 +53,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [userToDelete, setUserToDelete] = useState<LDAPUser | null>(null);
   const { showToast, hideToast } = useToast();
+  const { selectedCarrera } = useCarrera();
 
   // Filtrar usuarios por búsqueda
   const filteredUsers = useMemo(() => {
@@ -288,9 +296,9 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                         {/* Avatar con iniciales */}
                         <div className={cn(
                           'w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white/70',
-                          getAvatarColor(user.full_name || user.username)
+                          getAvatarColor(getFullName(user) || user.username)
                         )}>
-                          {getInitials(user.full_name || user.username)}
+                          {getInitials(getFullName(user) || user.username)}
                         </div>
                         {/* Username mono */}
                         <span className="font-mono text-sm text-white">
@@ -302,7 +310,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
                     {/* Nombre Completo */}
                     <td className="px-4 py-4">
                       <span className="text-sm text-white/70">
-                        {user.full_name || '—'}
+                        {getFullName(user) || '—'}
                       </span>
                     </td>
 
@@ -345,6 +353,7 @@ export function UserTable({ users, onRefresh }: UserTableProps) {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateUser}
+        defaultCarrera={selectedCarrera?.id}
       />
 
       {/* Modal Editar Usuario */}

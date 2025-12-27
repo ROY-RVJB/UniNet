@@ -68,7 +68,7 @@ export interface LDAPUser {
 /**
  * Facultades disponibles
  */
-export type Faculty = 'ingenieria' | 'artes' | 'ciencias' | 'salud';
+export type Faculty = 'ingenieria' | 'educacion' | 'ciencias' | 'salud' | 'artes';
 
 /**
  * Estado de una carrera/nodo

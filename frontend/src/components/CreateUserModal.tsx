@@ -6,6 +6,7 @@ interface CreateUserModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (userData: UserFormData) => Promise<void>
+  defaultCarrera?: string // ID de carrera pre-seleccionada
 }
 
 export interface UserFormData {
@@ -39,6 +40,7 @@ interface FormErrors {
 // CreateUserModal - Estilo Minimalista Vercel
 // ==========================================
 
+// 12 carreras oficiales UNAMAD (IDs LDAP: departmentNumber)
 const CARRERA_OPTIONS = [
   { value: "5001", label: "Administración y Negocios Internacionales" },
   { value: "5002", label: "Contabilidad y Finanzas" },
@@ -75,14 +77,13 @@ function normalizeText(text: string): string {
  */
 function generateUsername(
   nombres: string,
-  apellidoPaterno: string,
-  codigo?: string
+  apellidoPaterno: string
 ): string {
   if (!nombres.trim() || !apellidoPaterno.trim()) return ""
-  
+
   const nombre = normalizeText(nombres.split(' ')[0]) // Primer nombre
   const paterno = normalizeText(apellidoPaterno)
-  
+
   return `${nombre}.${paterno}`
 }
 
@@ -432,7 +433,7 @@ function CommandSelect({
   )
 }
 
-export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalProps) {
+export function CreateUserModal({ isOpen, onClose, onSubmit, defaultCarrera }: CreateUserModalProps) {
   const [formData, setFormData] = React.useState<UserFormData>({
     codigo: "",
     nombres: "",
@@ -443,7 +444,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
     dni: "",
     password: "",
     confirmPassword: "",
-    carrera: "",
+    carrera: defaultCarrera || "",
   })
   const [errors, setErrors] = React.useState<FormErrors>({})
   const [isLoading, setIsLoading] = React.useState(false)
@@ -461,7 +462,14 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
 
   // Reset form when modal opens/closes
   React.useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      // Al abrir: pre-llenar carrera si hay una seleccionada
+      setFormData(prev => ({
+        ...prev,
+        carrera: defaultCarrera || "",
+      }))
+    } else {
+      // Al cerrar: limpiar todo
       setFormData({
         codigo: "",
         nombres: "",
@@ -480,7 +488,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
       setUsernameStatus({ checking: false, available: null, usedCode: false })
       setUsernameManuallyEdited(false)
     }
-  }, [isOpen])
+  }, [isOpen, defaultCarrera])
 
   // Auto-generar username cuando cambian nombres o apellidos
   React.useEffect(() => {
