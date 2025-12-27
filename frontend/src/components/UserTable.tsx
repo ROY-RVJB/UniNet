@@ -7,7 +7,6 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import type { UserFormData } from '@/components/CreateUserModal';
 import type { EditUserFormData } from '@/components/EditUserModal';
 import { useToast } from '@/contexts/ToastContext';
-import { useCarrera } from '@/contexts/CarreraContext';
 import { cn } from '@/lib/utils';
 
 // ==========================================
@@ -54,7 +53,6 @@ export function UserTable({ users, onRefresh, carreraCode }: UserTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [userToDelete, setUserToDelete] = useState<LDAPUser | null>(null);
   const { showToast, hideToast } = useToast();
-  const { selectedCarrera } = useCarrera();
 
   // Filtrar usuarios por búsqueda
   const filteredUsers = useMemo(() => {
