@@ -1,0 +1,17 @@
+dn: uid=pepe.gonzales,ou=users,dc=uninet,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: pepe.gonzales
+cn: Pepe Gonzales Rodriguez
+sn: Gonzales
+givenName: Pepe
+mail: pepe.gonzales@universidad.edu.pe
+employeeNumber: 20240001
+departmentNumber: 5010
+description: DNI: 12345678
+uidNumber: 10020
+gidNumber: 5000
+homeDirectory: /home/pepe.gonzales
+loginShell: /bin/bash
+userPassword: {SSHA}0KC4p6VXJSk8FFmXbIibBvDprAxYFRRt

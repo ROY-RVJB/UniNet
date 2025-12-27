@@ -173,6 +173,10 @@ async def create_user(user_data: UserCreate):
         # Generar email automáticamente basado en username
         email = f"{user_data.username}@universidad.edu.pe"
         
+        # Preparar entorno con contraseña de admin LDAP
+        env = os.environ.copy()
+        env['LDAP_ADMIN_PASSWORD'] = 'admin123'  # TODO: Mover a variable de entorno o config
+        
         # Nuevo orden de parámetros: username codigo nombres apellido_paterno apellido_materno dni password carrera email
         result = subprocess.run(
             [
@@ -190,7 +194,7 @@ async def create_user(user_data: UserCreate):
             capture_output=True,
             text=True,
             timeout=30,
-            env=os.environ.copy()
+            env=env
         )
 
         if result.returncode == 0:
