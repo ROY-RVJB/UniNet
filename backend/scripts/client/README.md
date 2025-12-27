@@ -1,24 +1,83 @@
 # UniNet - Sistema de Monitoreo de Clientes
 
-Este directorio contiene los scripts necesarios para configurar el monitoreo automático de las máquinas cliente (VMs de estudiantes).
+Scripts para configurar el monitoreo automático en equipos de laboratorio (VMs Ubuntu de estudiantes).
 
 ---
 
-## 🎯 Instalación Rápida (Recomendado)
+## 🎯 Instalación en Equipos de Laboratorio
 
-### Para Usuarios/Estudiantes:
+### 📦 Método Recomendado (Interactivo)
 
-**Solo ejecuta este comando en tu VM Ubuntu:**
+**En cada equipo Ubuntu del laboratorio, ejecutar:**
 
 ```bash
-curl -sSL http://IP_DEL_SERVIDOR:4000/install | sudo bash
+# Paso 1: Descargar script
+curl -sSL http://IP_DEL_SERVIDOR:4000/install -o /tmp/uninet-install.sh
+
+# Paso 2: Ejecutar instalación
+sudo bash /tmp/uninet-install.sh
 ```
 
-> Reemplaza `IP_DEL_SERVIDOR` con la IP que te proporcione el administrador
+> **Reemplaza `IP_DEL_SERVIDOR`** con la IP del servidor (ej: `172.29.137.160`)
 
-**¡Eso es todo!** Tu PC se registrará automáticamente y empezará a enviar su estado cada 30 segundos.
+---
 
-📖 **Ver guía detallada:** [QUICK-INSTALL.md](QUICK-INSTALL.md)
+### 📝 Durante la Instalación
+
+Te preguntará a qué laboratorio pertenece el equipo:
+
+```
+🏫 Selecciona el laboratorio al que pertenece esta PC:
+
+  1) Administración y Negocios Internacionales
+  2) Contabilidad y Finanzas
+  3) Derecho y Ciencias Políticas
+  4) Ecoturismo
+  5) Educación Inicial y Especial
+  6) Educación Matemáticas y Computación
+  7) Educación Primaria e Informática
+  8) Enfermería
+  9) Ingeniería Agroindustrial
+ 10) Ingeniería de Sistemas e Informática
+ 11) Ingeniería Forestal y Medio Ambiente
+ 12) Medicina Veterinaria y Zootecnia
+
+Selecciona (1-12): _
+```
+
+**Escribe el número** del laboratorio y presiona Enter.
+
+✅ **¡Instalación completa!** El equipo ahora:
+- Aparece automáticamente en el dashboard
+- Permite login con usuarios LDAP creados en la web
+- Reporta su estado cada 30 segundos
+- Solo se muestra en el dashboard de su carrera
+
+---
+
+## 🔧 Métodos Alternativos
+
+### Opción 1: Con Variable de Entorno (Sin Menú)
+
+Si ya sabes el código de la carrera:
+
+```bash
+# Para Contabilidad (5002):
+CARRERA=5002 curl -sSL http://172.29.137.160:4000/install | sudo -E bash
+
+# Para Sistemas (5010):
+CARRERA=5010 curl -sSL http://172.29.137.160:4000/install | sudo -E bash
+```
+
+**Códigos de carrera:** Ver tabla al final de este documento.
+
+### Opción 2: Automático (Default = Sistemas)
+
+```bash
+curl -sSL http://172.29.137.160:4000/install | sudo bash
+```
+
+⚠️ Usa automáticamente código 5010 (Ingeniería de Sistemas)
 
 ---
 
@@ -79,18 +138,70 @@ sudo bash install-client.sh
 4. Verifica que el servicio cron esté activo
 5. Hace una prueba de conexión con el servidor
 
+## � ¿Qué hace la instalación?
+
+1. **Detecta IP del servidor** automáticamente desde donde se descargó
+2. **Pregunta el laboratorio** (modo interactivo) o usa variable/default
+3. **Instala agente de monitoreo** en `/usr/local/bin/uninet-agent`
+4. **Guarda configuración** en `/etc/uninet/config` (incluye código de carrera)
+5. **Configura autenticación LDAP:**
+   - Instala nslcd, PAM, NSS
+   - Configura conexión al servidor LDAP
+   - Habilita login con usuarios LDAP
+6. **Crea grupos del sistema:**
+   - GID 5000: alumnos
+   - GID 6000: docentes
+7. **Configura cron** para ejecutar el agente cada 30 segundos
+8. **Habilita auto-creación** de home directories (pam_mkhomedir)
+
+---
+
 ## 📡 Funcionamiento del Agente
 
-El agente (`uninet-agent.sh`) recopila y envía:
+El agente (`uninet-agent.sh`) recopila y envía cada 30 segundos:
 
 - **Hostname**: Nombre de la máquina
 - **IP**: Dirección IP principal (excluyendo loopback)
-- **Usuario**: Usuario con sesión gráfica activa (detectado con `who`)
+- **Usuario**: Usuario LDAP con sesión activa (detectado con `who`)
+- **Carrera**: Código del laboratorio al que pertenece (5001-5012)
 
-Envía esta información mediante POST a:
+Envía esta información mediante POST JSON a:
 ```
-http://172.29.137.160:4000/api/monitoring/heartbeat
+http://SERVIDOR:4000/api/heartbeat
 ```
+
+**Ejemplo de payload:**
+```json
+{
+  "hostname": "equipo",
+  "ip": "172.29.137.161",
+  "user": "tomas.quispe",
+  "carrera": "5002"
+}
+```
+
+---
+
+## 🎓 Códigos de Carrera
+
+| Código | Carrera | Dashboard |
+|--------|---------|-----------|
+| 5001 | Administración y Negocios Internacionales | Solo ve estas PCs |
+| 5002 | Contabilidad y Finanzas | Solo ve estas PCs |
+| 5003 | Derecho y Ciencias Políticas | Solo ve estas PCs |
+| 5004 | Ecoturismo | Solo ve estas PCs |
+| 5005 | Educación Inicial y Especial | Solo ve estas PCs |
+| 5006 | Educación Matemáticas y Computación | Solo ve estas PCs |
+| 5007 | Educación Primaria e Informática | Solo ve estas PCs |
+| 5008 | Enfermería | Solo ve estas PCs |
+| 5009 | Ingeniería Agroindustrial | Solo ve estas PCs |
+| 5010 | Ingeniería de Sistemas e Informática | Solo ve estas PCs |
+| 5011 | Ingeniería Forestal y Medio Ambiente | Solo ve estas PCs |
+| 5012 | Medicina Veterinaria y Zootecnia | Solo ve estas PCs |
+
+**Importante:** Cada dashboard filtra automáticamente y solo muestra las PCs de su laboratorio.
+
+---
 
 ## 🛠️ Verificación
 
@@ -100,29 +211,114 @@ http://172.29.137.160:4000/api/monitoring/heartbeat
 # Verificar que el agente está instalado
 ls -l /usr/local/bin/uninet-agent
 
+# Verificar configuración (incluyendo carrera)
+cat /etc/uninet/config
+
 # Verificar tarea cron
 crontab -l | grep uninet
 
 # Ejecutar manualmente para probar
 sudo /usr/local/bin/uninet-agent
+
+# Verificar autenticación LDAP
+getent passwd nombre.usuario  # Debe mostrar el usuario
+id nombre.usuario             # Debe mostrar uid, gid
 ```
 
 ### En el servidor
 
 ```bash
-# Ver logs del backend
-tail -f ~/UniNet/backend/logs/api.log
+# Ver estado de las PCs (todas)
+curl http://172.29.137.160:4000/api/status
 
-# Verificar estado de las PCs
-curl http://172.29.137.160:4000/api/monitoring/status
+# Ver PCs de una carrera específica (ej: Contabilidad)
+curl http://172.29.137.160:4000/api/status?carrera=5002
+
+# Verificar que el backend recibe heartbeats
+tail -f ~/UniNet/backend/logs/uvicorn.log
 ```
 
-### En el frontend
+### En el frontend (Dashboard Web)
 
-Acceder al dashboard: `http://localhost:5173`
+Acceder al dashboard: `http://localhost:5173` o desde otra máquina `http://IP_WINDOWS:5173`
 
-Las PCs deberían aparecer con su estado real:
-- Antes de instalar el agente: **offline** (rojo)
+Las PCs aparecerán según su estado:
+- **offline** 🔴 - Sin heartbeat en 60+ segundos (apagada/desconectada)
+- **online** 🟢 - Con heartbeat pero sin usuario
+- **inUse** 🔵 - Con heartbeat y usuario activo
+
+**Filtrado automático:**
+- Dashboard de Contabilidad → Solo ve PCs con carrera=5002
+- Dashboard de Sistemas → Solo ve PCs con carrera=5010
+- etc.
+
+---
+
+## 🐛 Troubleshooting
+
+### El equipo no aparece en el dashboard
+
+1. Verifica conectividad al servidor:
+```bash
+ping 172.29.137.160
+curl http://172.29.137.160:4000/health
+```
+
+2. Ejecuta el agente manualmente y ve si hay errores:
+```bash
+sudo /usr/local/bin/uninet-agent -v
+```
+
+3. Verifica que cron está corriendo:
+```bash
+sudo systemctl status cron
+```
+
+### El usuario LDAP no puede hacer login
+
+1. Verifica que el usuario existe en LDAP (desde el servidor):
+```bash
+sudo ldapsearch -x -b "dc=uninet,dc=com" "(uid=nombre.usuario)"
+```
+
+2. Verifica conectividad LDAP desde el cliente:
+```bash
+sudo systemctl status nslcd
+getent passwd | grep nombre.usuario
+```
+
+3. Verifica grupos:
+```bash
+getent group alumnos   # Debe existir con GID 5000
+getent group docentes  # Debe existir con GID 6000
+```
+
+### La PC aparece en todas las carreras (bug)
+
+Verifica que el config tiene la carrera correcta:
+```bash
+cat /etc/uninet/config | grep CARRERA
+```
+
+Si está mal, corrígelo manualmente:
+```bash
+sudo nano /etc/uninet/config
+# Cambia CARRERA="XXXX" al código correcto
+```
+
+---
+
+## 📚 Archivos del Sistema
+
+| Archivo | Descripción |
+|---------|-------------|
+| `/usr/local/bin/uninet-agent` | Script del agente de monitoreo |
+| `/etc/uninet/config` | Configuración (servidor, carrera) |
+| `/etc/nslcd.conf` | Configuración de autenticación LDAP |
+| `/etc/nsswitch.conf` | Name Service Switch (passwd, group, shadow) |
+| `/etc/pam.d/common-*` | Configuración PAM para autenticación |
+
+---
 - Después de instalar, sin login: **online** (verde)
 - Con usuario logueado: **inUse** (azul)
 
