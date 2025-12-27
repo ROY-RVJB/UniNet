@@ -37,8 +37,11 @@ else
     USER_FIELD="\"$ACTIVE_USER\""
 fi
 
+# Obtener carrera del config (laboratorio al que pertenece esta PC)
+CARRERA=${CARRERA:-"5010"}  # Default: Sistemas si no está configurado
+
 # Construir JSON
-JSON_DATA="{\"hostname\":\"$HOSTNAME\",\"ip\":\"$IP\",\"user\":$USER_FIELD}"
+JSON_DATA="{\"hostname\":\"$HOSTNAME\",\"ip\":\"$IP\",\"user\":$USER_FIELD,\"carrera\":\"$CARRERA\"}"
 
 # Enviar heartbeat al servidor
 curl -X POST "$SERVER_URL" \

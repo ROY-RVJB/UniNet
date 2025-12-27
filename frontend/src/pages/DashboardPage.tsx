@@ -56,8 +56,13 @@ export function DashboardPage() {
 
     const fetchStatus = async () => {
       try {
-        // Usar el nuevo endpoint que devuelve array
-        const res = await fetch(`${apiUrl}/api/status`);
+        // Construir URL con filtro de carrera si está seleccionada
+        let url = `${apiUrl}/api/status`;
+        if (selectedCarrera) {
+          url += `?carrera=${selectedCarrera.id}`;
+        }
+        
+        const res = await fetch(url);
         if (!res.ok) {
           console.warn('Backend no responde:', res.status);
           setIsLoading(false);
@@ -71,6 +76,7 @@ export function DashboardPage() {
           status: 'online' | 'offline' | 'inUse';
           user: string | null;
           lastSeen: string;
+          carrera?: string;
         }> = await res.json();
 
         // Transformar datos del backend al formato del frontend
@@ -81,7 +87,8 @@ export function DashboardPage() {
           status: pc.status,
           user: pc.user,
           lastSeen: new Date(pc.lastSeen),
-          laboratoryId: 'lab-sistemas', // Default laboratory
+          laboratoryId: `lab-${pc.carrera || '5010'}`,
+          carrera: pc.carrera,
         }));
 
         setPcs(transformedPCs);
@@ -99,7 +106,7 @@ export function DashboardPage() {
     const interval = setInterval(fetchStatus, 10000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedCarrera]); // Re-fetch cuando cambie la carrera seleccionada
 
   return (
     <>

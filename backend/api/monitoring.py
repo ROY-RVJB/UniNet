@@ -22,6 +22,7 @@ class HeartbeatData(BaseModel):
     hostname: str
     ip: str
     user: Optional[str] = None  # Usuario LDAP activo o null
+    carrera: Optional[str] = "5010"  # Código de carrera/laboratorio (default: Sistemas)
 
 
 class HostStatus(BaseModel):
@@ -32,6 +33,7 @@ class HostStatus(BaseModel):
     status: str  # 'online', 'offline', 'inUse'
     user: Optional[str] = None
     lastSeen: Optional[str] = None
+    carrera: Optional[str] = None  # Código de carrera/laboratorio
 
 
 @router.post("/heartbeat")
@@ -58,6 +60,7 @@ async def receive_heartbeat(data: HeartbeatData):
             "id": host_id,
             "ip": data.ip,
             "user": data.user,
+            "carrera": data.carrera,
             "last_seen": datetime.now(),
             "first_seen": datetime.now()
         }
@@ -66,6 +69,7 @@ async def receive_heartbeat(data: HeartbeatData):
         clients_state[data.hostname].update({
             "ip": data.ip,
             "user": data.user,
+            "carrera": data.carrera,
             "last_seen": datetime.now()
         })
     
@@ -77,11 +81,15 @@ async def receive_heartbeat(data: HeartbeatData):
 
 
 @router.get("/status")
-async def get_status():
+async def get_status(carrera: Optional[str] = None):
     """
     Obtiene el estado consolidado de todos los clientes registrados
     
     Sistema dinámico: solo muestra PCs que han enviado al menos un heartbeat
+    
+    Args:
+        carrera: Filtrar PCs por código de carrera (ej: 5002 para Contabilidad)
+                 Si no se especifica, retorna todas las PCs
     
     Estados:
     - offline: No ha enviado heartbeat en los últimos 60 segundos
@@ -97,6 +105,10 @@ async def get_status():
     
     # Procesar todos los clientes registrados
     for hostname, state in clients_state.items():
+        # Filtrar por carrera si se especificó
+        if carrera and state.get("carrera") != carrera:
+            continue
+            
         time_since_last_seen = now - state["last_seen"]
         is_alive = time_since_last_seen < timeout_threshold
         
@@ -114,7 +126,8 @@ async def get_status():
             "ip": state["ip"],
             "status": status,
             "user": state["user"] if state["user"] else None,
-            "lastSeen": state["last_seen"].isoformat()
+            "lastSeen": state["last_seen"].isoformat(),
+            "carrera": state.get("carrera", "5010")
         })
     
     # Ordenar por ID para presentación consistente

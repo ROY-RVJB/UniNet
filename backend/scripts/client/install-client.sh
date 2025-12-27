@@ -47,6 +47,48 @@ SERVER_URL="http://${SERVER_IP}:${SERVER_PORT}/api/heartbeat"
 echo -e "${BLUE}🎯 Servidor detectado: $SERVER_IP${NC}"
 echo ""
 
+# ==========================================
+# SELECCIÓN DE LABORATORIO/CARRERA
+# ==========================================
+echo -e "${BLUE}🏫 Selecciona el laboratorio al que pertenece esta PC:${NC}"
+echo ""
+echo "  1) Administración y Negocios Internacionales"
+echo "  2) Contabilidad y Finanzas"
+echo "  3) Derecho y Ciencias Políticas"
+echo "  4) Ecoturismo"
+echo "  5) Educación Inicial y Especial"
+echo "  6) Educación Matemáticas y Computación"
+echo "  7) Educación Primaria e Informática"
+echo "  8) Enfermería"
+echo "  9) Ingeniería Agroindustrial"
+echo " 10) Ingeniería de Sistemas e Informática"
+echo " 11) Ingeniería Forestal y Medio Ambiente"
+echo " 12) Medicina Veterinaria y Zootecnia"
+echo ""
+
+CARRERA_CODE=""
+while [ -z "$CARRERA_CODE" ]; do
+    read -p "Selecciona (1-12): " CARRERA_OPTION
+    case $CARRERA_OPTION in
+        1) CARRERA_CODE="5001" ;;
+        2) CARRERA_CODE="5002" ;;
+        3) CARRERA_CODE="5003" ;;
+        4) CARRERA_CODE="5004" ;;
+        5) CARRERA_CODE="5005" ;;
+        6) CARRERA_CODE="5006" ;;
+        7) CARRERA_CODE="5007" ;;
+        8) CARRERA_CODE="5008" ;;
+        9) CARRERA_CODE="5009" ;;
+        10) CARRERA_CODE="5010" ;;
+        11) CARRERA_CODE="5011" ;;
+        12) CARRERA_CODE="5012" ;;
+        *) echo -e "${RED}❌ Opción inválida. Intenta de nuevo.${NC}" ;;
+    esac
+done
+
+echo -e "${GREEN}✅ Laboratorio seleccionado: código $CARRERA_CODE${NC}"
+echo ""
+
 # Verificar que curl está instalado
 if ! command -v curl &> /dev/null; then
     echo -e "${BLUE}📦 Instalando curl...${NC}"
@@ -79,6 +121,7 @@ cat > "$CONFIG_DIR/config" << EOF
 SERVER_URL="$SERVER_URL"
 SERVER_IP="$SERVER_IP"
 SERVER_PORT="$SERVER_PORT"
+CARRERA="$CARRERA_CODE"
 EOF
 
 echo -e "${GREEN}✅ Configuración guardada en: $CONFIG_DIR/config${NC}"
