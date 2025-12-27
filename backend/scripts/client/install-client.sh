@@ -30,7 +30,8 @@ fi
 SERVER_IP="{{SERVER_IP}}"
 
 # Si el placeholder no fue reemplazado, intentar detectar
-if [ "$SERVER_IP" == "{{SERVER_IP}}" ]; then
+# Usamos pattern matching para evitar que esta línea también se reemplace
+if [[ "$SERVER_IP" == "{{"*"}}" ]]; then
     echo -e "${YELLOW}⚠️  Auto-detección de servidor falló${NC}"
     echo "Por favor ingresa la IP o hostname del servidor UniNet:"
     read -p "Servidor: " SERVER_IP
