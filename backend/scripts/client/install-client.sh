@@ -149,8 +149,9 @@ echo -e "${BLUE}📦 Instalando paquetes LDAP...${NC}"
 DEBIAN_FRONTEND=noninteractive apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
     ldap-utils \
-    libnss-ldap \
-    libpam-ldap \
+    libnss-ldapd \
+    libpam-ldapd \
+    nslcd \
     nscd \
     > /dev/null 2>&1
 
@@ -160,31 +161,38 @@ else
     echo -e "${YELLOW}⚠️  Advertencia: Error al instalar paquetes LDAP${NC}"
 fi
 
-# Configurar libnss-ldap
-echo -e "${BLUE}⚙️  Configurando NSS LDAP...${NC}"
-cat > /etc/libnss-ldap.conf << EOF
-# UniNet LDAP Configuration
+# Configurar nslcd (reemplazo moderno de libnss-ldap)
+echo -e "${BLUE}⚙️  Configurando NSLCD...${NC}"
+cat > /etc/nslcd.conf << EOF
+# UniNet LDAP Configuration via NSLCD
+uid nslcd
+gid nslcd
+
 uri $LDAP_SERVER
 base $LDAP_BASE_DN
-ldap_version 3
+
 binddn $LDAP_BIND_DN
 bindpw $LDAP_BIND_PW
-rootbinddn $LDAP_BIND_DN
-pam_password md5
-nss_initgroups_ignoreusers backup,bin,daemon,games,gnats,irc,landscape,libuuid,list,lp,mail,man,messagebus,news,nobody,pollinate,proxy,root,sshd,sync,sys,syslog,systemd-bus-proxy,systemd-network,systemd-resolve,systemd-timesync,uucp,uuidd,www-data
+
+# SSL/TLS settings
+ssl off
+tls_cacertfile /etc/ssl/certs/ca-certificates.crt
+
+# Search filters
+scope sub
+referrals no
+
+# Reconnect settings
+reconnect_sleeptime 1
+reconnect_retrytime 10
+
+# PAM authorization
+pam_authz_search (&(objectClass=posixAccount)(uid=\$username))
 EOF
 
-# Configurar libpam-ldap
-cat > /etc/pam_ldap.conf << EOF
-# UniNet LDAP PAM Configuration
-uri $LDAP_SERVER
-base $LDAP_BASE_DN
-ldap_version 3
-binddn $LDAP_BIND_DN
-bindpw $LDAP_BIND_PW
-rootbinddn $LDAP_BIND_DN
-pam_password md5
-EOF
+# Asegurar permisos correctos
+chmod 640 /etc/nslcd.conf
+chown root:nslcd /etc/nslcd.conf
 
 # Configurar NSS (Name Service Switch)
 echo -e "${BLUE}⚙️  Configurando NSS...${NC}"
@@ -197,10 +205,10 @@ sed -i 's/^shadow:.*/shadow:         files ldap/' /etc/nsswitch.conf
 echo -e "${BLUE}⚙️  Configurando PAM...${NC}"
 
 # Configurar common-auth
-cp /etc/pam.d/common-auth /etc/pam.d/common-auth.backup
+cp /etc/pam.d/common-auth /etc/pam.d/common-auth.backup 2>/dev/null || true
 cat > /etc/pam.d/common-auth << 'EOF'
 # UniNet PAM Authentication Configuration
-auth    [success=2 default=ignore]      pam_unix.so nullok_secure
+auth    [success=2 default=ignore]      pam_unix.so nullok
 auth    [success=1 default=ignore]      pam_ldap.so use_first_pass
 auth    requisite                       pam_deny.so
 auth    required                        pam_permit.so
@@ -208,7 +216,7 @@ auth    optional                        pam_cap.so
 EOF
 
 # Configurar common-account
-cp /etc/pam.d/common-account /etc/pam.d/common-account.backup
+cp /etc/pam.d/common-account /etc/pam.d/common-account.backup 2>/dev/null || true
 cat > /etc/pam.d/common-account << 'EOF'
 # UniNet PAM Account Configuration
 account [success=2 new_authtok_reqd=done default=ignore]        pam_unix.so
@@ -218,7 +226,7 @@ account required                        pam_permit.so
 EOF
 
 # Configurar common-password
-cp /etc/pam.d/common-password /etc/pam.d/common-password.backup
+cp /etc/pam.d/common-password /etc/pam.d/common-password.backup 2>/dev/null || true
 cat > /etc/pam.d/common-password << 'EOF'
 # UniNet PAM Password Configuration
 password        [success=2 default=ignore]      pam_unix.so obscure sha512
@@ -228,7 +236,7 @@ password        required                        pam_permit.so
 EOF
 
 # Configurar common-session
-cp /etc/pam.d/common-session /etc/pam.d/common-session.backup
+cp /etc/pam.d/common-session /etc/pam.d/common-session.backup 2>/dev/null || true
 cat > /etc/pam.d/common-session << 'EOF'
 # UniNet PAM Session Configuration
 session [default=1]                     pam_permit.so
@@ -242,8 +250,13 @@ session optional        pam_mkhomedir.so skel=/etc/skel umask=077
 EOF
 
 # Reiniciar servicios
-echo -e "${BLUE}🔄 Reiniciando servicios...${NC}"
+echo -e "${BLUE}🔄 Reiniciando servicios LDAP...${NC}"
+systemctl restart nslcd 2>/dev/null || true
+systemctl enable nslcd 2>/dev/null || true
 systemctl restart nscd 2>/dev/null || true
+
+# Esperar a que nslcd inicie
+sleep 2
 
 # Probar conexión LDAP
 echo -e "${BLUE}🔍 Probando conexión LDAP...${NC}"
