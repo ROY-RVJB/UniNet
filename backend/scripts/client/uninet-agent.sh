@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# UniNet Agent - Cliente de monitoreo de estado de PCs
-# Este script se ejecuta periódicamente para reportar el estado de la máquina cliente
+# UniNet Agent - Cliente de monitoreo de estado de PCs (con bloqueo de internet usando UFW)
+# Este script se ejecuta periódicamente para reportar el estado de la máquina cliente y aplicar reglas de firewall según la orden del backend
 
-# Configuración del servidor (se establece durante la instalación)
 CONFIG_FILE="/etc/uninet/config"
 
 # Cargar configuración
@@ -14,41 +13,77 @@ else
     exit 1
 fi
 
-# Validar que SERVER_URL esté configurado
 if [ -z "$SERVER_URL" ]; then
     echo "Error: SERVER_URL no está configurado"
     exit 1
 fi
 
-# Obtener hostname
+
 HOSTNAME=$(hostname)
-
-# Obtener IP (primera interfaz no-loopback activa)
 IP=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1' | head -n1)
-
-# Detectar usuario activo (quien está logueado en la sesión gráfica)
-# Busca usuarios con sesión activa, excluyendo root
-ACTIVE_USER=$(who | grep -v "^root " | awk '{print $1}' | head -n1)
-
-# Si no hay usuario, dejar vacío
+# Detectar usuario activo real (no root, no vacío)
+ACTIVE_USER=$(who | awk '$1!="root" {print $1}' | head -n1)
 if [ -z "$ACTIVE_USER" ]; then
-    USER_FIELD='null'
+    USER_FIELD=""
 else
-    USER_FIELD="\"$ACTIVE_USER\""
+    USER_FIELD="$ACTIVE_USER"
 fi
+CARRERA=${CARRERA:-"5010"}
 
-# Obtener carrera del config (laboratorio al que pertenece esta PC)
-CARRERA=${CARRERA:-"5010"}  # Default: Sistemas si no está configurado
+# Siempre enviar user como string (o vacío)
+JSON_DATA="{\"hostname\":\"$HOSTNAME\",\"ip\":\"$IP\",\"user\":\"$USER_FIELD\",\"carrera\":\"$CARRERA\"}"
 
-# Construir JSON
-JSON_DATA="{\"hostname\":\"$HOSTNAME\",\"ip\":\"$IP\",\"user\":$USER_FIELD,\"carrera\":\"$CARRERA\"}"
 
-# Enviar heartbeat al servidor
-curl -X POST "$SERVER_URL" \
+
+# Enviar heartbeat y guardar respuesta
+RESPONSE=$(curl -X POST "$SERVER_URL" \
     -H "Content-Type: application/json" \
     -d "$JSON_DATA" \
     --max-time 5 \
-    --silent \
-    --output /dev/null
+    --silent)
+
+# DEBUG: Imprimir la respuesta del backend
+echo "Respuesta del backend: $RESPONSE"
+
+# === Registro de acceso a internet (solo ejemplo: ping a 8.8.8.8) ===
+LOG_FILE="/var/log/uninet/carreras.log"
+if [ "$CARRERA" = "sistemas" ] && [ -n "$USER_FIELD" ]; then
+    # Probar si hay acceso a internet (ICMP a 8.8.8.8)
+    if ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
+        TS=$(date +"%H:%M:%S")
+        LOG_MSG="{\"timestamp\":\"$TS\",\"level\":\"info\",\"carrera\":\"$CARRERA\",\"uid\":\"$USER_FIELD\",\"message\":\"Acceso a internet detectado\"}"
+        echo "$LOG_MSG" | sudo tee -a "$LOG_FILE" >/dev/null
+    fi
+fi
+
+
+# Analizar si el backend pide bloquear internet
+
+# Si el backend pide bloquear internet, BLOQUEAR TODO el tráfico saliente (ni siquiera DNS)
+
+# Si el backend pide bloquear internet, BLOQUEAR TODO el tráfico saliente (ni siquiera DNS ni ICMP)
+
+
+if echo "$RESPONSE" | grep -q '"block_internet":true'; then
+    # Limpiar archivos de backup de UFW para evitar errores
+    for i in $(ls /etc/ufw/user.rules.* /etc/ufw/before.rules.* 2>/dev/null); do sudo rm -f "$i"; done
+    sudo ufw --force reset
+    sudo ufw default deny outgoing
+    sudo ufw default deny incoming
+    sudo ufw --force enable
+    # Bloquear ICMP (ping) usando iptables directamente
+    sudo iptables -A OUTPUT -p icmp --icmp-type echo-request -j DROP
+    sudo iptables -A INPUT -p icmp --icmp-type echo-reply -j DROP
+else
+    # Restaurar política por defecto a permitir todo y limpiar reglas
+    for i in $(ls /etc/ufw/user.rules.* /etc/ufw/before.rules.* 2>/dev/null); do sudo rm -f "$i"; done
+    sudo ufw --force reset
+    sudo ufw default allow outgoing
+    sudo ufw default allow incoming
+    sudo ufw --force enable
+    # Limpiar reglas ICMP de iptables
+    sudo iptables -D OUTPUT -p icmp --icmp-type echo-request -j DROP 2>/dev/null
+    sudo iptables -D INPUT -p icmp --icmp-type echo-reply -j DROP 2>/dev/null
+fi
 
 exit 0

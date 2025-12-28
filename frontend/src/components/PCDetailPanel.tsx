@@ -11,6 +11,7 @@ import {
   User,
   Globe
 } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
 
 // ==========================================
 // PCDetailPanel - Panel lateral de detalles
@@ -56,8 +57,45 @@ const statusConfig: Record<PCStatus, {
 };
 
 export function PCDetailPanel({ pc, isOpen, onClose }: PCDetailPanelProps) {
-  if (!pc) return null;
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [filterLevel, setFilterLevel] = useState<'all' | 'info' | 'warn' | 'error'>('all');
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+  useEffect(() => {
+    if (!pc) return;
+    setLoadingLogs(true);
+    const fetchLogs = async () => {
+      try {
+        // Buscar por usuario activo (uid) si existe
+        let param = '';
+        if (pc.user) {
+          param = `&username=${encodeURIComponent(pc.user)}`;
+        } else if (pc.name) {
+          // Si no hay usuario, intentar filtrar por carrera si está disponible
+          param = pc.carrera ? `&carrera=${encodeURIComponent(pc.carrera)}` : '';
+        }
+        const token = localStorage.getItem('uninet_token');
+        const res = await fetch(`${apiUrl}/api/logs?limit=20${param}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLogs(data);
+        }
+      } catch {}
+      setLoadingLogs(false);
+    };
+    fetchLogs();
+  }, [pc, apiUrl]);
+
+  // Filtrar logs por tipo
+  const filteredLogs = useMemo(() => {
+    if (filterLevel === 'all') return logs;
+    return logs.filter(log => (log.level || '').toLowerCase() === filterLevel);
+  }, [logs, filterLevel]);
+
+  if (!pc) return null;
   const status = statusConfig[pc.status];
   const isOffline = pc.status === 'offline';
   const hasUser = pc.status === 'inUse' && pc.user;
@@ -126,6 +164,44 @@ export function PCDetailPanel({ pc, isOpen, onClose }: PCDetailPanelProps) {
           >
             <X className="w-5 h-5 text-white/70" />
           </button>
+        </div>
+
+        {/* Logs recientes de este PC */}
+        <div className="mt-6">
+          <h4 className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-2">Logs recientes</h4>
+          {/* Filtros de nivel */}
+          <div className="flex gap-1 mb-2">
+            <button
+              onClick={() => setFilterLevel('all')}
+              className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${filterLevel === 'all' ? 'bg-tech-hoverState text-white' : 'text-tech-textDim hover:text-white'}`}
+            >Todos</button>
+            <button
+              onClick={() => setFilterLevel('info')}
+              className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${filterLevel === 'info' ? 'bg-teal-400/10 text-teal-400' : 'text-tech-textDim hover:text-white'}`}
+            >Info</button>
+            <button
+              onClick={() => setFilterLevel('warn')}
+              className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${filterLevel === 'warn' ? 'bg-amber-400/10 text-amber-400' : 'text-tech-textDim hover:text-white'}`}
+            >Warn</button>
+            <button
+              onClick={() => setFilterLevel('error')}
+              className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${filterLevel === 'error' ? 'bg-red-400/10 text-red-400' : 'text-tech-textDim hover:text-white'}`}
+            >Error</button>
+          </div>
+          <div className="bg-black/30 rounded-lg p-2 max-h-40 overflow-y-auto border border-white/10">
+            {loadingLogs ? (
+              <div className="text-tech-textDim text-xs">Cargando logs...</div>
+            ) : filteredLogs.length === 0 ? (
+              <div className="text-tech-textDim text-xs">Sin logs recientes para este equipo</div>
+            ) : (
+              filteredLogs.map((log, idx) => (
+                <div key={log.id || idx} className="flex gap-2 text-xs py-0.5 border-b border-white/5 last:border-b-0">
+                  <span className="text-tech-textDim">{log.timestamp || ''}</span>
+                  <span className="text-white">{log.message || JSON.stringify(log)}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Contenido */}
