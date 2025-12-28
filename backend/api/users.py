@@ -175,7 +175,7 @@ async def create_user(user_data: UserCreate):
         
         # Preparar entorno con contraseña de admin LDAP
         env = os.environ.copy()
-        env['LDAP_ADMIN_PASSWORD'] = 'admin123'  # TODO: Mover a variable de entorno o config
+        env['LDAP_ADMIN_PASSWORD'] = _try_read_admin_pass()
         
         # Nuevo orden de parámetros: username codigo nombres apellido_paterno apellido_materno dni password carrera email
         result = subprocess.run(

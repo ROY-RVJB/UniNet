@@ -42,7 +42,7 @@ if [[ "$SERVER_IP" == "{{"*"}}" ]]; then
 fi
 
 SERVER_PORT="4000"
-SERVER_URL="http://${SERVER_IP}:${SERVER_PORT}/api/heartbeat"
+SERVER_URL="http://${SERVER_IP}:${SERVER_PORT}/api/monitoring/heartbeat"
 
 echo -e "${BLUE}🎯 Servidor detectado: $SERVER_IP${NC}"
 echo ""
