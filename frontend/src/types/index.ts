@@ -7,8 +7,9 @@
  * - online: PC encendida y conectada, sin usuario activo
  * - offline: PC apagada o sin conexión (>60s sin heartbeat)
  * - inUse: PC encendida con usuario activo
+ * - examMode: PC en modo examen (restricciones activas)
  */
-export type PCStatus = 'online' | 'offline' | 'inUse';
+export type PCStatus = 'online' | 'offline' | 'inUse' | 'examMode';
 
 /**
  * Interfaz de PC del Laboratorio

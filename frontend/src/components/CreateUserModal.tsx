@@ -1,6 +1,13 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { X, Loader2, Eye, EyeOff, Check, AlertCircle } from "lucide-react"
+import { X, Loader2, Eye, EyeOff, Check, AlertCircle, GraduationCap } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface CreateUserModalProps {
   isOpen: boolean
@@ -40,7 +47,23 @@ interface FormErrors {
 // CreateUserModal - Estilo Minimalista Vercel
 // ==========================================
 
-// Carrera se asigna automáticamente según dashboard activo (carreraCode prop)
+// 12 carreras oficiales UNAMAD (IDs LDAP: departmentNumber)
+const CARRERA_OPTIONS = [
+  { value: "5001", label: "Administración y Negocios Internacionales" },
+  { value: "5002", label: "Contabilidad y Finanzas" },
+  { value: "5003", label: "Derecho y Ciencias Políticas" },
+  { value: "5004", label: "Ecoturismo" },
+  { value: "5005", label: "Educación Inicial y Especial" },
+  { value: "5006", label: "Educación Primaria e Informática" },
+  { value: "5007", label: "Educación Matemáticas y Computación" },
+  { value: "5008", label: "Enfermería" },
+  { value: "5009", label: "Ingeniería Agroindustrial" },
+  { value: "5010", label: "Ingeniería de Sistemas e Informática" },
+  { value: "5011", label: "Ingeniería Forestal y Medio Ambiente" },
+  { value: "5012", label: "Medicina Veterinaria y Zootecnia" },
+]
+
+// Si carreraCode está vacío, se muestra selector para elegir carrera
 
 // ==========================================
 // Utilidades para generar username
@@ -328,7 +351,11 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
         if (value !== formData.password) return "Las contraseñas no coinciden"
         return undefined
 
-      // carrera ya no se valida porque se asigna automáticamente
+      case "carrera":
+        // Solo validar si no hay carreraCode predefinido
+        if (!carreraCode && !value) return "Selecciona una carrera"
+        return undefined
+
       default:
         return undefined
     }
@@ -392,7 +419,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
       dni: true,
       password: true,
       confirmPassword: true,
-      // carrera no se marca porque ya está asignada automáticamente
+      carrera: !carreraCode, // Solo marcar si no hay carrera predefinida
     })
 
     if (!validateForm()) return
@@ -409,7 +436,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
   }
 
   const isFormValid = React.useMemo(() => {
-    return (
+    const baseValid = (
       formData.codigo.trim().length >= 8 &&
       formData.nombres.trim().length >= 2 &&
       formData.apellidoPaterno.trim().length >= 2 &&
@@ -418,11 +445,17 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
       formData.dni.length === 8 &&
       formData.password.length >= 6 &&
       formData.confirmPassword === formData.password &&
-      // carrera siempre es "5010", no necesita validación
       usernameStatus.available !== false &&
       !usernameStatus.checking
     )
-  }, [formData, usernameStatus])
+
+    // Si no hay carreraCode predefinido, validar que se haya seleccionado una
+    if (!carreraCode) {
+      return baseValid && formData.carrera.trim() !== ""
+    }
+
+    return baseValid
+  }, [formData, usernameStatus, carreraCode])
 
   if (!isOpen) return null
 
@@ -585,7 +618,38 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
               />
             </div>
 
-            {/* Carrera asignada automáticamente a 5010 (Ingeniería de Sistemas) - no visible */}
+            {/* Selector de Carrera - Solo visible cuando no hay carrera predefinida */}
+            {!carreraCode && (
+              <div className="space-y-1.5">
+                <label className="block text-sm text-white/50">
+                  Carrera Profesional
+                </label>
+                <Select
+                  value={formData.carrera}
+                  onValueChange={(value) => handleChange("carrera", value)}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger className={cn(
+                    touched.carrera && errors.carrera && "border-red-500/50"
+                  )}>
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-white/40" />
+                      <SelectValue placeholder="Seleccionar carrera..." />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CARRERA_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {touched.carrera && errors.carrera && (
+                  <p className="text-xs text-red-400">{errors.carrera}</p>
+                )}
+              </div>
+            )}
 
             {/* Footer buttons */}
             <div className="flex gap-3 pt-2">
