@@ -61,11 +61,8 @@ export function DashboardPage() {
     setTimeout(() => setSelectedPC(null), 300)
   }
 
-  // Filtrar PCs por estado
-  const filteredPCs = useMemo(() => {
-    if (statusFilter === 'all') return pcs
-    return pcs.filter(pc => pc.status === statusFilter)
-  }, [pcs, statusFilter])
+  // Ya no filtramos aquí - PCGrid maneja el filtro internamente
+  // para mantener las PCs en sus sectores originales
 
   // Stats - siempre usar el array real de PCs
   const stats = useMemo(() => {
@@ -141,7 +138,7 @@ export function DashboardPage() {
           stats={stats}
         />
 
-        <PCGrid pcs={filteredPCs} onPCClick={handlePCClick} />
+        <PCGrid pcs={pcs} onPCClick={handlePCClick} statusFilter={statusFilter} />
       </div>
 
       <PCDetailPanel
