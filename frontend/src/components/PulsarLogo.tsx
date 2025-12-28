@@ -12,12 +12,15 @@ interface PulsarLogoProps {
   size?: number
   className?: string
   isHovered?: boolean // Control externo del hover
+  isSuccess?: boolean // Estado de login exitoso
 }
 
-export function PulsarLogo({ size = 192, className, isHovered: externalHovered }: PulsarLogoProps) {
+export function PulsarLogo({ size = 192, className, isHovered: externalHovered, isSuccess = false }: PulsarLogoProps) {
   const [internalHovered, setInternalHovered] = useState(false)
   // Usar hover externo si se proporciona, sino usar el interno
   const isHovered = externalHovered !== undefined ? externalHovered : internalHovered
+  // En success, activar hover automáticamente para acelerar rotación
+  const isActive = isHovered || isSuccess
 
   // Calcular tamaños proporcionales
   const diskSize = size
@@ -39,7 +42,7 @@ export function PulsarLogo({ size = 192, className, isHovered: externalHovered }
 
   return (
     <div
-      className={`relative flex items-center justify-center cursor-pointer ${className || ''}`}
+      className={`relative flex items-center justify-center cursor-pointer select-none ${className || ''}`}
       style={{ width: size, height: size }}
       onMouseEnter={() => externalHovered === undefined && setInternalHovered(true)}
       onMouseLeave={() => externalHovered === undefined && setInternalHovered(false)}
@@ -52,8 +55,8 @@ export function PulsarLogo({ size = 192, className, isHovered: externalHovered }
           height: diskSize,
           // Transicion escalonada: delay 0.1s
           transition: 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s',
-          // Rotacion: 25s normal, 3s en hover
-          animation: `pulsar-rotate ${isHovered ? '3s' : '25s'} linear infinite`,
+          // Rotacion: 25s normal, 3s en hover, 0.3s en success (muy rápido)
+          animation: `pulsar-rotate ${isSuccess ? '0.3s' : isActive ? '3s' : '25s'} linear infinite`,
         }}
       >
         <svg
@@ -68,11 +71,11 @@ export function PulsarLogo({ size = 192, className, isHovered: externalHovered }
               key={i}
               cx={p.cx}
               cy={p.cy}
-              r={p.size}
+              r={isSuccess ? p.size * 1.5 : p.size}
               fill="white"
-              opacity={isHovered ? p.opacity + 0.3 : p.opacity}
+              opacity={isSuccess ? 1 : isActive ? p.opacity + 0.3 : p.opacity}
               style={{
-                transition: 'opacity 0.3s ease',
+                transition: 'all 0.3s ease',
               }}
             />
           ))}
@@ -95,12 +98,16 @@ export function PulsarLogo({ size = 192, className, isHovered: externalHovered }
         style={{
           width: horizonSize,
           height: horizonSize,
-          border: '1px solid rgba(255, 255, 255, 0.3)',
+          border: isSuccess ? '2px solid rgba(255, 255, 255, 0.8)' : '1px solid rgba(255, 255, 255, 0.3)',
           // Transicion escalonada: delay 0.05s
           transition: `all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s`,
-          // Scale y glow en hover
-          transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-          boxShadow: isHovered
+          // Scale y glow en hover/success
+          transform: isSuccess ? 'scale(1.1)' : isActive ? 'scale(1.05)' : 'scale(1)',
+          boxShadow: isSuccess
+            ? `0 0 40px rgba(255, 255, 255, 0.4),
+               0 0 80px rgba(255, 255, 255, 0.2),
+               inset 0 0 20px rgba(255, 255, 255, 0.1)`
+            : isActive
             ? `0 0 20px rgba(255, 255, 255, 0.15),
                inset 0 0 15px rgba(255, 255, 255, 0.05)`
             : `0 0 10px rgba(255, 255, 255, 0.05),
@@ -114,11 +121,14 @@ export function PulsarLogo({ size = 192, className, isHovered: externalHovered }
         style={{
           width: coreSize,
           height: coreSize,
-          backgroundColor: isHovered ? '#ffffff' : '#000000',
+          backgroundColor: isSuccess || isActive ? '#ffffff' : '#000000',
           // Transicion escalonada: delay 0s (primero en reaccionar)
           transition: `all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0s`,
-          transform: isHovered ? 'scale(0.9)' : 'scale(1)',
-          boxShadow: isHovered
+          transform: isSuccess || isActive ? 'scale(0.9)' : 'scale(1)',
+          boxShadow: isSuccess
+            ? `0 0 50px rgba(255, 255, 255, 0.6),
+               0 0 100px rgba(255, 255, 255, 0.3)`
+            : isActive
             ? `0 0 30px rgba(255, 255, 255, 0.4),
                0 0 60px rgba(255, 255, 255, 0.15)`
             : `inset 0 1px 4px rgba(255, 255, 255, 0.05),
@@ -130,10 +140,10 @@ export function PulsarLogo({ size = 192, className, isHovered: externalHovered }
           style={{
             fontSize: fontSize,
             fontWeight: 'bold',
-            color: isHovered ? '#000000' : '#888888',
+            color: isSuccess || isActive ? '#000000' : '#888888',
             letterSpacing: '0.05em',
             transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            transform: isHovered ? 'scale(1.15)' : 'scale(1)',
+            transform: isSuccess || isActive ? 'scale(1.15)' : 'scale(1)',
           }}
         >
           UN

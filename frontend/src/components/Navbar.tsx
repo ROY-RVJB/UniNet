@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, ChevronDown, LogOut } from 'lucide-react';
+import { User, ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { CarreraSelectorDropdown } from './CarreraSelectorDropdown';
 import { UniNetLogo } from './UniNetLogo';
@@ -153,16 +153,6 @@ export function Navbar() {
                   <p className="text-xs text-tech-textDim capitalize">{user?.role || 'Sin rol'}</p>
                 </div>
                 <div className="p-1">
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-tech-textDim hover:bg-white/5 hover:text-white rounded transition-colors">
-                    <Search className="w-4 h-4" />
-                    <span>Buscar</span>
-                  </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-tech-textDim hover:bg-white/5 hover:text-white rounded transition-colors relative">
-                    <Bell className="w-4 h-4" />
-                    <span>Notificaciones</span>
-                    <span className="ml-auto w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
-                  </button>
-                  <div className="my-1 h-px bg-tech-darkBorder" />
                   <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-tech-textDim hover:bg-white/5 hover:text-white rounded transition-colors">
                     <User className="w-4 h-4" />
                     <span>Perfil</span>

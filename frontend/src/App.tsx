@@ -13,6 +13,10 @@ import { useAuth } from '@/contexts/AuthContext'
 function App() {
   const { isAuthenticated } = useAuth()
 
+  // No redirigir si estamos en medio de la animación de login
+  const isLoginAnimating = sessionStorage.getItem('login_animating') === 'true'
+  const shouldRedirectFromLogin = isAuthenticated && !isLoginAnimating
+
   return (
     <>
       {/* Modal selector de carrera (post-login para docentes) */}
@@ -22,7 +26,7 @@ function App() {
       {/* Ruta publica: Login */}
       <Route
         path="/login"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+        element={shouldRedirectFromLogin ? <Navigate to="/" replace /> : <LoginPage />}
       />
 
       {/* Rutas protegidas con MainLayout */}

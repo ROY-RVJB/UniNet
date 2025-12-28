@@ -77,7 +77,7 @@ function MinimalInput({
           placeholder={placeholder}
           disabled={disabled}
           className={cn(
-            "w-full px-3 py-2 text-sm text-white",
+            "docente-input w-full px-3 py-2 text-sm text-white select-text",
             "bg-transparent border rounded-lg",
             "placeholder:text-white/20",
             "focus:outline-none transition-colors",
@@ -288,9 +288,44 @@ export function CreateDocenteModal({ isOpen, onClose, onSubmit }: CreateDocenteM
         onClick={onClose}
       />
 
+      {/* Estilos para override del autofill del navegador */}
+      <style>{`
+        .docente-input {
+          caret-color: #ffffff !important;
+        }
+        .docente-input::placeholder {
+          color: rgba(255, 255, 255, 0.2) !important;
+          -webkit-text-fill-color: rgba(255, 255, 255, 0.2) !important;
+        }
+        .docente-input:-webkit-autofill,
+        .docente-input:-webkit-autofill:hover,
+        .docente-input:-webkit-autofill:focus,
+        .docente-input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 1000px #000000 inset !important;
+          -webkit-text-fill-color: #ffffff !important;
+          background-color: #000000 !important;
+          transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s;
+          color: #ffffff !important;
+        }
+        /* Scrollbar minimalista oscuro */
+        .carreras-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .carreras-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .carreras-scroll::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 3px;
+        }
+        .carreras-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.25);
+        }
+      `}</style>
+
       {/* Modal */}
       <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 animate-in fade-in-0 zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-        <div className="bg-black border border-white/10 rounded-lg shadow-2xl overflow-hidden">
+        <div className="bg-black border border-white/10 rounded-lg shadow-2xl overflow-hidden select-none">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
             <h2 className="text-base font-medium text-white">
@@ -368,10 +403,15 @@ export function CreateDocenteModal({ isOpen, onClose, onSubmit }: CreateDocenteM
 
             {/* Carreras (checkboxes) */}
             <div className="space-y-2">
-              <label className="block text-sm text-white/50">
+              <label className="flex items-center gap-2 text-sm text-white/50">
                 Carreras Asignadas
+                {formData.carreras.length > 0 && (
+                  <span className="w-5 h-5 flex items-center justify-center text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full">
+                    {formData.carreras.length}
+                  </span>
+                )}
               </label>
-              <div className="border border-white/10 rounded-lg p-3 max-h-48 overflow-y-auto space-y-1">
+              <div className="carreras-scroll border border-white/10 rounded-lg p-3 max-h-48 overflow-y-auto space-y-1">
                 {CARRERAS_DISPONIBLES.map((carrera) => {
                   const isSelected = formData.carreras.includes(carrera.id)
                   return (
@@ -397,11 +437,6 @@ export function CreateDocenteModal({ isOpen, onClose, onSubmit }: CreateDocenteM
               </div>
               {touched.carreras && errors.carreras && (
                 <p className="text-xs text-red-400">{errors.carreras}</p>
-              )}
-              {formData.carreras.length > 0 && (
-                <p className="text-xs text-white/40">
-                  {formData.carreras.length} carrera{formData.carreras.length !== 1 ? 's' : ''} seleccionada{formData.carreras.length !== 1 ? 's' : ''}
-                </p>
               )}
             </div>
 
