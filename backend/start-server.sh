@@ -31,4 +31,4 @@ if [ -d "venv" ]; then
 fi
 
 # Iniciar servidor
-python -m uvicorn api.main:app --host 0.0.0.0 --port 4000 --reload
+python3 -m uvicorn api.main:app --host 0.0.0.0 --port 4000 --reload

@@ -33,6 +33,12 @@ FULL_NAME="$NOMBRES $APELLIDO_PATERNO $APELLIDO_MATERNO"
 
 # Generar UID numérico único usando archivo contador (RÁPIDO)
 UID_FILE="/etc/uninet/last_uid"
+
+# Si no tenemos permisos de escritura, usar directorio temporal
+if [ ! -w "$UID_FILE" ] && [ ! -w "/etc/uninet/" ]; then
+    UID_FILE="/tmp/uninet_last_uid"
+fi
+
 if [ ! -f "$UID_FILE" ]; then
     # Primera vez: buscar el último UID en LDAP
     LAST_UID=$(ldapsearch -x -LLL -b "$LDAP_BASE" "(objectClass=posixAccount)" uidNumber 2>/dev/null | grep "^uidNumber:" | awk '{print $2}' | sort -n | tail -1)

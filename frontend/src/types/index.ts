@@ -21,6 +21,7 @@ export interface PC {
   user: string | null;  // Usuario LDAP actual o null
   lastSeen: Date;
   laboratoryId: string; // ID del laboratorio al que pertenece
+  carrera?: string;     // Código de carrera/laboratorio (5001-5012)
 }
 
 /**

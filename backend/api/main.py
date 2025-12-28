@@ -6,6 +6,9 @@ Servidor principal que gestiona monitoreo, usuarios LDAP y autenticación
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse, FileResponse
+from pathlib import Path
+import os
 
 from api.monitoring import router as monitoring_router
 from api.users import router as users_router
@@ -45,6 +48,67 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+
+# Endpoints para servir scripts de instalación del agente
+SCRIPTS_DIR = Path(__file__).parent.parent / "scripts" / "client"
+
+@app.get("/install", response_class=PlainTextResponse)
+async def get_install_script(request: Request):
+    """
+    Sirve el script de instalación con auto-detección de IP del servidor
+    URL: curl -sSL http://IP_SERVIDOR:4000/install | sudo bash
+    """
+    # Obtener la IP del servidor desde el header Host de la request
+    # Este header contiene exactamente lo que el cliente usó en la URL
+    host_header = request.headers.get("host", "")
+    
+    # Separar host y puerto si están presentes (ej: "172.29.137.160:4000" -> "172.29.137.160")
+    if ":" in host_header:
+        server_host = host_header.split(":")[0]
+    else:
+        server_host = host_header
+    
+    # Si no hay host header (no debería pasar), usar fallback
+    if not server_host:
+        server_host = request.url.hostname or "localhost"
+    
+    # Leer el template del script de instalación
+    install_template_path = SCRIPTS_DIR / "install-client.sh"
+    
+    if not install_template_path.exists():
+        return f"""#!/bin/bash
+echo "Error: Script de instalación no encontrado"
+echo "Por favor contacte al administrador"
+exit 1
+"""
+    
+    # Leer y reemplazar la IP del servidor
+    with open(install_template_path, 'r') as f:
+        script_content = f.read()
+    
+    # Reemplazar placeholder con la IP real
+    script_content = script_content.replace("{{SERVER_IP}}", server_host)
+    
+    return script_content
+
+
+@app.get("/agent", response_class=PlainTextResponse)
+async def get_agent_script():
+    """
+    Sirve el script del agente uninet-agent.sh
+    """
+    agent_path = SCRIPTS_DIR / "uninet-agent.sh"
+    
+    if not agent_path.exists():
+        return f"""#!/bin/bash
+echo "Error: Script del agente no encontrado"
+exit 1
+"""
+    
+    with open(agent_path, 'r') as f:
+        return f.read()
+
 
 if __name__ == "__main__":
     import uvicorn
