@@ -319,14 +319,43 @@ async def delete_user(user_data: UserDelete):
         raise HTTPException(status_code=500, detail=f"Script de eliminación no encontrado: {script_path}")
 
     try:
-        result = subprocess.run(["bash", script_path, user_data.username], capture_output=True, text=True, timeout=30)
+        print(f"🗑️  Intentando eliminar usuario: {user_data.username}")
+        print(f"📁 Script: {script_path}")
+        
+        result = subprocess.run(
+            ["bash", script_path, user_data.username], 
+            capture_output=True, 
+            text=True, 
+            timeout=30,
+            cwd=SCRIPT_DIR  # Ejecutar desde el directorio del script
+        )
+        
+        print(f"📤 Return code: {result.returncode}")
+        print(f"📤 Stdout: {result.stdout}")
+        print(f"📤 Stderr: {result.stderr}")
 
         if result.returncode == 0:
-            return {"success": True, "message": f"Usuario {user_data.username} eliminado exitosamente", "username": user_data.username}
+            return {
+                "success": True, 
+                "message": f"Usuario {user_data.username} eliminado exitosamente", 
+                "username": user_data.username
+            }
 
-        raise HTTPException(status_code=400, detail=f"Error al eliminar usuario: {result.stderr}")
+        # Capturar el error real
+        error_msg = result.stderr.strip() if result.stderr else result.stdout.strip()
+        if not error_msg:
+            error_msg = f"Script falló con código {result.returncode} sin mensaje de error"
+            
+        print(f"❌ Error: {error_msg}")
+        raise HTTPException(status_code=400, detail=f"Error al eliminar usuario: {error_msg}")
 
     except subprocess.TimeoutExpired:
+        print(f"⏱️  Timeout al eliminar usuario {user_data.username}")
         raise HTTPException(status_code=504, detail="Timeout al eliminar usuario")
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
     except Exception as e:
+        print(f"💥 Excepción inesperada: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
