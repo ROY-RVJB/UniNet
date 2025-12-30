@@ -165,30 +165,39 @@ else
     exit 1
 fi
 
-# Configurar cron para ejecutar cada 30 segundos
+# Configurar monitoreo automático (heartbeat cada 5 segundos)
 echo -e "${BLUE}⏱️  Configurando monitoreo automático...${NC}"
 
-# Crear script wrapper para ejecutar dos veces por minuto
+# Detectar si es actualización
+IS_UPDATE=false
+if crontab -l 2>/dev/null | grep -q "uninet-agent-runner"; then
+    IS_UPDATE=true
+    echo -e "${YELLOW}📦 Instalación existente detectada - Actualizando configuración...${NC}"
+    # Limpiar cron anterior
+    crontab -l 2>/dev/null | grep -v "uninet-agent-runner" | crontab - 2>/dev/null
+fi
+
+# Crear script wrapper para ejecutar cada 5 segundos (12 veces por minuto)
 CRON_WRAPPER="/usr/local/bin/uninet-agent-runner"
 cat > "$CRON_WRAPPER" << 'EOF'
 #!/bin/bash
-# Ejecutar el agente dos veces por minuto (cada 30 segundos)
-/usr/local/bin/uninet-agent
-sleep 30
-/usr/local/bin/uninet-agent
+# Ejecutar el agente 12 veces por minuto (cada 5 segundos)
+for i in {1..12}; do
+    /usr/local/bin/uninet-agent &
+    sleep 5
+done
 EOF
 
 chmod +x "$CRON_WRAPPER"
 
-# Agregar tarea a cron (se ejecuta cada minuto, pero el wrapper lo hace cada 30s)
+# Agregar tarea a cron (se ejecuta cada minuto, pero el wrapper lo hace cada 5s)
 CRON_JOB="* * * * * $CRON_WRAPPER >/dev/null 2>&1"
+(crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
 
-# Verificar si ya existe la entrada
-if ! crontab -l 2>/dev/null | grep -q "uninet-agent-runner"; then
-    (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
-    echo -e "${GREEN}✅ Monitoreo automático configurado (heartbeat cada 30 segundos)${NC}"
+if [ "$IS_UPDATE" = true ]; then
+    echo -e "${GREEN}✅ Monitoreo actualizado exitosamente (heartbeat cada 5 segundos - Detección RÁPIDA)${NC}"
 else
-    echo -e "${YELLOW}⚠️  Monitoreo automático ya estaba configurado${NC}"
+    echo -e "${GREEN}✅ Monitoreo automático configurado (heartbeat cada 5 segundos - Detección RÁPIDA)${NC}"
 fi
 
 # Verificar que el servicio cron esté activo

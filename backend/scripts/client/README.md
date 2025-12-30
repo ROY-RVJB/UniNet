@@ -8,17 +8,18 @@ Scripts para configurar el monitoreo automático en equipos de laboratorio (VMs 
 
 ### 📦 Método Recomendado (Interactivo)
 
-**En cada equipo Ubuntu del laboratorio, ejecutar:**
+**En cada equipo Ubuntu del laboratorio, ejecutar UN SOLO COMANDO:**
 
 ```bash
-# Paso 1: Descargar script
-curl -sSL http://IP_DEL_SERVIDOR:4000/install -o /tmp/uninet-install.sh
-
-# Paso 2: Ejecutar instalación
-sudo bash /tmp/uninet-install.sh
+curl -sSL http://IP-DEL-SERVIDOR:4000/install | sudo bash
 ```
 
-> **Reemplaza `IP_DEL_SERVIDOR`** con la IP del servidor (ej: `172.29.137.160`)
+> **Reemplaza `IP-DEL-SERVIDOR`** con la IP real de tu servidor (ejemplo: `172.29.137.160`)
+
+**Ejemplo real:**
+```bash
+curl -sSL http://172.29.137.160:4000/install | sudo bash
+```
 
 ---
 
@@ -50,54 +51,58 @@ Selecciona (1-12): _
 ✅ **¡Instalación completa!** El equipo ahora:
 - Aparece automáticamente en el dashboard
 - Permite login con usuarios LDAP creados en la web
-- Reporta su estado cada 30 segundos
+- Reporta su estado cada **5 segundos** (detección rápida)
 - Solo se muestra en el dashboard de su carrera
 
 ---
 
 ## 🔧 Métodos Alternativos
 
-### Opción 1: Con Variable de Entorno (Sin Menú)
+### Opción 1: Con Variable de Entorno (Para instalaciones masivas sin interacción)
 
-Si ya sabes el código de la carrera:
+**Solo úsalo si necesitas automatizar** la instalación en muchas PCs sin que pregunte:
 
 ```bash
-# Para Contabilidad (5002):
-CARRERA=5002 curl -sSL http://172.29.137.160:4000/install | sudo -E bash
-
-# Para Sistemas (5010):
-CARRERA=5010 curl -sSL http://172.29.137.160:4000/install | sudo -E bash
+# Ejemplo: Instalar en 20 PCs de Contabilidad sin menú interactivo
+CARRERA=5002 curl -sSL http://IP-DEL-SERVIDOR:4000/install | sudo -E bash
 ```
+
+**¿Cuándo usar esto?**
+- Scripts de instalación masiva
+- Imágenes pre-configuradas
+- Ansible/automatización
 
 **Códigos de carrera:** Ver tabla al final de este documento.
 
-### Opción 2: Automático (Default = Sistemas)
+### Opción 2: Modo Default (NO recomendado - solo para testing)
 
 ```bash
-curl -sSL http://172.29.137.160:4000/install | sudo bash
+curl -sSL http://IP-DEL-SERVIDOR:4000/install | sudo bash
 ```
 
-⚠️ Usa automáticamente código 5010 (Ingeniería de Sistemas)
+⚠️ Si no defines CARRERA ni seleccionas en el menú, usa automáticamente 5010 (Sistemas)
 
 ---
 
 ## 📋 Descripción del Sistema
 
-El sistema de monitoreo funciona mediante **heartbeats** (latidos): cada máquina cliente envía su estado cada 30 segundos al servidor. El servidor determina el estado de cada máquina basándose en:
+El sistema de monitoreo funciona mediante **heartbeats** (latidos): cada máquina cliente envía su estado cada **5 segundos** al servidor. El servidor determina el estado de cada máquina basándose en:
 
 ### Estados de las PCs
 
 1. **offline** 🔴
-   - No se ha recibido heartbeat en más de 60 segundos
+   - No se ha recibido heartbeat en más de **15 segundos**
    - La máquina está apagada o sin conexión de red
 
 2. **online** 🟢
-   - Se recibió heartbeat recientemente (< 60s)
+   - Se recibió heartbeat recientemente (< 15s)
    - No hay usuario activo en la sesión
 
 3. **inUse** 🔵
    - Se recibió heartbeat recientemente
    - Hay un usuario con sesión iniciada
+
+**⚡ Detección rápida:** Los cambios de estado se reflejan en **3-5 segundos**
 
 ---
 
@@ -158,7 +163,7 @@ sudo bash install-client.sh
 
 ## 📡 Funcionamiento del Agente
 
-El agente (`uninet-agent.sh`) recopila y envía cada 30 segundos:
+El agente (`uninet-agent.sh`) recopila y envía cada **5 segundos**:
 
 - **Hostname**: Nombre de la máquina
 - **IP**: Dirección IP principal (excluyendo loopback)
@@ -167,7 +172,7 @@ El agente (`uninet-agent.sh`) recopila y envía cada 30 segundos:
 
 Envía esta información mediante POST JSON a:
 ```
-http://SERVIDOR:4000/api/heartbeat
+http://SERVIDOR:4000/api/monitoring/heartbeat
 ```
 
 **Ejemplo de payload:**
@@ -229,13 +234,13 @@ id nombre.usuario             # Debe mostrar uid, gid
 
 ```bash
 # Ver estado de las PCs (todas)
-curl http://172.29.137.160:4000/api/status
+curl http://IP-DEL-SERVIDOR:4000/api/monitoring/status
 
 # Ver PCs de una carrera específica (ej: Contabilidad)
-curl http://172.29.137.160:4000/api/status?carrera=5002
+curl http://IP-DEL-SERVIDOR:4000/api/monitoring/status?carrera=5002
 
 # Verificar que el backend recibe heartbeats
-tail -f ~/UniNet/backend/logs/uvicorn.log
+tail -f backend/logs/server.log
 ```
 
 ### En el frontend (Dashboard Web)
@@ -260,8 +265,8 @@ Las PCs aparecerán según su estado:
 
 1. Verifica conectividad al servidor:
 ```bash
-ping 172.29.137.160
-curl http://172.29.137.160:4000/health
+ping IP-DEL-SERVIDOR
+curl http://IP-DEL-SERVIDOR:4000/health
 ```
 
 2. Ejecuta el agente manualmente y ve si hay errores:
@@ -355,8 +360,8 @@ crontab -l | grep -v uninet | crontab -
 
 ### La PC aparece como offline
 
-- Verificar que pasaron menos de 60 segundos desde el último heartbeat
-- El agente se ejecuta cada 30s, por lo que debería actualizarse constantemente
+- Verificar que pasaron menos de **15 segundos** desde el último heartbeat
+- El agente se ejecuta cada **5 segundos**, por lo que debería actualizarse constantemente
 
 ### No detecta el usuario activo
 
@@ -368,8 +373,20 @@ crontab -l | grep -v uninet | crontab -
 
 - El sistema NO requiere autenticación para enviar heartbeats (es unidireccional)
 - Los datos se almacenan en memoria en el servidor (se pierden al reiniciar)
-- El umbral de timeout es de 60 segundos (configurable en `monitoring.py`)
-- La frecuencia de heartbeat es de 30 segundos (cron cada minuto, ejecuta 2 veces)
+- El umbral de timeout es de **15 segundos** (configurable en `monitoring.py`)
+- La frecuencia de heartbeat es de **5 segundos** (cron ejecuta 12 veces por minuto)
+- **Detección rápida**: Cambios visibles en 3-5 segundos máximo
+
+### 🔄 Actualización de Clientes Existentes
+
+**¿Ya tienes clientes instalados con la versión antigua (30 segundos)?**
+
+Simplemente **vuelve a ejecutar el mismo comando de instalación:**
+```bash
+curl -sSL http://IP-DEL-SERVIDOR:4000/install | sudo bash
+```
+
+El script es **idempotente** - detecta instalación existente y actualiza automáticamente a 5 segundos.
 
 ## 🔐 Seguridad
 

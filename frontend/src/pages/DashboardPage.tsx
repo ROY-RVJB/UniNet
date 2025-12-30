@@ -99,8 +99,8 @@ export function DashboardPage() {
     // Fetch inicial
     fetchStatus();
 
-    // Polling cada 10 segundos para actualizar el estado
-    const interval = setInterval(fetchStatus, 10000);
+    // Polling cada 3 segundos para actualizar el estado (detección rápida)
+    const interval = setInterval(fetchStatus, 3000);
 
     return () => clearInterval(interval);
   }, [selectedCarrera]); // Re-fetch cuando cambie la carrera seleccionada

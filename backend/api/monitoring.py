@@ -159,7 +159,7 @@ async def get_status(carrera: Optional[str] = None):
     """Tu endpoint original de status, adaptado ligeramente"""
     results = []
     now = datetime.now()
-    timeout_threshold = timedelta(seconds=60)
+    timeout_threshold = timedelta(seconds=15)  # Reducido a 15 segundos para detección rápida
     
     for hostname, state in clients_state.items():
         # Filtro por carrera
@@ -190,7 +190,7 @@ async def get_status(carrera: Optional[str] = None):
 async def get_stats():
     """Tus estadísticas originales"""
     now = datetime.now()
-    timeout_threshold = timedelta(seconds=60)
+    timeout_threshold = timedelta(seconds=15)  # Reducido a 15 segundos para detección rápida
     
     total = len(clients_state)
     online = 0

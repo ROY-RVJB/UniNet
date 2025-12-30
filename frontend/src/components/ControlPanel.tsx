@@ -55,8 +55,8 @@ export function ControlPanel() {
   // Ejecutar al montar o cambiar carrera
   useEffect(() => {
     fetchData();
-    // Opcional: Polling cada 10 segundos para actualizar stats
-    const interval = setInterval(fetchData, 10000);
+    // Opcional: Polling cada 3 segundos para actualizar stats (detección rápida)
+    const interval = setInterval(fetchData, 3000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
