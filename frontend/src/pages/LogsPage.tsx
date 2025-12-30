@@ -41,7 +41,7 @@ export function LogsPage() {
         const token = localStorage.getItem('uninet_token');
         // Siempre enviar carrera (por defecto 5010 si no hay selección)
         const carreraValue = selectedCarrera || '5010';
-        const res = await fetch(`${apiUrl}/api/logs?limit=500&carrera=${encodeURIComponent(carreraValue)}`, {
+        const res = await fetch(`${apiUrl}/api/monitoring/logs?limit=500&carrera=${encodeURIComponent(carreraValue)}`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
         if (res.ok) {

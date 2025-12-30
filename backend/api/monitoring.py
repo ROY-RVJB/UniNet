@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 import uuid
-
+from fastapi import APIRouter
 router = APIRouter()
 
 # --- 1. MEMORIA DEL SISTEMA (RAM) ---

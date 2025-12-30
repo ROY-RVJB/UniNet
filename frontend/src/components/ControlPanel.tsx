@@ -33,7 +33,7 @@ export function ControlPanel() {
       const headers = { 'Authorization': `Bearer ${token}` };
 
       // A. Obtener Estado del Botón (Endpoint: /network/status)
-      const statusRes = await fetch(`${apiUrl}/api/network/status?carrera=${selectedCarrera.id}`, { headers });
+      const statusRes = await fetch(`${apiUrl}/api/monitoring/network/status?carrera=${selectedCarrera.id}`, { headers });
       if (statusRes.ok) {
         const data = await statusRes.json();
         // Convertir "bloquear" -> "examen", "desbloquear" -> "clase"
@@ -42,7 +42,7 @@ export function ControlPanel() {
       }
 
       // B. Obtener Estadísticas (Endpoint: /stats)
-      const statsRes = await fetch(`${apiUrl}/api/stats`, { headers });
+      const statsRes = await fetch(`${apiUrl}/api/monitoring/stats`, { headers });
       if (statsRes.ok) {
         const data = await statsRes.json();
         setStats(data);
@@ -72,7 +72,7 @@ export function ControlPanel() {
       const token = localStorage.getItem('uninet_token');
       
       // Llamada a tu endpoint POST /network/control_internet
-      const res = await fetch(`${apiUrl}/api/network/control_internet`, {
+      const res = await fetch(`${apiUrl}/api/monitoring/network/control_internet`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

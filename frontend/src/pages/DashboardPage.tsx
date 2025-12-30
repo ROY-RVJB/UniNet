@@ -54,7 +54,7 @@ export function DashboardPage() {
     const fetchStatus = async () => {
       try {
         // Construir URL con filtro de carrera si está seleccionada
-        let url = `${apiUrl}/api/status`;
+        let url = `${apiUrl}/api/monitoring/status`;
         if (selectedCarrera) {
           url += `?carrera=${selectedCarrera.id}`;
         }
