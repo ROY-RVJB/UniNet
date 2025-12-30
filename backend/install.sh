@@ -160,8 +160,8 @@ echo "   Detener:       sudo systemctl stop uninet-api"
 echo "   Ver estado:    sudo systemctl status uninet-api"
 echo ""
 echo "🌐 El servidor está escuchando en:"
-echo "   http://localhost:4000/status"
-echo "   http://$(hostname -I | awk '{print $1}'):4000/status"
+echo "   http://localhost:4000/health"
+echo "   http://$(hostname -I | awk '{print $1}'):4000/health"
 
 # Mostrar IP de Tailscale si está instalado
 if command -v tailscale &> /dev/null; then
@@ -169,7 +169,7 @@ if command -v tailscale &> /dev/null; then
     if [ -n "$TAILSCALE_IP" ]; then
         echo ""
         echo -e "${GREEN}📡 IP de Tailscale detectada:${NC}"
-        echo -e "   ${BLUE}http://${TAILSCALE_IP}:4000/status${NC}"
+        echo -e "   ${BLUE}http://${TAILSCALE_IP}:4000/health${NC}"
         echo ""
         echo "💡 Usa esta IP para instalar clientes desde cualquier lugar:"
         echo -e "   ${GREEN}SERVER_IP=${TAILSCALE_IP} CARRERA=5010 curl -sSL http://${TAILSCALE_IP}:4000/install | sudo -E bash${NC}"
@@ -178,5 +178,5 @@ fi
 
 echo ""
 echo "💡 Prueba desde otra máquina:"
-echo "   curl http://$(hostname -I | awk '{print $1}'):4000/status"
+echo "   curl http://$(hostname -I | awk '{print $1}'):4000/health"
 echo ""

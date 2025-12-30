@@ -52,7 +52,7 @@ tailscale ip -4
 
 ```bash
 # Desde el servidor
-curl http://$(tailscale ip -4):4000/status
+curl http://$(tailscale ip -4):4000/health
 
 # Ver logs en tiempo real
 sudo journalctl -u uninet-api -f
