@@ -33,8 +33,13 @@ SERVER_IP="{{SERVER_IP}}"
 # Usamos pattern matching para evitar que esta línea también se reemplace
 if [[ "$SERVER_IP" == "{{"*"}}" ]]; then
     echo -e "${YELLOW}⚠️  Auto-detección de servidor falló${NC}"
-    echo "Por favor ingresa la IP o hostname del servidor UniNet:"
-    read -p "Servidor: " SERVER_IP
+    echo ""
+    echo "Por favor ingresa la IP de Tailscale del servidor UniNet:"
+    echo -e "${BLUE}   Ejemplo: 100.112.81.15${NC}"
+    echo ""
+    echo -e "${BLUE}💡 Tip: En tu servidor Ubuntu, ejecuta:${NC} ${GREEN}tailscale ip -4${NC}"
+    echo ""
+    read -p "IP de Tailscale del servidor: " SERVER_IP
     if [ -z "$SERVER_IP" ]; then
         echo -e "${RED}❌ Error: Se requiere la IP del servidor${NC}"
         exit 1

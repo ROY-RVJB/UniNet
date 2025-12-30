@@ -4,70 +4,143 @@ Servidor FastAPI que gestiona autenticación LDAP, usuarios y monitoreo de labor
 
 ---
 
-## 🚀 Configuración del Servidor (Primera Vez)
+## 🔑 PASO 0: Generar Auth Key de Tailscale (Una sola vez)
 
-### 1️⃣ Clonar el Repositorio
-```bash
-git clone https://github.com/TU-REPO/UniNet.git
-cd UniNet/backend
-```
+**El administrador (Alex) debe hacer esto UNA VEZ y compartir el token con el equipo:**
 
-### 2️⃣ Instalar Dependencias
-```bash
-# Crear entorno virtual
-python3 -m venv venv
-source venv/bin/activate
+1. Ir a: https://login.tailscale.com/admin/settings/keys
+2. Click en **"Generate auth key"**
+3. Configurar:
+   - ✅ **Reusable** (para usar en múltiples máquinas)
+   - ✅ **Preauthorized** (no necesita aprobación manual)
+   - ❌ **Ephemeral** (desactivar)
+   - **Expiration:** 90 días
 
-# Instalar dependencias
-pip install -r requirements.txt
-```
+4. Copiar el token generado:
+   ```
+   tskey-auth-kXXXXXXXXXXXXXXXXXXXXXXXX
+   ```
 
-### 3️⃣ Configurar OpenLDAP (si no está instalado)
-```bash
-cd scripts/ldap
-sudo bash setup.sh
-```
-Este script configura:
-- ✅ OpenLDAP (slapd)
-- ✅ Base DN: `dc=uninet,dc=com`
-- ✅ Usuario admin: `cn=admin,dc=uninet,dc=com`
-- ✅ Contraseña admin: `admin123` (cámbiala en producción)
-- ✅ OUs: users, groups
-
-### 4️⃣ Configurar Permisos
-```bash
-cd scripts
-sudo bash setup-permissions.sh
-```
-Configura:
-- Permisos de archivos LDAP
-- Contador de UID automático
-- Archivo de contraseña admin
-
-### 5️⃣ Iniciar el Servidor
-```bash
-cd backend
-./start-server.sh
-```
-
-✅ **Servidor corriendo en:** `http://0.0.0.0:4000`
-📊 **Documentación API:** `http://0.0.0.0:4000/docs`
+5. **Compartir este token con Roy, Patrick y guardarlo para instalaciones futuras**
 
 ---
 
-## 🖥️ Configuración de Equipos Cliente (Estudiantes)
+## 🖥️ Convertir una VM Ubuntu en SERVIDOR
 
-Una vez que el servidor esté corriendo, los equipos de los estudiantes se instalan fácilmente.
-
-### 📦 Instalación en Cliente (Método Interactivo - Recomendado)
-
-En cada equipo Ubuntu de laboratorio, ejecutar:
+**Ejecutar estos comandos en orden:**
 
 ```bash
-# Paso 1: Descargar script de instalación
-curl -sSL http://IP_DEL_SERVIDOR:4000/install -o /tmp/uninet-install.sh
+# 1. Instalar Tailscale y unirse a la red
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up --authkey=tskey-auth-kXXXXXXXXXXXXXXXXXXXXXXXX
 
-# Paso 2: Ejecutar instalación interactiva
+# 2. Clonar el proyecto
+git clone https://github.com/TU-REPO/UniNet.git
+cd UniNet/backend
+
+# 3. Instalar el servidor (configura automáticamente Tailscale, LDAP, firewall, etc.)
+sudo ./install.sh
+
+# 4. Anotar tu IP de Tailscale
+tailscale ip -4
+# Ejemplo: 100.112.81.15
+```
+
+**¡Listo!** Tu servidor está corriendo en: `http://100.112.81.15:4000`
+
+### Verificar que funciona:
+
+```bash
+# Desde el servidor
+curl http://$(tailscale ip -4):4000/status
+
+# Ver logs en tiempo real
+sudo journalctl -u uninet-api -f
+```
+
+---
+
+## 💻 Convertir una VM Ubuntu en CLIENTE (PC de Laboratorio)
+
+**Ejecutar estos comandos en orden:**
+
+```bash
+# 1. Instalar Tailscale y unirse a la red
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up --authkey=tskey-auth-kXXXXXXXXXXXXXXXXXXXXXXXX
+
+# 2. Instalar agente de monitoreo
+SERVER_IP=100.112.81.15 CARRERA=5010 curl -sSL http://100.112.81.15:4000/install | sudo -E bash
+```
+
+**Variables a cambiar:**
+- `SERVER_IP`: La IP de Tailscale de tu servidor (del paso anterior)
+- `CARRERA`: Código de la carrera (5001-5012)
+
+### Códigos de Carrera:
+
+```
+5001 → Administración y Negocios Internacionales
+5002 → Contabilidad y Finanzas
+5003 → Derecho y Ciencias Políticas
+5004 → Ecoturismo
+5005 → Educación Inicial y Especial
+5006 → Educación Matemáticas y Computación
+5007 → Educación Primaria e Informática
+5008 → Enfermería
+5009 → Ingeniería Agroindustrial
+5010 → Ingeniería de Sistemas e Informática
+5011 → Ingeniería Forestal y Medio Ambiente
+5012 → Medicina Veterinaria y Zootecnia
+```
+
+**¡Listo!** El cliente está reportando al servidor cada 30 segundos.
+
+---
+
+## 👥 Para Desarrolladores (Roy, Patrick)
+
+Si quieres tu propio servidor de desarrollo:
+
+```bash
+# 1. Usar el mismo Auth Key compartido
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up --authkey=tskey-auth-kXXXXXXXXXXXXXXXXXXXXXXXX
+
+# 2. Clonar y configurar
+git clone https://github.com/TU-REPO/UniNet.git
+cd UniNet/backend
+sudo ./install.sh
+
+# 3. Obtener tu IP
+tailscale ip -4
+# Ejemplo: 100.96.133.34
+
+# 4. Configurar frontend en tu PC Windows
+cd ../frontend
+cp .env.example .env.local
+echo "VITE_API_URL=http://100.96.133.34:4000" > .env.local
+```
+
+---
+
+## 📚 Documentación Completa
+
+- **Guía completa de Tailscale:** [TAILSCALE-SETUP.md](TAILSCALE-SETUP.md)
+- **Migrar desde ZeroTier:** [MIGRATION-CHECKLIST.md](MIGRATION-CHECKLIST.md)
+- **Comandos rápidos:** [QUICK-REFERENCE.md](QUICK-REFERENCE.md)
+
+---
+
+## 🛠️ Instalación Manual (Si prefieres paso a paso)
+
+### 📦 Instalación en Cliente (Método Interactivo - Alternativo)
+
+Si no quieres especificar la carrera en el comando:
+
+```bash
+# Descargar e instalar interactivamente
+curl -sSL http://100.112.81.15:4000/install -o /tmp/uninet-install.sh
 sudo bash /tmp/uninet-install.sh
 ```
 
@@ -95,26 +168,7 @@ Selecciona (1-12): _
 
 ---
 
-### 🔧 Métodos Alternativos de Instalación
-
-#### Opción 1: Modo Rápido con Variable (Sin Menú)
-```bash
-# Para Contabilidad (código 5002):
-CARRERA=5002 curl -sSL http://IP_DEL_SERVIDOR:4000/install | sudo -E bash
-
-# Para Sistemas (código 5010):
-CARRERA=5010 curl -sSL http://IP_DEL_SERVIDOR:4000/install | sudo -E bash
-```
-
-#### Opción 2: Modo Automático (Default = Sistemas)
-```bash
-curl -sSL http://IP_DEL_SERVIDOR:4000/install | sudo bash
-```
-⚠️ Usa automáticamente carrera 5010 (Sistemas)
-
----
-
-## 🔄 ¿Qué hace la instalación en los clientes?
+##  ¿Qué hace la instalación en los clientes?
 
 1. **Detecta IP del servidor automáticamente**
 2. **Solicita laboratorio/carrera** (interactivo o por variable)

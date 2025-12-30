@@ -18,8 +18,37 @@ else
 fi
 
 echo ""
+echo "� Verificando configuración de red..."
+
+# Verificar Tailscale
+if command -v tailscale &> /dev/null; then
+    TAILSCALE_IP=$(tailscale ip -4 2>/dev/null)
+    if [ -n "$TAILSCALE_IP" ]; then
+        echo "✅ Tailscale detectado"
+        echo "   IP: $TAILSCALE_IP"
+        
+        # Configurar firewall automáticamente si UFW está instalado
+        if command -v ufw &> /dev/null; then
+            echo "🔥 Configurando firewall..."
+            sudo ufw allow in on tailscale0 >/dev/null 2>&1
+            sudo ufw allow 4000/tcp >/dev/null 2>&1
+            echo "✅ Firewall configurado"
+        fi
+    else
+        echo "⚠️  Tailscale instalado pero no conectado"
+        echo "   Ejecuta: sudo tailscale up"
+    fi
+else
+    echo "⚠️  Tailscale no detectado"
+    echo "   Considera instalarlo: curl -fsSL https://tailscale.com/install.sh | sh"
+fi
+
+echo ""
 echo "🚀 Iniciando servidor UniNet..."
-echo "📡 URL: http://0.0.0.0:4000"
+echo "📡 URL local: http://0.0.0.0:4000"
+if [ -n "$TAILSCALE_IP" ]; then
+    echo "📡 URL Tailscale: http://$TAILSCALE_IP:4000"
+fi
 echo "📊 Docs: http://0.0.0.0:4000/docs"
 echo ""
 echo "⏸️  Para detener: Ctrl+C"

@@ -119,8 +119,30 @@ systemctl start uninet-api
 if command -v ufw &> /dev/null; then
     echo ""
     echo "🔥 Configurando firewall (UFW)..."
+    
+    # Permitir tráfico en la interfaz de Tailscale
+    if ip link show tailscale0 &> /dev/null; then
+        echo "   🔓 Permitiendo tráfico en tailscale0 (Tailscale)..."
+        ufw allow in on tailscale0
+        echo -e "   ${GREEN}✓ Tailscale configurado${NC}"
+    else
+        echo -e "   ${YELLOW}⚠️  Tailscale no detectado. Considera instalarlo para acceso remoto.${NC}"
+        echo "      Comando: curl -fsSL https://tailscale.com/install.sh | sh"
+    fi
+    
+    # Permitir puerto 4000 (FastAPI)
     ufw allow 4000/tcp
-    echo -e "${GREEN}✓ Puerto 4000 abierto${NC}"
+    echo -e "   ${GREEN}✓ Puerto 4000/tcp abierto (FastAPI)${NC}"
+    
+    # Permitir puerto 389 (LDAP) si está instalado
+    if command -v slapd &> /dev/null; then
+        ufw allow 389/tcp
+        echo -e "   ${GREEN}✓ Puerto 389/tcp abierto (LDAP)${NC}"
+    fi
+    
+    # Asegurar que UFW esté activo
+    ufw --force enable
+    echo -e "${GREEN}✓ Firewall configurado${NC}"
 fi
 
 # Verificar estado
@@ -140,6 +162,20 @@ echo ""
 echo "🌐 El servidor está escuchando en:"
 echo "   http://localhost:4000/status"
 echo "   http://$(hostname -I | awk '{print $1}'):4000/status"
+
+# Mostrar IP de Tailscale si está instalado
+if command -v tailscale &> /dev/null; then
+    TAILSCALE_IP=$(tailscale ip -4 2>/dev/null)
+    if [ -n "$TAILSCALE_IP" ]; then
+        echo ""
+        echo -e "${GREEN}📡 IP de Tailscale detectada:${NC}"
+        echo -e "   ${BLUE}http://${TAILSCALE_IP}:4000/status${NC}"
+        echo ""
+        echo "💡 Usa esta IP para instalar clientes desde cualquier lugar:"
+        echo -e "   ${GREEN}SERVER_IP=${TAILSCALE_IP} CARRERA=5010 curl -sSL http://${TAILSCALE_IP}:4000/install | sudo -E bash${NC}"
+    fi
+fi
+
 echo ""
 echo "💡 Prueba desde otra máquina:"
 echo "   curl http://$(hostname -I | awk '{print $1}'):4000/status"
