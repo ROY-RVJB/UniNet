@@ -81,9 +81,11 @@ rm /tmp/base.ldif
 # Guardar configuración
 mkdir -p /etc/uninet
 cat > /etc/uninet/ldap.conf << EOF
+LDAP_URI=ldap://localhost:389
 LDAP_BASE=$LDAP_BASE
 LDAP_ADMIN=cn=admin,$LDAP_BASE
 LDAP_DOMAIN=$DOMAIN
+LDAP_GROUPS_BASE=ou=groups,$LDAP_BASE
 EOF
 
 echo ""

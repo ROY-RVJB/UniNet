@@ -9,9 +9,19 @@ if [ ! -f /etc/uninet/ldap.conf ]; then
     exit 1
 fi
 source /etc/uninet/ldap.conf
-# Buscar todos los usuarios (posixAccount incluye tanto nuevos como antiguos)
-ldapsearch -x -LLL -b "ou=users,$LDAP_BASE" "(objectClass=posixAccount)" \
-    uid employeeNumber givenName sn cn description departmentNumber mail dn 2>/dev/null | \
+
+# Verificar que LDAP_BASE está definido
+if [ -z "$LDAP_BASE" ]; then
+    echo "Error: LDAP_BASE no está definido en /etc/uninet/ldap.conf" >&2
+    exit 1
+fi
+
+# Determinar URI de LDAP (por defecto localhost)
+LDAP_URI=${LDAP_URI:-ldap://localhost:389}
+
+# Buscar todos los usuarios con timeout de 8 segundos
+timeout 8 ldapsearch -x -H "$LDAP_URI" -LLL -b "ou=users,$LDAP_BASE" "(objectClass=posixAccount)" \
+    uid employeeNumber givenName sn cn description departmentNumber mail dn 2>&1 | \
 awk '
 BEGIN { OFS="|" }
 /^dn:/ { dn=$2; for(i=3;i<=NF;i++) dn=dn" "$i }

@@ -240,7 +240,7 @@ async def list_users(carrera: Optional[str] = None):
         raise HTTPException(status_code=500, detail=f"Script de listado no encontrado: {script_path}")
 
     try:
-        result = subprocess.run(["bash", script_path], capture_output=True, text=True, timeout=10)
+        result = subprocess.run(["bash", script_path], capture_output=True, text=True, timeout=30)
 
         if result.returncode == 0:
             users: list[UserResponse] = []
