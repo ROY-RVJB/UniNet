@@ -31,9 +31,15 @@ if ! ldapsearch -x -b "$USER_DN" "(objectClass=*)" dn 2>/dev/null | grep -q "^dn
     exit 1
 fi
 
-# Pedir contraseña de admin LDAP
-read -sp "Contraseña de admin LDAP: " ADMIN_PASS
-echo ""
+# Obtener contraseña de admin LDAP (primero variable, luego archivo)
+ADMIN_PASS=${LDAP_ADMIN_PASSWORD:-$(cat /etc/uninet/ldap_admin_pass 2>/dev/null || echo "")}
+
+# Si no hay contraseña disponible, error
+if [ -z "$ADMIN_PASS" ]; then
+    echo "❌ Error: No se pudo obtener la contraseña de admin LDAP" >&2
+    echo "   Verifica que existe /etc/uninet/ldap_admin_pass o define LDAP_ADMIN_PASSWORD" >&2
+    exit 1
+fi
 
 # Si es contraseña, encriptarla
 if [ "$ATTRIBUTE" == "userPassword" ]; then

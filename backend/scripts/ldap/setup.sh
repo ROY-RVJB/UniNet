@@ -88,6 +88,11 @@ LDAP_DOMAIN=$DOMAIN
 LDAP_GROUPS_BASE=ou=groups,$LDAP_BASE
 EOF
 
+# Guardar contraseña de admin de forma segura (para uso automático de scripts)
+echo "$ADMIN_PASS" > /etc/uninet/ldap_admin_pass
+chmod 600 /etc/uninet/ldap_admin_pass
+chown root:root /etc/uninet/ldap_admin_pass
+
 echo ""
 echo "============================================================"
 echo -e "  ${GREEN}✅ OpenLDAP instalado correctamente${NC}"

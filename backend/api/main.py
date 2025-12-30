@@ -49,6 +49,56 @@ async def root():
 async def health_check():
     return {"status": "ok"}
 
+@app.get("/ldap-config")
+async def get_ldap_config(request: Request):
+    """
+    Sirve la configuración LDAP del servidor para clientes
+    Lee de /etc/uninet/ldap.conf y /etc/uninet/ldap_admin_pass
+    """
+    try:
+        # Leer configuración LDAP
+        ldap_conf = {}
+        if os.path.exists("/etc/uninet/ldap.conf"):
+            with open("/etc/uninet/ldap.conf", "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        key, value = line.split("=", 1)
+                        ldap_conf[key.strip()] = value.strip()
+        
+        # Leer contraseña de admin
+        admin_pass = ""
+        if os.path.exists("/etc/uninet/ldap_admin_pass"):
+            with open("/etc/uninet/ldap_admin_pass", "r") as f:
+                admin_pass = f.read().strip()
+        
+        # Construir respuesta
+        if not ldap_conf:
+            return {
+                "error": "LDAP not configured",
+                "message": "Run backend/scripts/ldap/setup.sh first"
+            }
+        
+        # Obtener IP del servidor desde el header Host
+        host_header = request.headers.get("host", "")
+        if ":" in host_header:
+            server_ip = host_header.split(":")[0]
+        else:
+            server_ip = host_header or request.url.hostname or "localhost"
+        
+        return {
+            "ldap_uri": ldap_conf.get("LDAP_URI", f"ldap://{server_ip}"),
+            "ldap_base": ldap_conf.get("LDAP_BASE", "dc=uninet,dc=com"),
+            "ldap_admin": ldap_conf.get("LDAP_ADMIN", "cn=admin,dc=uninet,dc=com"),
+            "ldap_admin_pass": admin_pass,
+            "ldap_groups_base": ldap_conf.get("LDAP_GROUPS_BASE", "ou=groups,dc=uninet,dc=com")
+        }
+    except Exception as e:
+        return {
+            "error": "Failed to read LDAP config",
+            "message": str(e)
+        }
+
 
 # Endpoints para servir scripts de instalación del agente
 SCRIPTS_DIR = Path(__file__).parent.parent / "scripts" / "client"

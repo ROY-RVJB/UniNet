@@ -215,11 +215,47 @@ fi
 echo ""
 echo -e "${BLUE}🔐 Configurando autenticación LDAP...${NC}"
 
-# Configuración LDAP
-LDAP_SERVER="ldap://${SERVER_IP}"
-LDAP_BASE_DN="dc=uninet,dc=com"
-LDAP_BIND_DN="cn=admin,dc=uninet,dc=com"
-LDAP_BIND_PW="admin123"
+# Descargar configuración LDAP del servidor automáticamente
+echo -e "${BLUE}📥 Obteniendo configuración LDAP del servidor...${NC}"
+LDAP_CONFIG_JSON=$(curl -s --max-time 5 "http://${SERVER_IP}:${SERVER_PORT}/ldap-config")
+
+# Verificar si se obtuvo configuración válida
+if echo "$LDAP_CONFIG_JSON" | grep -q "ldap_base"; then
+    # Parsear JSON con jq (o manualmente si no está disponible)
+    if command -v jq &> /dev/null; then
+        LDAP_SERVER=$(echo "$LDAP_CONFIG_JSON" | jq -r '.ldap_uri')
+        LDAP_BASE_DN=$(echo "$LDAP_CONFIG_JSON" | jq -r '.ldap_base')
+        LDAP_BIND_DN=$(echo "$LDAP_CONFIG_JSON" | jq -r '.ldap_admin')
+        LDAP_BIND_PW=$(echo "$LDAP_CONFIG_JSON" | jq -r '.ldap_admin_pass')
+    else
+        # Parsear manualmente sin jq
+        LDAP_SERVER=$(echo "$LDAP_CONFIG_JSON" | grep -o '"ldap_uri":"[^"]*"' | cut -d'"' -f4)
+        LDAP_BASE_DN=$(echo "$LDAP_CONFIG_JSON" | grep -o '"ldap_base":"[^"]*"' | cut -d'"' -f4)
+        LDAP_BIND_DN=$(echo "$LDAP_CONFIG_JSON" | grep -o '"ldap_admin":"[^"]*"' | cut -d'"' -f4)
+        LDAP_BIND_PW=$(echo "$LDAP_CONFIG_JSON" | grep -o '"ldap_admin_pass":"[^"]*"' | cut -d'"' -f4)
+    fi
+    
+    # Si LDAP_SERVER no tiene protocolo, agregarlo
+    if [[ ! "$LDAP_SERVER" =~ ^ldap:// ]]; then
+        LDAP_SERVER="ldap://${SERVER_IP}"
+    fi
+    
+    echo -e "${GREEN}✅ Configuración LDAP obtenida del servidor${NC}"
+    echo -e "${GREEN}   Base DN: $LDAP_BASE_DN${NC}"
+else
+    # Fallback: Configuración por defecto (solo si el servidor no está configurado)
+    echo -e "${YELLOW}⚠️  No se pudo obtener configuración LDAP del servidor${NC}"
+    echo -e "${YELLOW}⚠️  Usando configuración por defecto${NC}"
+    echo ""
+    echo -e "${BLUE}💡 Para configurar LDAP en el servidor, ejecuta:${NC}"
+    echo -e "${GREEN}   cd backend/scripts/ldap && sudo bash setup.sh${NC}"
+    echo ""
+    
+    LDAP_SERVER="ldap://${SERVER_IP}"
+    LDAP_BASE_DN="dc=uninet,dc=com"
+    LDAP_BIND_DN="cn=admin,dc=uninet,dc=com"
+    LDAP_BIND_PW="admin123"
+fi
 
 # Instalar paquetes necesarios para LDAP
 echo -e "${BLUE}📦 Instalando paquetes LDAP...${NC}"
@@ -390,7 +426,7 @@ echo "   • Hostname: $HOSTNAME"
 echo "   • IP: $IP"
 echo "   • Servidor: $SERVER_IP:$SERVER_PORT"
 echo ""
-echo "🎯 Este equipo ahora envía su estado cada 30 segundos"
+echo "🎯 Este equipo ahora envía su estado cada 5 segundos (⚡ Detección RÁPIDA)"
 echo "   Verifica el dashboard en: http://$SERVER_IP:5173"
 echo ""
 echo "🔐 Autenticación LDAP configurada:"
@@ -405,7 +441,7 @@ echo "   • Listar usuarios LDAP: getent passwd | grep '/home'"
 echo "   • Probar usuario LDAP: id <nombre_usuario>"
 echo ""
 echo "💡 Funcionamiento automático:"
-echo "   • Estado de la máquina se reporta cada 30 segundos"
+echo "   • Estado de la máquina se reporta cada 5 segundos (⚡ Cambios visibles en 3-5s)"
 echo "   • Usuario activo se muestra en el dashboard"
 echo "   • Los usuarios LDAP pueden hacer login gráfico"
 echo ""

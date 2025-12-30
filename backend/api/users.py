@@ -319,7 +319,7 @@ async def delete_user(user_data: UserDelete):
         raise HTTPException(status_code=500, detail=f"Script de eliminación no encontrado: {script_path}")
 
     try:
-        result = subprocess.run(["bash", script_path, user_data.username], capture_output=True, text=True, timeout=10)
+        result = subprocess.run(["bash", script_path, user_data.username], capture_output=True, text=True, timeout=30)
 
         if result.returncode == 0:
             return {"success": True, "message": f"Usuario {user_data.username} eliminado exitosamente", "username": user_data.username}
