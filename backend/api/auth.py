@@ -104,6 +104,14 @@ class DocenteCreateRequest(BaseModel):
     carreras: List[str] = []
 
 
+class DocenteUpdateRequest(BaseModel):
+    """Request para actualizar docente"""
+    full_name: str | None = None
+    email: str | None = None
+    password: str | None = None
+    carreras: List[str] | None = None
+
+
 def init_db():
     """Inicializa la base de datos de administradores"""
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
@@ -569,4 +577,76 @@ async def delete_docente(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al eliminar docente: {str(e)}"
+        )
+
+
+@docentes_router.put("/{docente_id}", response_model=dict)
+async def update_docente(
+    docente_id: str,
+    data: DocenteUpdateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Actualiza un docente (solo admin)"""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo el administrador puede editar docentes"
+        )
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Verificar que el docente existe
+    cursor.execute("SELECT id FROM admins WHERE id = ?", (docente_id,))
+    row = cursor.fetchone()
+
+    if not row:
+        conn.close()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Docente no encontrado"
+        )
+
+    try:
+        # 1. Actualizar campos básicos
+        update_fields = []
+        params = []
+
+        if data.full_name is not None:
+            update_fields.append("full_name = ?")
+            params.append(data.full_name)
+        
+        if data.email is not None:
+            update_fields.append("email = ?")
+            params.append(data.email)
+
+        if data.password:
+            update_fields.append("hashed_password = ?")
+            params.append(get_password_hash(data.password))
+
+        if update_fields:
+            params.append(docente_id)
+            cursor.execute(f"UPDATE admins SET {', '.join(update_fields)} WHERE id = ?", tuple(params))
+
+        # 2. Actualizar carreras (si se enviaron)
+        if data.carreras is not None:
+            # Eliminar asignaciones actuales
+            cursor.execute("DELETE FROM docentes_carreras WHERE docente_id = ?", (docente_id,))
+            
+            # Insertar nuevas
+            for carrera_id in data.carreras:
+                cursor.execute("""
+                    INSERT INTO docentes_carreras (docente_id, carrera_id)
+                    VALUES (?, ?)
+                """, (docente_id, carrera_id))
+
+        conn.commit()
+        conn.close()
+
+        return {"message": "Docente actualizado correctamente"}
+    except Exception as e:
+        conn.close()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al actualizar docente: {str(e)}"
         )
