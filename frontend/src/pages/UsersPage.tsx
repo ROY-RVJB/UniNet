@@ -100,6 +100,24 @@ export function UsersPage() {
     }
   }
 
+  // Actualizar docente
+  const handleUpdateDocente = async (id: string, data: Partial<DocenteFormData>) => {
+    const token = localStorage.getItem('uninet_token')
+    const res = await fetch(`${apiUrl}/api/docentes/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}))
+      throw new Error(error.detail || 'Error al actualizar docente')
+    }
+  }
+
   useEffect(() => {
     // Esperar a que la carrera esté inicializada antes de hacer fetch
     if (!isCarreraReady) {
@@ -129,6 +147,7 @@ export function UsersPage() {
             docentes={docentes}
             onRefresh={fetchDocentes}
             onCreate={handleCreateDocente}
+            onUpdate={handleUpdateDocente}
             onDelete={handleDeleteDocente}
           />
         </div>

@@ -45,3 +45,8 @@ coverage
 
 # OS files
 Thumbs.db
+
+# Local E2E Tests
+e2e-local/
+test-results/
+playwright-report/

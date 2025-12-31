@@ -1,9 +1,16 @@
 import { Card } from '@/components/ui/card';
-import { Globe, Lock, AlertTriangle, FileText, Settings, Terminal, Loader2, RefreshCw } from 'lucide-react';
+import { Globe, Lock, AlertTriangle, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useCarrera } from '@/contexts/CarreraContext';
 
 type LabMode = 'clase' | 'examen';
+
+interface NetworkStats {
+  online: number;
+  inUse: number;
+  total: number;
+  offline?: number;
+}
 
 // Mapeo entre tu Backend (bloquear/desbloquear) y Frontend (examen/clase)
 const MODE_TO_ACTION = {
@@ -11,15 +18,10 @@ const MODE_TO_ACTION = {
   examen: 'bloquear'
 };
 
-const ACTION_TO_MODE = {
-  desbloquear: 'clase',
-  bloquear: 'examen'
-};
-
 export function ControlPanel() {
   const [currentMode, setCurrentMode] = useState<LabMode>('clase');
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({ online: 0, inUse: 0, total: 0 });
+  const [stats, setStats] = useState<NetworkStats>({ online: 0, inUse: 0, total: 0, offline: 0 });
   
   const { selectedCarrera } = useCarrera();
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";

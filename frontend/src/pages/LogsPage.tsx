@@ -1,5 +1,6 @@
 import { LogViewer } from '@/components/LogViewer'
 import { useEffect, useState } from 'react';
+import type { LogEntry } from '@/types';
 
 interface CarreraOption {
   value: string;
@@ -7,7 +8,7 @@ interface CarreraOption {
 }
 
 export function LogsPage() {
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [carreras, setCarreras] = useState<CarreraOption[]>([]);
   const [selectedCarrera, setSelectedCarrera] = useState<string>('');
@@ -47,7 +48,7 @@ export function LogsPage() {
         if (res.ok) {
           const data = await res.json();
           // Normalizar logs para LogViewer
-          const normalized = data.map((log, idx) => ({
+          const normalized = data.map((log: any, idx: number) => ({
             id: log.id || idx,
             timestamp: log.timestamp ? new Date(`1970-01-01T${log.timestamp}`) : new Date(),
             level: (log.level || 'info').toLowerCase(),

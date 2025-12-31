@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Plus, Pencil, Trash2, RefreshCw, Search, GraduationCap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CreateDocenteModal } from '@/components/CreateDocenteModal'
+import { EditDocenteModal } from '@/components/EditDocenteModal'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -144,11 +145,13 @@ interface DocentesTableProps {
   docentes: DocenteSistema[]
   onRefresh: () => void
   onCreate: (data: DocenteFormData) => Promise<void>
+  onUpdate: (id: string, data: Partial<DocenteFormData>) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }
 
-export function DocentesTable({ docentes, onRefresh, onCreate, onDelete }: DocentesTableProps) {
+export function DocentesTable({ docentes, onRefresh, onCreate, onUpdate, onDelete }: DocentesTableProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [docenteToEdit, setDocenteToEdit] = useState<DocenteSistema | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [docenteToDelete, setDocenteToDelete] = useState<DocenteSistema | null>(null)
   const { showToast, hideToast } = useToast()
@@ -178,6 +181,24 @@ export function DocentesTable({ docentes, onRefresh, onCreate, onDelete }: Docen
     } catch (error) {
       hideToast(loadingId)
       showToast('error', error instanceof Error ? error.message : 'Error al crear docente')
+      throw error
+    }
+  }
+
+  const handleUpdateDocente = async (data: Partial<DocenteFormData>) => {
+    if (!docenteToEdit) return
+
+    const loadingId = showToast('loading', 'Actualizando docente...')
+
+    try {
+      await onUpdate(docenteToEdit.id, data)
+      hideToast(loadingId)
+      showToast('success', `Docente ${docenteToEdit.username} actualizado`)
+      setDocenteToEdit(null)
+      onRefresh()
+    } catch (error) {
+      hideToast(loadingId)
+      showToast('error', error instanceof Error ? error.message : 'Error al actualizar docente')
       throw error
     }
   }
@@ -362,7 +383,7 @@ export function DocentesTable({ docentes, onRefresh, onCreate, onDelete }: Docen
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={() => {/* TODO: Edit modal */}}
+                          onClick={() => setDocenteToEdit(docente)}
                           className="p-1.5 rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors"
                           title="Editar"
                         >
@@ -392,16 +413,24 @@ export function DocentesTable({ docentes, onRefresh, onCreate, onDelete }: Docen
         onSubmit={handleCreateDocente}
       />
 
-      {/* Modal Confirmar Eliminación */}
+      {/* Modal de confirmación de eliminación */}
       <ConfirmModal
         isOpen={!!docenteToDelete}
         onClose={() => setDocenteToDelete(null)}
         onConfirm={handleConfirmDelete}
-        title="Eliminar docente"
-        message={`¿Eliminar a ${docenteToDelete?.full_name || docenteToDelete?.username}? Esta acción no se puede deshacer.`}
+        title="Eliminar Docente"
+        message={`¿Estás seguro de que deseas eliminar al docente ${docenteToDelete?.username}? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         cancelText="Cancelar"
         variant="danger"
+      />
+
+      {/* Modal de edición */}
+      <EditDocenteModal
+        isOpen={!!docenteToEdit}
+        onClose={() => setDocenteToEdit(null)}
+        onSubmit={handleUpdateDocente}
+        docente={docenteToEdit}
       />
     </>
   )
