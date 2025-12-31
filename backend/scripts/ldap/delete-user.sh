@@ -4,6 +4,12 @@
 # Uso: ./delete-user.sh <username>
 #
 
+set -e  # Exit on error
+set -o pipefail  # Exit on pipe failure
+
+# Timeout para operaciones LDAP (en segundos)
+LDAP_TIMEOUT=5
+
 # Cargar configuración
 if [ ! -f /etc/uninet/ldap.conf ]; then
     echo "Error: LDAP no configurado. Ejecuta setup.sh primero" >&2
@@ -21,9 +27,22 @@ fi
 USERNAME=$1
 USER_DN="uid=$USERNAME,ou=users,$LDAP_BASE"
 
-# Verificar que el usuario existe
-if ! ldapsearch -x -b "$USER_DN" "(objectClass=*)" dn 2>/dev/null | grep -q "^dn: "; then
-    echo "❌ Error: Usuario $USERNAME no encontrado" >&2
+# Intentar usar ldapi:// primero (más confiable), luego ldap://
+LDAP_URI_TO_USE=""
+if [ -z "$LDAP_URI" ] || [ "$LDAP_URI" == "ldap://localhost:389" ]; then
+    # Probar ldapi:// (unix socket) primero
+    if timeout $LDAP_TIMEOUT ldapsearch -x -H ldapi:/// -b "dc=uninet,dc=com" "(objectClass=*)" dn &>/dev/null; then
+        LDAP_URI_TO_USE="ldapi:///"
+    else
+        LDAP_URI_TO_USE="ldap://localhost:389"
+    fi
+else
+    LDAP_URI_TO_USE="$LDAP_URI"
+fi
+
+# Verificar que el usuario existe (con timeout)
+if ! timeout $LDAP_TIMEOUT ldapsearch -x -H "$LDAP_URI_TO_USE" -b "$USER_DN" "(objectClass=*)" dn 2>/dev/null | grep -q "^dn: "; then
+    echo "❌ Error: Usuario $USERNAME no encontrado o LDAP no responde" >&2
     exit 1
 fi
 
@@ -37,11 +56,16 @@ if [ -z "$ADMIN_PASS" ]; then
     exit 1
 fi
 
-# Eliminar usuario
-if ldapdelete -x -D "$LDAP_ADMIN" -w "$ADMIN_PASS" "$USER_DN" 2>/dev/null; then
+# Eliminar usuario (con timeout)
+if timeout $LDAP_TIMEOUT ldapdelete -x -H "$LDAP_URI_TO_USE" -D "$LDAP_ADMIN" -w "$ADMIN_PASS" "$USER_DN" 2>&1; then
     echo "✅ Usuario $USERNAME eliminado exitosamente"
     exit 0
 else
-    echo "❌ Error al eliminar usuario $USERNAME" >&2
+    EXITCODE=$?
+    if [ $EXITCODE -eq 124 ]; then
+        echo "❌ Error: Timeout al conectar con LDAP server" >&2
+    else
+        echo "❌ Error al eliminar usuario $USERNAME (código: $EXITCODE)" >&2
+    fi
     exit 1
 fi

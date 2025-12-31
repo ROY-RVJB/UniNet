@@ -326,7 +326,7 @@ async def delete_user(user_data: UserDelete):
             ["bash", script_path, user_data.username], 
             capture_output=True, 
             text=True, 
-            timeout=30,
+            timeout=10,  # Reducido a 10 segundos (el script internamente usa 5s)
             cwd=SCRIPT_DIR  # Ejecutar desde el directorio del script
         )
         

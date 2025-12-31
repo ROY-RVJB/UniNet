@@ -29,6 +29,8 @@ read -p "Dominio base (ej: uninet.com): " DOMAIN
 read -p "Organización (ej: UniNet Lab): " ORGANIZATION
 read -sp "Contraseña del administrador LDAP: " ADMIN_PASS
 echo ""
+read -p "Usuario que ejecutará el backend (default: servidor): " BACKEND_USER
+BACKEND_USER=${BACKEND_USER:-servidor}
 
 # Convertir dominio a formato LDAP (ej: uninet.com -> dc=uninet,dc=com)
 LDAP_BASE=$(echo "$DOMAIN" | sed 's/\./,dc=/g' | sed 's/^/dc=/')
@@ -90,8 +92,8 @@ EOF
 
 # Guardar contraseña de admin de forma segura (para uso automático de scripts)
 echo "$ADMIN_PASS" > /etc/uninet/ldap_admin_pass
-chmod 600 /etc/uninet/ldap_admin_pass
-chown root:root /etc/uninet/ldap_admin_pass
+chmod 640 /etc/uninet/ldap_admin_pass
+chown root:$BACKEND_USER /etc/uninet/ldap_admin_pass
 
 echo ""
 echo "============================================================"
