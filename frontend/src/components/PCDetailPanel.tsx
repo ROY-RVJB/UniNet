@@ -12,6 +12,7 @@ import {
   Globe
 } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
+import { API_BASE_URL } from '@/config/api';
 
 // ==========================================
 // PCDetailPanel - Panel lateral de detalles
@@ -60,7 +61,6 @@ export function PCDetailPanel({ pc, isOpen, onClose }: PCDetailPanelProps) {
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [filterLevel, setFilterLevel] = useState<'all' | 'info' | 'warn' | 'error'>('all');
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
   useEffect(() => {
     if (!pc) return;
@@ -76,18 +76,18 @@ export function PCDetailPanel({ pc, isOpen, onClose }: PCDetailPanelProps) {
           param = pc.carrera ? `&carrera=${encodeURIComponent(pc.carrera)}` : '';
         }
         const token = localStorage.getItem('uninet_token');
-        const res = await fetch(`${apiUrl}/api/logs?limit=20${param}`, {
+        const res = await fetch(`${API_BASE_URL}/api/logs?limit=20${param}`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
         if (res.ok) {
           const data = await res.json();
           setLogs(data);
         }
-      } catch {}
+      } catch { }
       setLoadingLogs(false);
     };
     fetchLogs();
-  }, [pc, apiUrl]);
+  }, [pc]);
 
   // Filtrar logs por tipo
   const filteredLogs = useMemo(() => {

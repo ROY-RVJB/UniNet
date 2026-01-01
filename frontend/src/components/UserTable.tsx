@@ -8,6 +8,7 @@ import type { UserFormData } from '@/components/CreateUserModal';
 import type { EditUserFormData } from '@/components/EditUserModal';
 import { useToast } from '@/contexts/ToastContext';
 import { cn } from '@/lib/utils';
+import { API_BASE_URL } from '@/config/api';
 
 // ==========================================
 // UserTable - Usuarios LDAP
@@ -68,7 +69,6 @@ export function UserTable({ users, onRefresh, carreraCode }: UserTableProps) {
 
   const handleCreateUser = async (userData: UserFormData) => {
     const loadingId = showToast('loading', 'Creando usuario...');
-    const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000";
 
     // Construir nombre completo desde los campos individuales
     const fullName = `${userData.nombres} ${userData.apellidoPaterno} ${userData.apellidoMaterno}`.trim();
@@ -90,11 +90,11 @@ export function UserTable({ users, onRefresh, carreraCode }: UserTableProps) {
       const xhr = new XMLHttpRequest();
 
       await new Promise((resolve, reject) => {
-        xhr.open('POST', `${apiUrl}/api/users/create`, true);
+        xhr.open('POST', `${API_BASE_URL}/api/users/create`, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.setRequestHeader('Accept', 'application/json');
 
-        xhr.onload = function() {
+        xhr.onload = function () {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               resolve(JSON.parse(xhr.responseText));
@@ -106,11 +106,11 @@ export function UserTable({ users, onRefresh, carreraCode }: UserTableProps) {
           }
         };
 
-        xhr.onerror = function() {
+        xhr.onerror = function () {
           reject(new Error('Error de red al crear usuario'));
         };
 
-        xhr.ontimeout = function() {
+        xhr.ontimeout = function () {
           reject(new Error('Timeout al crear usuario'));
         };
 
@@ -135,7 +135,6 @@ export function UserTable({ users, onRefresh, carreraCode }: UserTableProps) {
 
   const handleUpdateUser = async (userData: EditUserFormData) => {
     const loadingId = showToast('loading', 'Actualizando usuario...');
-    const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000";
 
     const payload: Record<string, string> = {
       username: userData.username,
@@ -148,7 +147,7 @@ export function UserTable({ users, onRefresh, carreraCode }: UserTableProps) {
     }
 
     try {
-      const res = await fetch(`${apiUrl}/api/users/update`, {
+      const res = await fetch(`${API_BASE_URL}/api/users/update`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -179,10 +178,9 @@ export function UserTable({ users, onRefresh, carreraCode }: UserTableProps) {
     if (!userToDelete) return;
 
     const loadingId = showToast('loading', 'Eliminando usuario...');
-    const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000";
 
     try {
-      const res = await fetch(`${apiUrl}/api/users/delete`, {
+      const res = await fetch(`${API_BASE_URL}/api/users/delete`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: userToDelete.username }),

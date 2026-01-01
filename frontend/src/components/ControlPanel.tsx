@@ -2,6 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Globe, Lock, AlertTriangle, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useCarrera } from '@/contexts/CarreraContext';
+import { API_BASE_URL } from '@/config/api';
 
 type LabMode = 'clase' | 'examen';
 
@@ -22,9 +23,8 @@ export function ControlPanel() {
   const [currentMode, setCurrentMode] = useState<LabMode>('clase');
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<NetworkStats>({ online: 0, inUse: 0, total: 0, offline: 0 });
-  
+
   const { selectedCarrera } = useCarrera();
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
   // --- 1. Cargar estado inicial y estadísticas ---
   const fetchData = useCallback(async () => {
@@ -35,7 +35,7 @@ export function ControlPanel() {
       const headers = { 'Authorization': `Bearer ${token}` };
 
       // A. Obtener Estado del Botón (Endpoint: /network/status)
-      const statusRes = await fetch(`${apiUrl}/api/monitoring/network/status?carrera=${selectedCarrera.id}`, { headers });
+      const statusRes = await fetch(`${API_BASE_URL}/api/monitoring/network/status?carrera=${selectedCarrera.id}`, { headers });
       if (statusRes.ok) {
         const data = await statusRes.json();
         // Convertir "bloquear" -> "examen", "desbloquear" -> "clase"
@@ -44,7 +44,7 @@ export function ControlPanel() {
       }
 
       // B. Obtener Estadísticas (Endpoint: /stats)
-      const statsRes = await fetch(`${apiUrl}/api/monitoring/stats`, { headers });
+      const statsRes = await fetch(`${API_BASE_URL}/api/monitoring/stats`, { headers });
       if (statsRes.ok) {
         const data = await statsRes.json();
         setStats(data);
@@ -52,7 +52,7 @@ export function ControlPanel() {
     } catch (error) {
       console.error("Error fetching network status:", error);
     }
-  }, [apiUrl, selectedCarrera?.id]);
+  }, [selectedCarrera?.id]);
 
   // Ejecutar al montar o cambiar carrera
   useEffect(() => {
@@ -72,9 +72,9 @@ export function ControlPanel() {
 
     try {
       const token = localStorage.getItem('uninet_token');
-      
+
       // Llamada a tu endpoint POST /network/control_internet
-      const res = await fetch(`${apiUrl}/api/monitoring/network/control_internet`, {
+      const res = await fetch(`${API_BASE_URL}/api/monitoring/network/control_internet`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ export function ControlPanel() {
 
       // Si todo sale bien, actualizamos la UI
       setCurrentMode(newMode);
-      
+
       // Recargamos stats por si acaso
       fetchData();
 
@@ -213,17 +213,17 @@ export function ControlPanel() {
 
         {/* Acciones Rápidas */}
         <div>
-           <h3 className="text-white font-medium mb-3 text-sm">Herramientas de Diagnóstico</h3>
-           <div className="flex flex-wrap gap-3">
-             <button onClick={fetchData} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-tech-darkCard border border-tech-darkBorder text-white text-xs hover:bg-tech-hoverState transition-colors">
-               <RefreshCw className="h-3.5 w-3.5" />
-               Actualizar Datos
-             </button>
-             <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-tech-darkCard border border-tech-darkBorder text-white text-xs hover:bg-tech-hoverState transition-colors">
-               <FileText className="h-3.5 w-3.5" />
-               Ver Logs Backend
-             </button>
-           </div>
+          <h3 className="text-white font-medium mb-3 text-sm">Herramientas de Diagnóstico</h3>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={fetchData} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-tech-darkCard border border-tech-darkBorder text-white text-xs hover:bg-tech-hoverState transition-colors">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Actualizar Datos
+            </button>
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-tech-darkCard border border-tech-darkBorder text-white text-xs hover:bg-tech-hoverState transition-colors">
+              <FileText className="h-3.5 w-3.5" />
+              Ver Logs Backend
+            </button>
+          </div>
         </div>
       </div>
 
@@ -235,20 +235,20 @@ export function ControlPanel() {
             Reglas Activas ({currentMode})
           </h3>
           <div className="space-y-3 text-sm font-mono">
-             <div className="flex justify-between">
-                <span className="text-tech-textDim">IN (SSH)</span>
-                <span className="text-teal-400">ALLOW</span>
-             </div>
-             <div className="flex justify-between">
-                <span className="text-tech-textDim">OUT (Intranet)</span>
-                <span className="text-teal-400">ALLOW</span>
-             </div>
-             <div className="flex justify-between border-t border-white/5 pt-2">
-                <span className="text-tech-textDim">OUT (Internet)</span>
-                <span className={currentMode === 'clase' ? 'text-teal-400' : 'text-red-400 font-bold'}>
-                    {currentMode === 'clase' ? 'ALLOW' : 'DENY'}
-                </span>
-             </div>
+            <div className="flex justify-between">
+              <span className="text-tech-textDim">IN (SSH)</span>
+              <span className="text-teal-400">ALLOW</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-tech-textDim">OUT (Intranet)</span>
+              <span className="text-teal-400">ALLOW</span>
+            </div>
+            <div className="flex justify-between border-t border-white/5 pt-2">
+              <span className="text-tech-textDim">OUT (Internet)</span>
+              <span className={currentMode === 'clase' ? 'text-teal-400' : 'text-red-400 font-bold'}>
+                {currentMode === 'clase' ? 'ALLOW' : 'DENY'}
+              </span>
+            </div>
           </div>
         </Card>
 
@@ -261,19 +261,19 @@ export function ControlPanel() {
             <p className="text-4xl font-bold text-white">{stats.online + stats.inUse}</p>
             <span className="text-xs text-tech-textDim">equipos reportando</span>
           </div>
-          
+
           <div className="mt-4 space-y-2">
             <div className="flex justify-between text-xs">
-                <span className="text-tech-textDim">En uso (Alumnos):</span>
-                <span className="text-white font-mono">{stats.inUse}</span>
+              <span className="text-tech-textDim">En uso (Alumnos):</span>
+              <span className="text-white font-mono">{stats.inUse}</span>
             </div>
             <div className="flex justify-between text-xs">
-                <span className="text-tech-textDim">Libres (Login Screen):</span>
-                <span className="text-white font-mono">{stats.online}</span>
+              <span className="text-tech-textDim">Libres (Login Screen):</span>
+              <span className="text-white font-mono">{stats.online}</span>
             </div>
-             <div className="flex justify-between text-xs">
-                <span className="text-tech-textDim">Offline:</span>
-                <span className="text-white/40 font-mono">{stats.offline}</span>
+            <div className="flex justify-between text-xs">
+              <span className="text-tech-textDim">Offline:</span>
+              <span className="text-white/40 font-mono">{stats.offline}</span>
             </div>
           </div>
         </Card>

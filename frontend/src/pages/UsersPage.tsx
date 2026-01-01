@@ -3,6 +3,7 @@ import { UserTable } from '@/components/UserTable'
 import { DocentesTable, type DocenteSistema, type DocenteFormData } from '@/components/DocentesTable'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCarrera } from '@/contexts/CarreraContext'
+import { API_BASE_URL } from '@/config/api'
 import type { LDAPUser } from '@/types'
 
 // ==========================================
@@ -17,13 +18,11 @@ export function UsersPage() {
   const { user } = useAuth()
   const { selectedCarrera, isCarreraReady } = useCarrera()
 
-  const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000"
-
   // Fetch usuarios LDAP (filtrado por carrera si hay una seleccionada)
   const fetchUsers = async () => {
     try {
       // Construir URL con filtro de carrera si aplica
-      let url = `${apiUrl}/api/users/list`
+      let url = `${API_BASE_URL}/api/users/list`
       if (selectedCarrera?.id) {
         url += `?carrera=${selectedCarrera.id}`
       }
@@ -44,7 +43,7 @@ export function UsersPage() {
   const fetchDocentes = async () => {
     try {
       const token = localStorage.getItem('uninet_token')
-      const res = await fetch(`${apiUrl}/api/docentes/list`, {
+      const res = await fetch(`${API_BASE_URL}/api/docentes/list`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -69,7 +68,7 @@ export function UsersPage() {
   // Crear docente
   const handleCreateDocente = async (data: DocenteFormData) => {
     const token = localStorage.getItem('uninet_token')
-    const res = await fetch(`${apiUrl}/api/docentes/create`, {
+    const res = await fetch(`${API_BASE_URL}/api/docentes/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -87,7 +86,7 @@ export function UsersPage() {
   // Eliminar docente
   const handleDeleteDocente = async (id: string) => {
     const token = localStorage.getItem('uninet_token')
-    const res = await fetch(`${apiUrl}/api/docentes/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/api/docentes/${id}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -103,7 +102,7 @@ export function UsersPage() {
   // Actualizar docente
   const handleUpdateDocente = async (id: string, data: Partial<DocenteFormData>) => {
     const token = localStorage.getItem('uninet_token')
-    const res = await fetch(`${apiUrl}/api/docentes/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/api/docentes/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

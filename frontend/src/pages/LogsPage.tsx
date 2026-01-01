@@ -1,5 +1,6 @@
 import { LogViewer } from '@/components/LogViewer'
 import { useEffect, useState } from 'react';
+import { API_BASE_URL } from '@/config/api';
 import type { LogEntry } from '@/types';
 
 interface CarreraOption {
@@ -12,7 +13,6 @@ export function LogsPage() {
   const [loading, setLoading] = useState(true);
   const [carreras, setCarreras] = useState<CarreraOption[]>([]);
   const [selectedCarrera, setSelectedCarrera] = useState<string>('');
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
   // Obtener carreras disponibles
   // Carreras hardcodeadas para compatibilidad con backend actual
@@ -42,7 +42,7 @@ export function LogsPage() {
         const token = localStorage.getItem('uninet_token');
         // Siempre enviar carrera (por defecto 5010 si no hay selección)
         const carreraValue = selectedCarrera || '5010';
-        const res = await fetch(`${apiUrl}/api/monitoring/logs?limit=500&carrera=${encodeURIComponent(carreraValue)}`, {
+        const res = await fetch(`${API_BASE_URL}/api/monitoring/logs?limit=500&carrera=${encodeURIComponent(carreraValue)}`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
         if (res.ok) {
@@ -67,7 +67,7 @@ export function LogsPage() {
     // Opcional: polling cada 10s
     const interval = setInterval(fetchLogs, 10000);
     return () => { isMounted = false; clearInterval(interval); };
-  }, [apiUrl, selectedCarrera]);
+  }, [selectedCarrera]);
 
   return (
     <div className="space-y-6">

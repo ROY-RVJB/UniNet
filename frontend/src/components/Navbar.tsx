@@ -4,6 +4,7 @@ import { User, ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { CarreraSelectorDropdown } from './CarreraSelectorDropdown';
 import { UniNetLogo } from './UniNetLogo';
+import { API_BASE_URL } from '@/config/api';
 
 // ==========================================
 // Navbar - Navegación horizontal estilo Vercel
@@ -33,10 +34,8 @@ export function Navbar() {
     let isMounted = true;
 
     const checkServer = async () => {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://10.12.195.223:4000";
-
       try {
-        const response = await fetch(`${apiUrl}/health`, {
+        const response = await fetch(`${API_BASE_URL}/health`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -92,24 +91,24 @@ export function Navbar() {
               {navTabs
                 .filter(tab => tab.roles.includes(user.role))
                 .map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => navigate(tab.path)}
-                  className={`
+                  <button
+                    key={tab.id}
+                    onClick={() => navigate(tab.path)}
+                    className={`
                     relative px-4 py-2 text-sm font-medium rounded-md transition-colors
                     ${location.pathname === tab.path
-                      ? 'text-white bg-white/10'
-                      : 'text-tech-textDim hover:text-white hover:bg-white/5'
-                    }
+                        ? 'text-white bg-white/10'
+                        : 'text-tech-textDim hover:text-white hover:bg-white/5'
+                      }
                   `}
-                >
-                  {tab.label}
-                  {/* Underline dentro del boton activo */}
-                  {location.pathname === tab.path && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-white rounded-full" />
-                  )}
-                </button>
-              ))}
+                  >
+                    {tab.label}
+                    {/* Underline dentro del boton activo */}
+                    {location.pathname === tab.path && (
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-white rounded-full" />
+                    )}
+                  </button>
+                ))}
             </div>
           )}
 
@@ -121,21 +120,20 @@ export function Navbar() {
         <div className="flex items-center gap-4">
           {/* Server Status Indicator */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-tech-darkCard border border-tech-darkBorder">
-            <div className={`w-2 h-2 rounded-full ${
-              serverStatus === 'online' ? 'bg-green-500 animate-pulse' :
-              serverStatus === 'offline' ? 'bg-red-500' :
-              'bg-yellow-500 animate-pulse'
-            }`} />
+            <div className={`w-2 h-2 rounded-full ${serverStatus === 'online' ? 'bg-green-500 animate-pulse' :
+                serverStatus === 'offline' ? 'bg-red-500' :
+                  'bg-yellow-500 animate-pulse'
+              }`} />
             <span className="text-xs font-medium text-tech-textDim">
               {serverStatus === 'online' ? 'Online' :
-               serverStatus === 'offline' ? 'Offline' :
-               'Checking...'}
+                serverStatus === 'offline' ? 'Offline' :
+                  'Checking...'}
             </span>
           </div>
 
           {/* Profile Menu */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-tech-darkCard border border-tech-darkBorder hover:border-tech-textDim transition-colors"
             >
