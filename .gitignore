@@ -34,4 +34,8 @@ Thumbs.db
 docs/
 .playwright-mcp
 CLAUDE.mdbackend/admins.db
-backend/database/
+# Ignorar solo la base de datos SQLite, no el código
+backend/database/*.db
+backend/database/*.db-journal
+backend/database/*.db-wal
+backend/database/*.db-shm
