@@ -177,6 +177,24 @@ exit 1
         return f.read()
 
 
+@app.get("/test-alerts", response_class=PlainTextResponse)
+async def get_test_alerts_script():
+    """
+    Sirve el script para generar alertas de Suricata de prueba
+    """
+    script_path = SCRIPTS_DIR / "test-suricata-alerts.sh"
+    
+    if not script_path.exists():
+        return f"""#!/bin/bash
+echo "Error: Script de prueba de alertas no encontrado"
+echo "Ubicación esperada: {script_path}"
+exit 1
+"""
+    
+    with open(script_path, 'r') as f:
+        return f.read()
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=4000, log_level="info")

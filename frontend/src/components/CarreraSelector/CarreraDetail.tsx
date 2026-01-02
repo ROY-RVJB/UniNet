@@ -89,7 +89,11 @@ export function CarreraDetail({ carrera }: CarreraDetailProps) {
   // Calcular tiempo desde última sincronización
   const getTimeSinceSync = () => {
     if (!carrera.lastSync) return 'Sin datos';
-    const diff = Date.now() - carrera.lastSync.getTime();
+    // Convertir el string a Date si es necesario
+    const lastSyncDate = typeof carrera.lastSync === 'string' 
+      ? new Date(carrera.lastSync) 
+      : carrera.lastSync;
+    const diff = Date.now() - lastSyncDate.getTime();
     const minutes = Math.floor(diff / 60000);
     if (minutes < 1) return 'hace menos de 1 minuto';
     if (minutes === 1) return 'hace 1 minuto';
