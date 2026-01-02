@@ -423,8 +423,11 @@ if command -v suricata &> /dev/null; then
     # Configurar Suricata para monitorear la interfaz correcta
     sed -i "s/interface: .*/interface: $NETWORK_INTERFACE/" /etc/suricata/suricata.yaml 2>/dev/null || true
     
-    # Habilitar eve.json (salida JSON para alertas)
-    sed -i 's/^  - eve-log:/  - eve-log:\n      enabled: yes/' /etc/suricata/suricata.yaml 2>/dev/null || true
+    # Habilitar eve.json (salida JSON para alertas) - CRÍTICO para el agente
+    # Buscar la sección outputs y habilitar eve-log si está deshabilitado
+    sed -i '/^outputs:/,/^[^ ]/ s/# *eve-log:/  eve-log:/' /etc/suricata/suricata.yaml 2>/dev/null || true
+    sed -i '/eve-log:/,/^[^ ]/ s/enabled: no/enabled: yes/' /etc/suricata/suricata.yaml 2>/dev/null || true
+    sed -i '/eve-log:/,/^[^ ]/ s/# *enabled: yes/    enabled: yes/' /etc/suricata/suricata.yaml 2>/dev/null || true
     
     # Actualizar reglas de Suricata
     echo -e "${BLUE}📥 Actualizando reglas de detección de Suricata...${NC}"
