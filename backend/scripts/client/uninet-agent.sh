@@ -76,6 +76,12 @@ if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
             [ -z "$SIGNATURE_ID" ] && SIGNATURE_ID="0"
             [ -z "$SIGNATURE" ] && SIGNATURE="Unknown"
             
+            # Asegurar que los valores numéricos sean válidos (regex: solo dígitos)
+            [[ ! "$SRC_PORT" =~ ^[0-9]+$ ]] && SRC_PORT="0"
+            [[ ! "$DEST_PORT" =~ ^[0-9]+$ ]] && DEST_PORT="0"
+            [[ ! "$SEVERITY" =~ ^[1-3]$ ]] && SEVERITY="3"
+            [[ ! "$SIGNATURE_ID" =~ ^[0-9]+$ ]] && SIGNATURE_ID="0"
+            
             # Construir payload usando jq para escapar correctamente
             ALERT_PAYLOAD=$(jq -n \
                 --arg hostname "$HOSTNAME" \
