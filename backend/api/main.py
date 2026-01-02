@@ -13,6 +13,7 @@ import os
 from api.monitoring import router as monitoring_router
 from api.users import router as users_router
 from api.auth import router as auth_router, docentes_router
+from api.carreras import router as carreras_router
 
 app = FastAPI(
     title="UniNet Dashboard API",
@@ -34,7 +35,8 @@ app.add_middleware(
 app.include_router(monitoring_router, prefix="/api/monitoring", tags=["Monitoring"])
 app.include_router(users_router, prefix="/api/users", tags=["Users"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
-app.include_router(docentes_router, prefix="/api/docentes", tags=["Docentes"]) 
+app.include_router(docentes_router, prefix="/api/docentes", tags=["Docentes"])
+app.include_router(carreras_router, prefix="/api/carreras", tags=["Carreras"]) 
 
 @app.get("/")
 async def root():

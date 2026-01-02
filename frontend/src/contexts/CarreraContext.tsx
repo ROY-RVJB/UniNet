@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { Carrera } from '@/types';
 import { mockCarreras } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_BASE_URL } from '@/config/api';
 
 // ==========================================
 // Carrera Context - Estado Global de Carreras
@@ -31,9 +32,51 @@ interface CarreraProviderProps {
 
 export function CarreraProvider({ children }: CarreraProviderProps) {
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const [carreras] = useState<Carrera[]>(mockCarreras);
+  const [carreras, setCarreras] = useState<Carrera[]>([]);
+  const [isLoadingCarreras, setIsLoadingCarreras] = useState(true);
   const [selectedCarrera, setSelectedCarreraState] = useState<Carrera | null>(null);
   const [isCarreraReady, setIsCarreraReady] = useState(false);
+
+  // Fetch carreras desde API
+  useEffect(() => {
+    const fetchCarreras = async () => {
+      try {
+        setIsLoadingCarreras(true);
+        const res = await fetch(`${API_BASE_URL}/api/carreras/list`);
+
+        if (!res.ok) {
+          throw new Error('Failed to fetch carreras');
+        }
+
+        const data = await res.json();
+
+        // Mapear respuesta de API a formato Carrera (asegurando campos numéricos)
+        const mappedCarreras: Carrera[] = data.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          faculty: c.faculty,
+          icon: c.icon,
+          // Estos campos vendrían del backend en el futuro, por ahora defaults
+          status: 'online',
+          pcsCount: 0,
+          usersCount: 0,
+          nodeId: `NODE-${c.id}`, // Generar ID de nodo temporal
+          lastSync: new Date().toISOString()
+        }));
+
+        setCarreras(mappedCarreras);
+      } catch (error) {
+        console.error('Error fetching carreras:', error);
+        // Fallback a mockData si falla
+        setCarreras(mockCarreras);
+      } finally {
+        setIsLoadingCarreras(false);
+      }
+    };
+
+    fetchCarreras();
+  }, []);
+
 
   // Cargar carrera seleccionada de localStorage al inicio
   // Esperar a que Auth termine de cargar antes de inicializar
@@ -158,7 +201,7 @@ export function CarreraProvider({ children }: CarreraProviderProps) {
         isHome,
         userCarreras,
         isRestricted,
-        isCarreraReady,
+        isCarreraReady: isCarreraReady && !isLoadingCarreras,
       }}
     >
       {children}
