@@ -447,6 +447,18 @@ EOF
     mkdir -p /var/log/suricata
     chmod 755 /var/log/suricata
     
+    # Deshabilitar alertas STUN/P2P y Go HTTP (tráfico VPN normal - muy ruidoso)
+    echo -e "${BLUE}🔇 Configurando filtros de alertas...${NC}"
+    cat > /etc/suricata/disable.conf <<'DISABLE_RULES'
+# Alertas STUN/NAT - Tráfico VPN normal de Tailscale
+2016149
+2016150
+# Alertas Go HTTP Client - Tráfico Docker/Tailscale normal
+2024897
+2060251
+DISABLE_RULES
+    echo -e "${GREEN}   ✅ Filtros configurados (solo alertas relevantes)${NC}"
+    
     # Reiniciar Suricata con la nueva configuración
     systemctl restart suricata 2>/dev/null || service suricata restart 2>/dev/null || true
     systemctl enable suricata 2>/dev/null || true
