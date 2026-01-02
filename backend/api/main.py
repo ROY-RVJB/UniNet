@@ -9,6 +9,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, FileResponse
 from pathlib import Path
 import os
+import sys
+
+# Agregar directorio padre al path para importar database
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from database import db
+from api import monitoring
 
 from api.monitoring import router as monitoring_router
 from api.users import router as users_router
@@ -21,6 +27,15 @@ app = FastAPI(
     version="2.0.0",
     redirect_slashes=False
 )
+
+# Inicializar la base de datos y cargar cache al arrancar
+@app.on_event("startup")
+async def startup_event():
+    """Se ejecuta una vez al iniciar el servidor"""
+    print("🚀 Iniciando UniNet Dashboard...")
+    db.init_database()
+    monitoring.init_cache()
+    print("✅ Sistema listo!")
 
 # CORS
 app.add_middleware(
