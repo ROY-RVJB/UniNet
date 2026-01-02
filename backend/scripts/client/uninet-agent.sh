@@ -69,29 +69,30 @@ if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
             CATEGORY=$(echo "$alert_line" | grep -o '"category":"[^"]*"' | cut -d'"' -f4)
             
             # Valores por defecto para campos opcionales
-            [ -z "$SRC_PORT" ] && SRC_PORT="null"
-            [ -z "$DEST_PORT" ] && DEST_PORT="null"
+            [ -z "$SRC_PORT" ] && SRC_PORT="0"
+            [ -z "$DEST_PORT" ] && DEST_PORT="0"
             [ -z "$CATEGORY" ] && CATEGORY="Unknown"
             [ -z "$SEVERITY" ] && SEVERITY="3"
             [ -z "$SIGNATURE_ID" ] && SIGNATURE_ID="0"
+            [ -z "$SIGNATURE" ] && SIGNATURE="Unknown"
             
-            # Construir payload para el backend
-            ALERT_PAYLOAD="{
-                \"hostname\":\"$HOSTNAME\",
-                \"ip\":\"$IP\",
-                \"user\":\"$USER_FIELD\",
-                \"carrera\":\"$CARRERA\",
-                \"timestamp\":\"$TIMESTAMP\",
-                \"signature\":\"$SIGNATURE\",
-                \"severity\":$SEVERITY,
-                \"category\":\"$CATEGORY\",
-                \"src_ip\":\"$SRC_IP\",
-                \"dest_ip\":\"$DEST_IP\",
-                \"protocol\":\"$PROTO\",
-                \"src_port\":$SRC_PORT,
-                \"dest_port\":$DEST_PORT,
-                \"signature_id\":$SIGNATURE_ID
-            }"
+            # Construir payload usando jq para escapar correctamente
+            ALERT_PAYLOAD=$(jq -n \
+                --arg hostname "$HOSTNAME" \
+                --arg ip "$IP" \
+                --arg user "$USER_FIELD" \
+                --arg carrera "$CARRERA" \
+                --arg timestamp "$TIMESTAMP" \
+                --arg signature "$SIGNATURE" \
+                --argjson severity "$SEVERITY" \
+                --arg category "$CATEGORY" \
+                --arg src_ip "$SRC_IP" \
+                --arg dest_ip "$DEST_IP" \
+                --arg protocol "$PROTO" \
+                --argjson src_port "$SRC_PORT" \
+                --argjson dest_port "$DEST_PORT" \
+                --argjson signature_id "$SIGNATURE_ID" \
+                '{hostname: $hostname, ip: $ip, user: $user, carrera: $carrera, timestamp: $timestamp, signature: $signature, severity: $severity, category: $category, src_ip: $src_ip, dest_ip: $dest_ip, protocol: $protocol, src_port: $src_port, dest_port: $dest_port, signature_id: $signature_id}')
             
             # Enviar alerta al backend (sin bloquear el heartbeat)
             curl -X POST "$ALERT_URL" \
