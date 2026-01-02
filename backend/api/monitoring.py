@@ -2,11 +2,10 @@
 
 import subprocess
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 import uuid
-from fastapi import APIRouter
 
 # Importar funciones de la base de datos
 import sys
@@ -58,15 +57,13 @@ class SecurityAlert(BaseModel):
     timestamp: str
     signature: str
     severity: int         # 1=crítica, 2=alta, 3=media
-    category: str
+    category: Optional[str] = None
     src_ip: str
     dest_ip: str
     protocol: str
     src_port: Optional[int] = None
     dest_port: Optional[int] = None
     signature_id: int
-
-    hostname: Optional[str] = None
 
 # --- 3. HELPER: SISTEMA DE LOGS ---
 
@@ -239,9 +236,22 @@ async def get_stats():
 # --- 8. ENDPOINTS DE SEGURIDAD (SURICATA IDS) ---
 
 @router.post("/security/alerts")
-async def receive_security_alert(alert: SecurityAlert):
+async def receive_security_alert(request: Request):
     """Recibe alertas de seguridad de Suricata desde los clientes"""
     global security_alerts
+    
+    try:
+        # Obtener el body como JSON
+        body = await request.json()
+        print(f"📥 Recibido: {body}")
+        
+        # Validar con el modelo
+        alert = SecurityAlert(**body)
+        
+    except Exception as e:
+        print(f"❌ Error validando alerta: {e}")
+        print(f"❌ Datos recibidos: {body if 'body' in locals() else 'No se pudo leer'}")
+        raise
     
     # Mapear severidad de Suricata (1=critical, 2=high, 3=medium) a nuestro sistema
     severity_map = {1: "critical", 2: "high", 3: "medium"}
