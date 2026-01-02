@@ -40,6 +40,7 @@ class UserResponse(BaseModel):
     carrera: str
     email: str | None = None
     dn: str
+    full_name: str | None = None  # Add full_name field
 
 
 # ==========================
@@ -265,10 +266,16 @@ async def list_users(carrera: Optional[str] = None):
                         dni=parts[5].strip(),
                         carrera=user_carrera,
                         email=parts[7].strip() if parts[7].strip() else None,
-                        dn=parts[8].strip()
+                        dn=parts[8].strip(),
+                        full_name=f"{parts[2].strip()} {parts[3].strip()} {parts[4].strip()}"
                     ))
             return users
 
+        # Log error details to console for debugging
+        print(f"❌ LDAP List Error (Code {result.returncode}):")
+        print(f"Stderr: {result.stderr}")
+        print(f"Stdout: {result.stdout}")
+        
         raise HTTPException(status_code=500, detail=f"Error al listar usuarios: {result.stderr}")
 
     except subprocess.TimeoutExpired:
@@ -298,11 +305,16 @@ async def list_users_with_carreras():
         carreras = _ldap_groups_for_user(u.username)
         out.append(UserWithCarreras(
             username=u.username,
-            full_name=u.full_name,
+            codigo=u.codigo,
+            nombres=u.nombres,
+            apellido_paterno=u.apellido_paterno,
+            apellido_materno=u.apellido_materno,
+            dni=u.dni,
+            carrera=carreras[0] if carreras else u.carrera, # Prefer LDAP group, fallback to user department
             email=u.email,
             dn=u.dn,
-            carreras=carreras,
-            carrera=carreras[0] if carreras else None
+            full_name=u.full_name,
+            carreras=carreras
         ))
 
     return out
