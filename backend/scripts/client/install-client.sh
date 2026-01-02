@@ -416,22 +416,32 @@ apt-get install -y suricata > /dev/null 2>&1 || {
 if command -v suricata &> /dev/null; then
     echo -e "${GREEN}✅ Suricata instalado correctamente${NC}"
     
-    # Detectar interfaz de red principal (excluyendo lo y docker)
-    NETWORK_INTERFACE=$(ip -o link show | grep -v "lo\|docker\|veth" | awk -F': ' '{print $2}' | head -n1)
-    echo -e "${BLUE}📡 Interfaz de red detectada: $NETWORK_INTERFACE${NC}"
-    
-    # Configurar Suricata para monitorear la interfaz correcta
-    sed -i "s/interface: .*/interface: $NETWORK_INTERFACE/" /etc/suricata/suricata.yaml 2>/dev/null || true
-    
-    # Habilitar eve.json (salida JSON para alertas) - CRÍTICO para el agente
-    # Buscar la sección outputs y habilitar eve-log si está deshabilitado
-    sed -i '/^outputs:/,/^[^ ]/ s/# *eve-log:/  eve-log:/' /etc/suricata/suricata.yaml 2>/dev/null || true
-    sed -i '/eve-log:/,/^[^ ]/ s/enabled: no/enabled: yes/' /etc/suricata/suricata.yaml 2>/dev/null || true
-    sed -i '/eve-log:/,/^[^ ]/ s/# *enabled: yes/    enabled: yes/' /etc/suricata/suricata.yaml 2>/dev/null || true
-    
-    # Actualizar reglas de Suricata
+    # Actualizar reglas de Suricata primero
     echo -e "${BLUE}📥 Actualizando reglas de detección de Suricata...${NC}"
     suricata-update > /dev/null 2>&1 || echo -e "${YELLOW}⚠️  No se pudieron actualizar las reglas${NC}"
+    
+    # Detectar interfaz de red principal
+    NETWORK_INTERFACE=$(ip -o link show | grep -v "lo\|docker\|veth\|virbr" | awk -F': ' '{print $2}' | head -n1)
+    echo -e "${BLUE}📡 Interfaz de red detectada: $NETWORK_INTERFACE${NC}"
+    
+    # Configurar interfaz usando Python (método seguro que no rompe YAML)
+    python3 <<EOF
+import re
+config_file = "/etc/suricata/suricata.yaml"
+try:
+    with open(config_file, 'r') as f:
+        content = f.read()
+    pattern = r'(af-packet:\s*-\s*interface:\s*)\S+'
+    new_content = re.sub(pattern, f'\\\\1${NETWORK_INTERFACE}', content, count=1)
+    if new_content != content:
+        with open(config_file, 'w') as f:
+            f.write(new_content)
+        print("✅ Interfaz configurada correctamente")
+    else:
+        print("⚠️  Configuración de interfaz no modificada")
+except Exception as e:
+    print(f"⚠️  Error configurando interfaz: {e}")
+EOF
     
     # Crear directorio de logs si no existe
     mkdir -p /var/log/suricata
@@ -444,7 +454,7 @@ if command -v suricata &> /dev/null; then
     # Verificar que Suricata esté corriendo
     sleep 2
     if systemctl is-active --quiet suricata 2>/dev/null || service suricata status 2>/dev/null | grep -q "running"; then
-        echo -e "${GREEN}✅ Suricata IDS activo y monitoreando tráfico de red${NC}"
+        echo -e "${GREEN}✅ Suricata IDS activo y monitoreando tráfico de red en: $NETWORK_INTERFACE${NC}"
         echo -e "${GREEN}   📊 Las alertas se guardarán en: /var/log/suricata/eve.json${NC}"
     else
         echo -e "${YELLOW}⚠️  Suricata instalado pero no pudo iniciarse${NC}"

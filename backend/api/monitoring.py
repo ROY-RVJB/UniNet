@@ -58,15 +58,13 @@ class SecurityAlert(BaseModel):
     timestamp: str
     signature: str
     severity: int         # 1=crítica, 2=alta, 3=media
-    category: str
+    category: Optional[str] = None
     src_ip: str
     dest_ip: str
     protocol: str
     src_port: Optional[int] = None
     dest_port: Optional[int] = None
     signature_id: int
-
-    hostname: Optional[str] = None
 
 # --- 3. HELPER: SISTEMA DE LOGS ---
 

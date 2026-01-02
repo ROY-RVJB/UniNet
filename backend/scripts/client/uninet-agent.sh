@@ -68,6 +68,13 @@ if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
             SIGNATURE_ID=$(echo "$alert_line" | grep -o '"signature_id":[0-9]*' | cut -d':' -f2)
             CATEGORY=$(echo "$alert_line" | grep -o '"category":"[^"]*"' | cut -d'"' -f4)
             
+            # Valores por defecto para campos opcionales
+            [ -z "$SRC_PORT" ] && SRC_PORT="null"
+            [ -z "$DEST_PORT" ] && DEST_PORT="null"
+            [ -z "$CATEGORY" ] && CATEGORY="Unknown"
+            [ -z "$SEVERITY" ] && SEVERITY="3"
+            [ -z "$SIGNATURE_ID" ] && SIGNATURE_ID="0"
+            
             # Construir payload para el backend
             ALERT_PAYLOAD="{
                 \"hostname\":\"$HOSTNAME\",
