@@ -1,0 +1,5 @@
+# Ignorar la base de datos SQLite pero mantener el código
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
