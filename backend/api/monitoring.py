@@ -7,17 +7,27 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 import uuid
 from fastapi import APIRouter
+
+# Importar funciones de la base de datos
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from database import db
+
 router = APIRouter()
 
-# --- 1. MEMORIA DEL SISTEMA (RAM) ---
-# Estado de los PCs (Tu código original usaba un dict, lo mantenemos)
+# --- 1. CACHÉ EN MEMORIA (para rendimiento) ---
+# Al iniciar el servidor, cargamos todo de la BD a memoria
+# Pero ahora TODO se guarda en la BD para persistir
 clients_state: Dict[str, dict] = {} 
-
-# Estado de la Red: { "5010": "bloquear", "5001": "desbloquear" }
 network_rules: Dict[str, str] = {}
 
-# Historial de Logs (Lista en memoria)
-system_logs: List[dict] = []
+def init_cache():
+    """Carga datos de la BD a la memoria al iniciar el servidor"""
+    global clients_state, network_rules
+    clients_state = db.load_all_clients()
+    network_rules = db.load_network_rules()
+    print(f"📦 Cache inicializado: {len(clients_state)} clientes, {len(network_rules)} reglas")
 
 # --- 2. MODELOS DE DATOS ---
 
@@ -43,7 +53,7 @@ class LogEntry(BaseModel):
 # --- 3. HELPER: SISTEMA DE LOGS ---
 
 def add_log(level, category, message, carrera, hostname=None):
-    """Crea un log y lo guarda en la lista en memoria"""
+    """Crea un log y lo guarda en la BD"""
     entry = {
         "id": str(uuid.uuid4())[:8],
         "timestamp": datetime.now().strftime("%H:%M:%S"),
@@ -53,11 +63,8 @@ def add_log(level, category, message, carrera, hostname=None):
         "carrera": str(carrera),
         "hostname": hostname
     }
-    # Insertar al inicio (el más nuevo primero)
-    system_logs.insert(0, entry)
-    # Limpiar logs antiguos para no saturar memoria (max 500)
-    if len(system_logs) > 500:
-        system_logs.pop()
+    # Guardar en la base de datos
+    db.save_log(entry)
 
 # --- 4. ENDPOINTS: CONTROL DE RED (EL BOTÓN DEL PROFESOR) ---
 
@@ -65,10 +72,11 @@ def add_log(level, category, message, carrera, hostname=None):
 async def control_internet_carrera(data: InternetControl):
     """
     El profesor presiona el botón.
-    Guardamos la orden y generamos un LOG GRUPAL.
+    Guardamos la orden en la BD y generamos un LOG GRUPAL.
     """
-    # 1. Guardar la regla en memoria
+    # 1. Guardar la regla en memoria Y en la base de datos
     network_rules[data.gid_carrera] = data.accion
+    db.save_network_rule(data.gid_carrera, data.accion)
     
     # 2. Generar Log
     if data.accion == "bloquear":
@@ -92,14 +100,10 @@ from fastapi import Request
 async def get_logs(carrera: str = None, username: str = None):
     """
     Devuelve los logs filtrados por carrera y/o usuario (username/uid)
+    AHORA desde la base de datos
     """
-    filtered = system_logs
-    if carrera:
-        filtered = [log for log in filtered if log.get("carrera") == carrera]
-    if username:
-        # Buscar por user o uid
-        filtered = [log for log in filtered if (log.get("user") == username or log.get("uid") == username)]
-    return filtered
+    logs = db.load_logs(limit=500, carrera=carrera, username=username)
+    return logs
 
 # --- 6. ENDPOINT PRINCIPAL: HEARTBEAT (MODIFICADO) ---
 
@@ -107,6 +111,7 @@ async def get_logs(carrera: str = None, username: str = None):
 async def receive_heartbeat(data: HeartbeatData):
     """
     Recibe estado del PC y RESPONDE si debe bloquear internet.
+    AHORA con persistencia en BD.
     """
     now = datetime.now()
     carrera_actual = str(data.carrera)
@@ -123,6 +128,8 @@ async def receive_heartbeat(data: HeartbeatData):
             "last_seen": now,
             "first_seen": now
         }
+        # Guardar en la base de datos
+        db.save_client(data.hostname, clients_state[data.hostname])
         add_log("INFO", "SYSTEM", f"🖥️ Nuevo equipo conectado: {data.hostname}", carrera_actual, data.hostname)
     else:
         # Detectar cambio de usuario
@@ -131,13 +138,15 @@ async def receive_heartbeat(data: HeartbeatData):
             # LOG: Alumno inició sesión
             add_log("INFO", "AUTH", f"👤 Alumno {data.user} inició sesión", carrera_actual, data.hostname)
 
-        # Actualizar estado
+        # Actualizar estado en memoria
         clients_state[data.hostname].update({
             "ip": data.ip,
             "user": data.user,
             "carrera": carrera_actual,
             "last_seen": now
         })
+        # Guardar cambios en la base de datos
+        db.save_client(data.hostname, clients_state[data.hostname])
     
     # B. LÓGICA DE BLOQUEO (CRÍTICO)
     # Verificamos si existe una regla de "bloquear" para esta carrera
