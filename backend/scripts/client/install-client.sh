@@ -449,14 +449,23 @@ EOF
     
     # Deshabilitar alertas STUN/P2P y Go HTTP (tráfico VPN normal - muy ruidoso)
     echo -e "${BLUE}🔇 Configurando filtros de alertas...${NC}"
+    
+    # Método 1: Crear archivo disable.conf con los SIDs a deshabilitar
     cat > /etc/suricata/disable.conf <<'DISABLE_RULES'
-# Alertas STUN/NAT - Tráfico VPN normal de Tailscale
 2016149
 2016150
-# Alertas Go HTTP Client - Tráfico Docker/Tailscale normal
 2024897
 2060251
 DISABLE_RULES
+    
+    # Método 2: Usar suricata-update para deshabilitar permanentemente
+    if command -v suricata-update &> /dev/null; then
+        suricata-update disable-sid 2016149 2>/dev/null
+        suricata-update disable-sid 2016150 2>/dev/null
+        suricata-update disable-sid 2024897 2>/dev/null
+        suricata-update disable-sid 2060251 2>/dev/null
+    fi
+    
     echo -e "${GREEN}   ✅ Filtros configurados (solo alertas relevantes)${NC}"
     
     # Reiniciar Suricata con la nueva configuración
