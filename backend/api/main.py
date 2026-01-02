@@ -117,7 +117,7 @@ async def get_ldap_config(request: Request):
         }
 
 
-|# Endpoints para servir scripts de instalación del agente
+# Endpoints para servir scripts de instalación del agente
 SCRIPTS_DIR = Path(__file__).parent.parent / "scripts" / "client"
 
 @app.get("/install", response_class=PlainTextResponse)
