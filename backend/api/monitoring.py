@@ -31,11 +31,52 @@ def init_cache():
 
 # --- 2. MODELOS DE DATOS ---
 
+class CPUMetrics(BaseModel):
+    percent: float
+    cores: int
+    per_core: List[float]
+    load_average: List[float]
+
+class RAMMetrics(BaseModel):
+    total: int
+    used: int
+    percent: float
+    available: int
+    swap_total: int
+    swap_used: int
+    swap_percent: float
+
+class DiskMetrics(BaseModel):
+    total: int
+    used: int
+    percent: float
+    free: int
+
+class NetworkMetrics(BaseModel):
+    sent_total: int
+    recv_total: int
+
+class ProcessInfo(BaseModel):
+    pid: int
+    name: str
+    user: str
+    cpu_percent: float
+    mem_percent: float
+    mem_mb: float
+
+class SystemMetrics(BaseModel):
+    cpu: CPUMetrics
+    ram: RAMMetrics
+    disk: DiskMetrics
+    network: NetworkMetrics
+    top_processes: List[ProcessInfo]
+
 class HeartbeatData(BaseModel):
     hostname: str
     ip: str
     user: Optional[str] = None
-    carrera: Optional[str] = "5010" 
+    carrera: Optional[str] = "5010"
+    metrics: Optional[SystemMetrics] = None 
 
 class InternetControl(BaseModel):
     gid_carrera: str      # El ID de la carrera (ej: "5010")
@@ -160,6 +201,12 @@ async def receive_heartbeat(data: HeartbeatData):
             "carrera": carrera_actual,
             "last_seen": now
         })
+        
+        # Guardar métricas si están presentes
+        if data.metrics:
+            clients_state[data.hostname]["metrics"] = data.metrics.dict()
+            clients_state[data.hostname]["metrics_timestamp"] = now.isoformat()
+        
         # Guardar cambios en la base de datos
         db.save_client(data.hostname, clients_state[data.hostname])
     
@@ -204,7 +251,9 @@ async def get_status(carrera: Optional[str] = None):
             "status": status_str,
             "user": state["user"],
             "lastSeen": state["last_seen"].isoformat(),
-            "carrera": state.get("carrera", "5010")
+            "carrera": state.get("carrera", "5010"),
+            "metrics": state.get("metrics"),  # Incluir métricas si existen
+            "metricsTimestamp": state.get("metrics_timestamp")  # Timestamp de las métricas
         })
     
     results.sort(key=lambda x: x["id"])

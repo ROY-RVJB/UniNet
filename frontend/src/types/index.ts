@@ -12,6 +12,70 @@
 export type PCStatus = 'online' | 'offline' | 'inUse' | 'examMode';
 
 /**
+ * Métricas de CPU
+ */
+export interface CPUMetrics {
+  percent: number;
+  cores: number;
+  per_core: number[];
+  load_average: number[];
+}
+
+/**
+ * Métricas de RAM
+ */
+export interface RAMMetrics {
+  total: number;
+  used: number;
+  percent: number;
+  available: number;
+  swap_total: number;
+  swap_used: number;
+  swap_percent: number;
+}
+
+/**
+ * Métricas de Disco
+ */
+export interface DiskMetrics {
+  total: number;
+  used: number;
+  percent: number;
+  free: number;
+}
+
+/**
+ * Métricas de Red
+ */
+export interface NetworkMetrics {
+  sent_total: number;
+  recv_total: number;
+}
+
+/**
+ * Información de proceso
+ */
+export interface ProcessInfo {
+  pid: number;
+  name: string;
+  user: string;
+  cpu_percent: number;
+  mem_percent: number;
+  mem_mb: number;
+}
+
+/**
+ * Métricas completas del sistema
+ */
+export interface SystemMetrics {
+  cpu: CPUMetrics;
+  ram: RAMMetrics;
+  disk: DiskMetrics;
+  network: NetworkMetrics;
+  top_processes: ProcessInfo[];
+}
+
+/**
  * Interfaz de PC del Laboratorio
  */
 export interface PC {
@@ -23,6 +87,8 @@ export interface PC {
   lastSeen: Date;
   laboratoryId: string; // ID del laboratorio al que pertenece
   carrera?: string;     // Código de carrera/laboratorio (5001-5012)
+  metrics?: SystemMetrics;  // Métricas del sistema
+  metricsTimestamp?: string; // Timestamp de las métricas
 }
 
 /**
@@ -107,7 +173,7 @@ export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 /**
  * Categorías de alertas de Suricata
  */
-export type AlertCategory = 
+export type AlertCategory =
   | 'port-scan'           // Escaneo de puertos
   | 'brute-force'         // Intentos de fuerza bruta
   | 'malware'             // Malware detectado

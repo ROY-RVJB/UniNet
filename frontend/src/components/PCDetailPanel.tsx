@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { API_BASE_URL } from '@/config/api';
+import { SystemMetricsPanel } from './SystemMetrics';
 
 // ==========================================
 // PCDetailPanel - Panel lateral de detalles
@@ -261,6 +262,16 @@ export function PCDetailPanel({ pc, isOpen, onClose }: PCDetailPanelProps) {
               <span className="text-white/60 text-sm">
                 {pc.lastSeen ? formatLastSeen(pc.lastSeen) : '—'}
               </span>
+            </div>
+          </div>
+
+          {/* Métricas del Sistema */}
+          <div className="space-y-4">
+            <h3 className="text-xs text-white/50 uppercase tracking-wider font-semibold">
+              Métricas del Sistema
+            </h3>
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-lg overflow-hidden">
+              <SystemMetricsPanel metrics={pc.metrics} />
             </div>
           </div>
 
