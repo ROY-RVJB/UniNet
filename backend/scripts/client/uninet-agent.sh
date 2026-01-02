@@ -149,8 +149,14 @@ fi
 # ==========================================
 # LEER Y ENVIAR ALERTAS DE SURICATA IDS
 # ==========================================
+# Archivos de control para alertas
 SURICATA_LOG="/var/log/suricata/eve.json"
 LAST_ALERT_FILE="/var/run/uninet-last-alert"
+ALERT_CACHE_DIR="/var/run/uninet-alert-cache"
+ALERT_DEDUP_SECONDS=300  # 5 minutos - no enviar alertas duplicadas del mismo signature_id en este periodo
+
+# Crear directorio de caché de alertas
+mkdir -p "$ALERT_CACHE_DIR"
 
 # Verificar si Suricata está activo y hay alertas nuevas
 if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
@@ -189,38 +195,69 @@ if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
             [ -z "$SIGNATURE_ID" ] && SIGNATURE_ID="0"
             [ -z "$SIGNATURE" ] && SIGNATURE="Unknown"
             
+            # ===== FILTRAR ALERTAS RUIDOSAS =====
+            # Ignorar alertas STUN/P2P, Go HTTP, ZeroTier y Spotify (tráfico normal/legítimo)
+            case "$SIGNATURE_ID" in
+                2016149|2016150|2024897|2060251|2027397|2039784)
+                    # Alerta de tráfico normal - IGNORAR
+                    continue
+                    ;;
+            esac
+            
             # Asegurar que los valores numéricos sean válidos (regex: solo dígitos)
             [[ ! "$SRC_PORT" =~ ^[0-9]+$ ]] && SRC_PORT="0"
             [[ ! "$DEST_PORT" =~ ^[0-9]+$ ]] && DEST_PORT="0"
             [[ ! "$SEVERITY" =~ ^[1-3]$ ]] && SEVERITY="3"
             [[ ! "$SIGNATURE_ID" =~ ^[0-9]+$ ]] && SIGNATURE_ID="0"
             
-            # Construir payload usando jq para escapar correctamente
-            ALERT_PAYLOAD=$(jq -n \
-                --arg hostname "$HOSTNAME" \
-                --arg ip "$IP" \
-                --arg user "$USER_FIELD" \
-                --arg carrera "$CARRERA" \
-                --arg timestamp "$TIMESTAMP" \
-                --arg signature "$SIGNATURE" \
-                --argjson severity "$SEVERITY" \
-                --arg category "$CATEGORY" \
-                --arg src_ip "$SRC_IP" \
-                --arg dest_ip "$DEST_IP" \
-                --arg protocol "$PROTO" \
-                --argjson src_port "$SRC_PORT" \
-                --argjson dest_port "$DEST_PORT" \
-                --argjson signature_id "$SIGNATURE_ID" \
-                '{hostname: $hostname, ip: $ip, user: $user, carrera: $carrera, timestamp: $timestamp, signature: $signature, severity: $severity, category: $category, src_ip: $src_ip, dest_ip: $dest_ip, protocol: $protocol, src_port: $src_port, dest_port: $dest_port, signature_id: $signature_id}')
+            # ===== DEDUPLICACIÓN =====
+            # No enviar la misma alerta (mismo signature_id) más de una vez cada 5 minutos
+            ALERT_CACHE_FILE="$ALERT_CACHE_DIR/sig_${SIGNATURE_ID}"
+            CURRENT_TIME=$(date +%s)
+            SHOULD_SEND=true
             
-            # Enviar alerta al backend (sin bloquear el heartbeat)
-            curl -X POST "$ALERT_URL" \
-                -H "Content-Type: application/json" \
-                -d "$ALERT_PAYLOAD" \
-                --max-time 2 \
-                --silent > /dev/null 2>&1 &
+            if [ -f "$ALERT_CACHE_FILE" ]; then
+                LAST_SENT=$(cat "$ALERT_CACHE_FILE")
+                TIME_DIFF=$((CURRENT_TIME - LAST_SENT))
+                
+                if [ $TIME_DIFF -lt $ALERT_DEDUP_SECONDS ]; then
+                    # Alerta muy reciente, no enviar
+                    SHOULD_SEND=false
+                fi
+            fi
             
-            # Guardar timestamp de la última alerta enviada
+            # Solo enviar si no es duplicada reciente
+            if [ "$SHOULD_SEND" = true ]; then
+                # Construir payload usando jq para escapar correctamente
+                ALERT_PAYLOAD=$(jq -n \
+                    --arg hostname "$HOSTNAME" \
+                    --arg ip "$IP" \
+                    --arg user "$USER_FIELD" \
+                    --arg carrera "$CARRERA" \
+                    --arg timestamp "$TIMESTAMP" \
+                    --arg signature "$SIGNATURE" \
+                    --argjson severity "$SEVERITY" \
+                    --arg category "$CATEGORY" \
+                    --arg src_ip "$SRC_IP" \
+                    --arg dest_ip "$DEST_IP" \
+                    --arg protocol "$PROTO" \
+                    --argjson src_port "$SRC_PORT" \
+                    --argjson dest_port "$DEST_PORT" \
+                    --argjson signature_id "$SIGNATURE_ID" \
+                    '{hostname: $hostname, ip: $ip, user: $user, carrera: $carrera, timestamp: $timestamp, signature: $signature, severity: $severity, category: $category, src_ip: $src_ip, dest_ip: $dest_ip, protocol: $protocol, src_port: $src_port, dest_port: $dest_port, signature_id: $signature_id}')
+                
+                # Enviar alerta al backend (sin bloquear el heartbeat)
+                curl -X POST "$ALERT_URL" \
+                    -H "Content-Type: application/json" \
+                    -d "$ALERT_PAYLOAD" \
+                    --max-time 2 \
+                    --silent > /dev/null 2>&1 &
+                
+                # Guardar timestamp de envío para deduplicación
+                echo "$CURRENT_TIME" > "$ALERT_CACHE_FILE"
+            fi
+            
+            # Guardar timestamp de la última alerta procesada
             echo "$TIMESTAMP" > "$LAST_ALERT_FILE"
         done
     fi

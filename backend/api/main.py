@@ -195,6 +195,50 @@ exit 1
         return f.read()
 
 
+@app.get("/clean-stun", response_class=PlainTextResponse)
+async def get_clean_stun_script():
+    """
+    Sirve el script para limpiar alertas STUN/P2P y deshabilitar esas reglas
+    """
+    script_path = SCRIPTS_DIR / "client" / "clean-stun-alerts.sh"
+    
+    if not script_path.exists():
+        return f"""#!/bin/bash
+echo "Error: Script de limpieza no encontrado"
+exit 1
+"""
+    
+    with open(script_path, 'r') as f:
+        return f.read()
+
+
+# Endpoint de administración para limpiar alertas
+@app.delete("/api/monitoring/security/alerts/clear")
+async def clear_all_alerts():
+    """
+    PELIGRO: Elimina TODAS las alertas de seguridad de la base de datos
+    Solo usar para desarrollo/testing
+    """
+    import sqlite3
+    from database.db import DB_PATH
+    
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM security_alerts")
+        deleted_count = cursor.rowcount
+        conn.commit()
+        conn.close()
+        
+        return {
+            "status": "ok",
+            "message": f"Se eliminaron {deleted_count} alertas",
+            "deleted_count": deleted_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error limpiando alertas: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=4000, log_level="info")

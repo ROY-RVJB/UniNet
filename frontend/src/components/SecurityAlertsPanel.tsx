@@ -412,8 +412,11 @@ function AlertCard({ alert, onAcknowledge, onRemediationAction, onPCClick, isPro
                 "text-lg font-bold tracking-tight leading-tight",
                 alert.acknowledged ? 'text-gray-500' : 'text-white'
               )}>
-                {alert.title}
+                {alert.friendlyTitle || alert.title}
               </h3>
+              <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
+                {alert.friendlyDescription || alert.description}
+              </p>
               <span className="text-[9px] text-gray-500 font-mono">
                 {formatTimestamp(alert.timestamp)}
               </span>
@@ -655,7 +658,7 @@ function RemediationConfirmModal({ alert, action, onConfirm, onCancel }: Remedia
             )}
             <div className="flex items-center gap-2 text-sm">
               <span className="text-gray-400">Amenaza:</span>
-              <span className="text-red-400">{alert.title}</span>
+              <span className="text-red-400">{alert.friendlyTitle || alert.title}</span>
             </div>
           </div>
 

@@ -39,6 +39,30 @@ def init_database():
         )
     """)
     
+    # Tabla de alertas de seguridad
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS security_alerts (
+            id TEXT PRIMARY KEY,
+            timestamp TEXT NOT NULL,
+            hostname TEXT NOT NULL,
+            carrera TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            category TEXT NOT NULL,
+            signature TEXT NOT NULL,
+            signature_id INTEGER,
+            friendly_title TEXT,
+            friendly_description TEXT,
+            src_ip TEXT,
+            dest_ip TEXT,
+            protocol TEXT,
+            src_port INTEGER,
+            dest_port INTEGER,
+            user_name TEXT,
+            acknowledged BOOLEAN DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
     # Tabla de logs
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS logs (
@@ -214,8 +238,105 @@ def load_logs(limit: int = 500, carrera: Optional[str] = None, username: Optiona
     
     return [dict(row) for row in rows]
 
-def clean_old_logs(days: int = 30):
-    """Limpia logs antiguos para mantener la base de datos ligera"""
+# --- FUNCIONES PARA ALERTAS DE SEGURIDAD ---
+
+def save_security_alert(alert_data: dict):
+    """Guarda una alerta de seguridad en la base de datos"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        INSERT INTO security_alerts 
+        (id, timestamp, hostname, carrera, severity, category, signature, signature_id,
+         friendly_title, friendly_description, src_ip, dest_ip, protocol, 
+         src_port, dest_port, user_name, acknowledged)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        alert_data['id'],
+        alert_data['timestamp'],
+        alert_data['pcId'],
+        alert_data['carreraId'],
+        alert_data['severity'],
+        alert_data['category'],
+        alert_data['title'],
+        alert_data['signatureId'],
+        alert_data.get('friendlyTitle', ''),
+        alert_data.get('friendlyDescription', ''),
+        alert_data['sourceIp'],
+        alert_data['destIp'],
+        alert_data['protocol'],
+        alert_data['sourcePort'],
+        alert_data['destPort'],
+        alert_data.get('userName'),
+        alert_data['acknowledged']
+    ))
+    
+    conn.commit()
+    conn.close()
+
+def load_security_alerts(
+    limit: int = 100,
+    acknowledged: Optional[bool] = None,
+    severity: Optional[str] = None,
+    hostname: Optional[str] = None,
+    carrera: Optional[str] = None
+) -> List[dict]:
+    """Carga alertas de seguridad desde la base de datos con filtros opcionales"""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    query = "SELECT * FROM security_alerts WHERE 1=1"
+    params = []
+    
+    if acknowledged is not None:
+        query += " AND acknowledged = ?"
+        params.append(1 if acknowledged else 0)
+    
+    if severity:
+        query += " AND severity = ?"
+        params.append(severity)
+    
+    if hostname:
+        query += " AND hostname = ?"
+        params.append(hostname)
+    
+    if carrera:
+        query += " AND carrera = ?"
+        params.append(carrera)
+    
+    query += " ORDER BY timestamp DESC LIMIT ?"
+    params.append(limit)
+    
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Convertir a dict con el formato esperado por el frontend
+    alerts = []
+    for row in rows:
+        alerts.append({
+            "id": row['id'],
+            "timestamp": row['timestamp'],
+            "pcId": row['hostname'],
+            "pcName": row['hostname'],
+            "carreraId": row['carrera'],
+            "carreraName": "Ingeniería de Sistemas",  # TODO: mapear
+            "userName": row['user_name'],
+            "severity": row['severity'],
+            "category": row['category'],
+            "title": row['friendly_title'] or row['signature'],
+            "description": row['friendly_description'] or f"Alerta de seguridad detectada",
+            "sourceIp": row['src_ip'],
+            "destIp": row['dest_ip'],
+            "protocol": row['protocol'],
+            "sourcePort": row['src_port'],
+            "destPort": row['dest_port'],
+            "signatureId": row['signature_id'],
+            "acknowledged": bool(row['acknowledged'])
+        })
+    
+    return alerts
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
