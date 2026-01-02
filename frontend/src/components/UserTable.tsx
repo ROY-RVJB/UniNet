@@ -320,18 +320,18 @@ export function UserTable({ users, onRefresh, carreraCode }: UserTableProps) {
 
                     {/* Acciones - visibles en hover */}
                     <td className="px-4 py-4">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleEditUser(user)}
                           className="p-1.5 rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                          title="Editar"
+                          title="Editar usuario"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(user)}
                           className="p-1.5 rounded text-white/40 hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                          title="Eliminar"
+                          title="Eliminar usuario"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

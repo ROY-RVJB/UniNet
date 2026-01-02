@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { User, ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { CarreraSelectorDropdown } from './CarreraSelectorDropdown';
@@ -15,6 +15,7 @@ import type { UserRole } from '@/types/auth'
 // Tabs con roles permitidos
 // Docente puede ver Network y Logs pero filtrado por su carrera
 const navTabs: { id: string; label: string; path: string; roles: UserRole[] }[] = [
+  { id: 'home', label: 'Inicio', path: '/', roles: ['admin', 'docente'] },
   { id: 'dashboard', label: 'Dashboard', path: '/dashboard', roles: ['admin', 'docente'] },
   { id: 'users', label: 'Usuarios', path: '/users', roles: ['admin', 'docente'] },
   { id: 'network', label: 'Network', path: '/network', roles: ['admin', 'docente'] },
@@ -23,7 +24,6 @@ const navTabs: { id: string; label: string; path: string; roles: UserRole[] }[] 
 
 export function Navbar() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, logout } = useAuth();
   const [isBrandHovered, setIsBrandHovered] = useState(false);
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
@@ -67,6 +67,7 @@ export function Navbar() {
         {/* Left: Logo Singularidad + Texto con efecto bidireccional */}
         <div
           className="flex items-center gap-3 cursor-pointer"
+          onClick={() => navigate('/')}
           onMouseEnter={() => setIsBrandHovered(true)}
           onMouseLeave={() => setIsBrandHovered(false)}
         >
@@ -91,23 +92,19 @@ export function Navbar() {
               {navTabs
                 .filter(tab => tab.roles.includes(user.role))
                 .map((tab) => (
-                  <button
+                  <NavLink
                     key={tab.id}
-                    onClick={() => navigate(tab.path)}
-                    className={`
-                    relative px-4 py-2 text-sm font-medium rounded-md transition-colors
-                    ${location.pathname === tab.path
+                    to={tab.path}
+                    className={({ isActive }) => `
+                      px-4 py-2 text-sm font-medium rounded-md transition-colors
+                      ${isActive
                         ? 'text-white bg-white/10'
                         : 'text-tech-textDim hover:text-white hover:bg-white/5'
                       }
-                  `}
+                    `}
                   >
                     {tab.label}
-                    {/* Underline dentro del boton activo */}
-                    {location.pathname === tab.path && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-0.5 bg-white rounded-full" />
-                    )}
-                  </button>
+                  </NavLink>
                 ))}
             </div>
           )}
@@ -121,8 +118,8 @@ export function Navbar() {
           {/* Server Status Indicator */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-tech-darkCard border border-tech-darkBorder">
             <div className={`w-2 h-2 rounded-full ${serverStatus === 'online' ? 'bg-green-500 animate-pulse' :
-                serverStatus === 'offline' ? 'bg-red-500' :
-                  'bg-yellow-500 animate-pulse'
+              serverStatus === 'offline' ? 'bg-red-500' :
+                'bg-yellow-500 animate-pulse'
               }`} />
             <span className="text-xs font-medium text-tech-textDim">
               {serverStatus === 'online' ? 'Online' :

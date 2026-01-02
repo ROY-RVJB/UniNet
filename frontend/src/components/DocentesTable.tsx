@@ -230,7 +230,7 @@ export function DocentesTable({ docentes, onRefresh, onCreate, onUpdate, onDelet
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-semibold text-white">Docentes del Sistema</h2>
+            <h2 className="text-xl font-semibold text-white">Docentes</h2>
             <span className="text-sm text-white/40">
               {docentes.length} {docentes.length === 1 ? 'docente' : 'docentes'}
             </span>
@@ -269,7 +269,7 @@ export function DocentesTable({ docentes, onRefresh, onCreate, onUpdate, onDelet
               className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded-lg hover:bg-white/90 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              Nuevo Docente
+              Nuevo
             </button>
           </div>
         </div>
@@ -381,18 +381,18 @@ export function DocentesTable({ docentes, onRefresh, onCreate, onUpdate, onDelet
 
                     {/* Acciones */}
                     <td className="px-4 py-4">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setDocenteToEdit(docente)}
                           className="p-1.5 rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                          title="Editar"
+                          title="Editar docente"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(docente)}
                           className="p-1.5 rounded text-white/40 hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                          title="Eliminar"
+                          title="Eliminar docente"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

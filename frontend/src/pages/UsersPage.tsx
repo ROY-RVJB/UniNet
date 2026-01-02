@@ -131,7 +131,7 @@ export function UsersPage() {
   }, [user?.role, selectedCarrera?.id, isCarreraReady]) // Re-fetch cuando cambie la carrera
 
   return (
-    <div className="space-y-12">
+    <div className="max-w-7xl mx-auto space-y-12">
       {/* Tabla de usuarios LDAP - Siempre visible */}
       <UserTable
         users={users}
@@ -141,7 +141,18 @@ export function UsersPage() {
 
       {/* Tabla de docentes del sistema - Solo visible para admin */}
       {user?.role === 'admin' && (
-        <div className="border-t border-white/10 pt-12">
+        <div className="relative">
+          {/* Separador visual mejorado */}
+          <div className="flex items-center gap-4 mb-12">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
+              <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+              <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+              <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          </div>
+
           <DocentesTable
             docentes={docentes}
             onRefresh={fetchDocentes}

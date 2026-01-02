@@ -85,7 +85,10 @@ export function CarreraSelector() {
           <CarreraList
             carreras={filteredCarreras}
             selectedId={selectedCarrera?.id ?? null}
-            onSelect={setSelectedCarrera}
+            onSelect={(carrera) => {
+              setSelectedCarrera(carrera);
+              setContextCarrera(carrera); // Sincronizar con contexto global
+            }}
           />
         </div>
 

@@ -22,7 +22,7 @@ export function CarreraSelectorDropdown() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { availableCarreras, selectedCarrera, setSelectedCarrera} = useCarrera();
+  const { availableCarreras, selectedCarrera, setSelectedCarrera } = useCarrera();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -92,8 +92,8 @@ export function CarreraSelectorDropdown() {
           </>
         ) : (
           <>
-            <span className="w-2 h-2 rounded-full flex-shrink-0 bg-status-online" />
-            <span className="text-white text-sm truncate flex-1 text-left">Todas las Carreras</span>
+            <span className="w-2 h-2 rounded-full flex-shrink-0 bg-tech-blue" />
+            <span className="text-white text-sm truncate flex-1 text-left">Ver Todas</span>
           </>
         )}
         <ChevronDown className={`w-4 h-4 text-tech-textDim flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -113,7 +113,7 @@ export function CarreraSelectorDropdown() {
 
           {/* Options */}
           <div className="max-h-80 overflow-y-auto py-1 scrollbar-thin">
-            {/* Option: Todas las Carreras - Navega al Home */}
+            {/* Option: Ver Todas - Datos sin filtrar */}
             <button
               onClick={() => handleSelect(null)}
               className={`
@@ -122,12 +122,15 @@ export function CarreraSelectorDropdown() {
                 ${!selectedCarrera ? 'bg-white/5' : ''}
               `}
             >
-              <div className="w-6 h-6 rounded bg-tech-darkBorder flex items-center justify-center">
-                <span className="text-xs font-bold text-tech-textDim">All</span>
+              <div className="w-6 h-6 rounded bg-tech-blue/20 flex items-center justify-center">
+                <span className="text-xs font-bold text-tech-blue">All</span>
               </div>
               <div className="flex-1">
                 <span className="text-sm text-white">
-                  {isDocente ? 'Inicio' : 'Todas las Carreras'}
+                  Ver Todas (Sin Filtro)
+                </span>
+                <span className="text-xs text-tech-textDim block">
+                  Datos de todas las carreras
                 </span>
               </div>
               {!selectedCarrera && (
