@@ -82,10 +82,34 @@ ALERT_TRANSLATIONS = {
         "description": "⚠️ Se detectó un flood de paquetes ICMP. Posible ataque de denegación de servicio (DoS)"
     },
     
+    # Alertas de DDoS y amplificación
+    "2019102": {
+        "title": "Escaneo de amplificación SSDP",
+        "description": "🚨 CRÍTICO: Intento de ataque DDoS usando amplificación SSDP. El equipo está intentando abusar del protocolo SSDP para amplificar tráfico malicioso"
+    },
+    "2019103": {
+        "title": "Amplificación DNS detectada",
+        "description": "🚨 Posible ataque DDoS usando amplificación DNS. Tráfico sospechoso hacia servidores DNS"
+    },
+    
+    # Alertas de DNS sospechoso
+    "2063117": {
+        "title": "Consulta DNS a dominio abusado",
+        "description": "⚠️ Se detectó consulta DNS a azurewebsites.net, dominio frecuentemente abusado por malware. Verificar si es tráfico legítimo o posible infección"
+    },
+    "2028470": {
+        "title": "Consulta DNS sospechosa",
+        "description": "⚠️ Consulta DNS a dominio con reputación cuestionable. Puede indicar comunicación con servidores de comando y control (C2)"
+    },
+    
     # Alertas de malware
     "2012647": {
         "title": "Tráfico de malware detectado",
         "description": "🚨 CRÍTICO: Se detectó comunicación con servidores de malware conocidos. El equipo puede estar infectado"
+    },
+    "2028371": {
+        "title": "Beacon de malware",
+        "description": "🚨 CRÍTICO: Se detectó tráfico tipo beacon hacia servidor externo. Indicativo de malware activo (trojan, ransomware, etc.)"
     },
     
     # Alertas de tráfico HTTP sospechoso
@@ -109,19 +133,57 @@ def translate_alert(signature: str, signature_id: int, category: str = "") -> di
     if translation:
         return translation
     
-    # Buscar por palabras clave en la signature
+    # Buscar por palabras clave en la signature (orden de prioridad)
     signature_lower = signature.lower()
-    if "ssh" in signature_lower:
-        return ALERT_TRANSLATIONS["ssh"]
-    elif "port" in signature_lower and "scan" in signature_lower:
-        return ALERT_TRANSLATIONS["port_scan"]
-    elif "sql" in signature_lower or "injection" in signature_lower:
-        return ALERT_TRANSLATIONS["sql"]
-    elif "icmp" in signature_lower or "flood" in signature_lower:
-        return ALERT_TRANSLATIONS["icmp"]
+    category_lower = category.lower() if category else ""
     
-    # Si no se encuentra traducción, usar default
-    return ALERT_TRANSLATIONS["default"]
+    # Patrones críticos primero
+    if "dos" in signature_lower or "ddos" in signature_lower or "amplification" in signature_lower:
+        return {
+            "title": f"Ataque DoS/DDoS detectado",
+            "description": f"🚨 CRÍTICO: {signature[:100]}. Posible ataque de denegación de servicio"
+        }
+    elif "malware" in signature_lower or "trojan" in signature_lower or "ransomware" in signature_lower:
+        return {
+            "title": "Tráfico de malware",
+            "description": f"🚨 CRÍTICO: {signature[:100]}. El equipo puede estar infectado"
+        }
+    elif "exploit" in signature_lower or "vulnerability" in signature_lower:
+        return {
+            "title": "Intento de explotación",
+            "description": f"⚠️ {signature[:100]}. Intento de aprovechar una vulnerabilidad"
+        }
+    elif "brute" in signature_lower or ("ssh" in signature_lower and "fail" in signature_lower):
+        return {
+            "title": "Ataque de fuerza bruta",
+            "description": f"⚠️ {signature[:100]}. Múltiples intentos de autenticación"
+        }
+    elif "scan" in signature_lower or "scanning" in signature_lower:
+        return {
+            "title": "Escaneo de red detectado",
+            "description": f"⚠️ {signature[:100]}. Reconocimiento de puertos o servicios"
+        }
+    elif "sql" in signature_lower or "injection" in signature_lower:
+        return {
+            "title": "Intento de inyección SQL",
+            "description": f"⚠️ {signature[:100]}. Intento de ataque a base de datos"
+        }
+    elif "dns" in signature_lower and ("abuse" in signature_lower or "suspicious" in signature_lower):
+        return {
+            "title": "Consulta DNS sospechosa",
+            "description": f"⚠️ {signature[:100]}. Posible comunicación con servidor malicioso"
+        }
+    elif "flood" in signature_lower or "icmp" in signature_lower:
+        return {
+            "title": "Flood de tráfico",
+            "description": f"⚠️ {signature[:100]}. Volumen alto de paquetes detectado"
+        }
+    
+    # Si no coincide con ningún patrón, usar la firma original como título
+    return {
+        "title": signature[:60] if len(signature) > 60 else signature,
+        "description": f"Alerta: {signature}. Categoría: {category or 'No especificada'}"
+    }
 
 # --- 1. CACHÉ EN MEMORIA (para rendimiento) ---
 # Al iniciar el servidor, cargamos todo de la BD a memoria
