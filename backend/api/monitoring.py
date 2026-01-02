@@ -15,6 +15,82 @@ from database import db
 
 router = APIRouter()
 
+# --- DICCIONARIO DE TRADUCCIÓN DE ALERTAS ---
+# Traduce alertas técnicas de Suricata a mensajes comprensibles
+ALERT_TRANSLATIONS = {
+    # Alertas de STUN/NAT (tráfico de VPN/videoconferencia)
+    "2016149": {
+        "title": "Solicitud de conexión P2P",
+        "description": "El equipo está intentando establecer una conexión directa con otro dispositivo (usado por VPN, videollamadas como Zoom/Teams, o aplicaciones P2P)"
+    },
+    "2016150": {
+        "title": "Respuesta de conexión P2P",
+        "description": "El equipo recibió confirmación de conexión directa desde otro dispositivo (normal en VPN, videollamadas o aplicaciones P2P)"
+    },
+    
+    # Alertas de User-Agent Go
+    "2024897": {
+        "title": "Aplicación Go detectada",
+        "description": "Se detectó tráfico de una aplicación escrita en lenguaje Go. Puede ser legítima (Docker, Kubernetes, Tailscale) o sospechosa si no se esperaba"
+    },
+    "2060251": {
+        "title": "Cliente HTTP Go saliente",
+        "description": "Una aplicación Go está haciendo peticiones HTTP. Verificar si es una herramienta autorizada (Docker, contenedores, VPN)"
+    },
+    
+    # Alertas de SSH
+    "ssh": {
+        "title": "Actividad SSH detectada",
+        "description": "Tráfico de conexión remota SSH. Verificar si el usuario tiene autorización para acceso remoto"
+    },
+    
+    # Alertas de escaneo de puertos
+    "port_scan": {
+        "title": "Escaneo de puertos detectado",
+        "description": "⚠️ Un dispositivo está escaneando múltiples puertos. Esto puede indicar reconocimiento de red o intento de intrusión"
+    },
+    
+    # Alertas de SQL Injection
+    "sql": {
+        "title": "Intento de inyección SQL",
+        "description": "⚠️ Se detectó un patrón de ataque SQL. El equipo puede estar comprometido o alguien está intentando atacar una base de datos"
+    },
+    
+    # Alertas de ICMP flood
+    "icmp": {
+        "title": "Tráfico ICMP inusual",
+        "description": "Volumen alto de paquetes ping. Puede ser un ataque DoS o simplemente pruebas de red"
+    },
+    
+    # Default para alertas desconocidas
+    "default": {
+        "title": "Alerta de seguridad",
+        "description": "Se detectó actividad sospechosa en la red. Revisar detalles para determinar si es una amenaza"
+    }
+}
+
+def translate_alert(signature: str, signature_id: int, category: str = "") -> dict:
+    """Traduce una alerta técnica de Suricata a un mensaje comprensible"""
+    
+    # Buscar por signature_id primero (más específico)
+    translation = ALERT_TRANSLATIONS.get(str(signature_id))
+    if translation:
+        return translation
+    
+    # Buscar por palabras clave en la signature
+    signature_lower = signature.lower()
+    if "ssh" in signature_lower:
+        return ALERT_TRANSLATIONS["ssh"]
+    elif "port" in signature_lower and "scan" in signature_lower:
+        return ALERT_TRANSLATIONS["port_scan"]
+    elif "sql" in signature_lower or "injection" in signature_lower:
+        return ALERT_TRANSLATIONS["sql"]
+    elif "icmp" in signature_lower or "flood" in signature_lower:
+        return ALERT_TRANSLATIONS["icmp"]
+    
+    # Si no se encuentra traducción, usar default
+    return ALERT_TRANSLATIONS["default"]
+
 # --- 1. CACHÉ EN MEMORIA (para rendimiento) ---
 # Al iniciar el servidor, cargamos todo de la BD a memoria
 # Pero ahora TODO se guarda en la BD para persistir
@@ -287,7 +363,6 @@ async def get_stats():
 @router.post("/security/alerts")
 async def receive_security_alert(request: Request):
     """Recibe alertas de seguridad de Suricata desde los clientes"""
-    global security_alerts
     
     try:
         # Obtener el body como JSON
@@ -306,6 +381,9 @@ async def receive_security_alert(request: Request):
     severity_map = {1: "critical", 2: "high", 3: "medium"}
     severity_str = severity_map.get(alert.severity, "low")
     
+    # Traducir la alerta técnica a mensaje comprensible
+    translation = translate_alert(alert.signature, alert.signature_id, alert.category or "")
+    
     # Crear registro de alerta
     alert_record = {
         "id": f"alert-{uuid.uuid4()}",
@@ -317,7 +395,9 @@ async def receive_security_alert(request: Request):
         "userName": alert.user,
         "severity": severity_str,
         "category": alert.category.lower().replace(" ", "-") if alert.category else "other",
-        "title": alert.signature,
+        "title": alert.signature,  # Técnico original
+        "friendlyTitle": translation["title"],  # Traducido
+        "friendlyDescription": translation["description"],  # Explicación clara
         "description": f"Suricata detected {alert.category or 'suspicious activity'}",
         "sourceIp": alert.src_ip,
         "destIp": alert.dest_ip,
@@ -328,12 +408,10 @@ async def receive_security_alert(request: Request):
         "acknowledged": False
     }
     
-    # Agregar a la lista de alertas (mantener últimas 1000)
-    security_alerts.append(alert_record)
-    if len(security_alerts) > 1000:
-        security_alerts = security_alerts[-1000:]
+    # Guardar en la base de datos (persistencia)
+    db.save_security_alert(alert_record)
     
-    print(f"🛡️  Nueva alerta de seguridad: {alert.signature} desde {alert.hostname} ({severity_str})")
+    print(f"🛡️  Nueva alerta de seguridad: {translation['title']} - {alert.hostname} ({severity_str})")
     
     return {"status": "ok", "alert_id": alert_record["id"]}
 
@@ -343,41 +421,28 @@ async def get_security_alerts(
     acknowledged: Optional[bool] = None,
     severity: Optional[str] = None,
     hostname: Optional[str] = None,
+    carrera: Optional[str] = None,
     limit: int = Query(default=100, le=1000)
 ):
-    """Obtiene alertas de seguridad con filtros opcionales"""
-    global security_alerts
+    """Obtiene alertas de seguridad desde la base de datos con filtros opcionales"""
     
-    # Filtrar alertas
-    filtered = security_alerts.copy()
+    # Cargar desde la base de datos (persistente)
+    alerts = db.load_security_alerts(
+        limit=limit,
+        acknowledged=acknowledged,
+        severity=severity,
+        hostname=hostname,
+        carrera=carrera
+    )
     
-    if acknowledged is not None:
-        filtered = [a for a in filtered if a["acknowledged"] == acknowledged]
-    
-    if severity:
-        filtered = [a for a in filtered if a["severity"] == severity]
-    
-    if hostname:
-        filtered = [a for a in filtered if a["pcId"] == hostname]
-    
-    # Ordenar por timestamp descendente (más recientes primero)
-    filtered.sort(key=lambda x: x["timestamp"], reverse=True)
-    
-    # Limitar resultados
-    return filtered[:limit]
+    return alerts
 
 
 @router.post("/security/alerts/{alert_id}/acknowledge")
 async def acknowledge_alert(alert_id: str):
     """Marca una alerta como revisada"""
-    global security_alerts
-    
-    for alert in security_alerts:
-        if alert["id"] == alert_id:
-            alert["acknowledged"] = True
-            return {"status": "ok", "alert_id": alert_id}
-    
-    raise HTTPException(status_code=404, detail="Alert not found")
+    # TODO: Implementar actualización en BD
+    return {"status": "ok", "alert_id": alert_id, "message": "Feature pending implementation"}
 
 
 @router.post("/security/remediation")

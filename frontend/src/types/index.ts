@@ -198,8 +198,10 @@ export interface SecurityAlert {
   userName: string | null;    // Usuario LDAP que estaba usando la PC (null si no hay usuario)
   severity: AlertSeverity;    // Severidad
   category: AlertCategory;    // Categoría
-  title: string;              // Título corto de la alerta
+  title: string;              // Título técnico original de Suricata
+  friendlyTitle?: string;     // Título traducido y comprensible
   description: string;        // Descripción detallada
+  friendlyDescription?: string; // Explicación clara de qué significa la alerta
   sourceIp: string;           // IP origen
   destIp: string;             // IP destino
   protocol: string;           // Protocolo (TCP/UDP/ICMP)
