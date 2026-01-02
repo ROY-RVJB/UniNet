@@ -18,6 +18,7 @@ const navTabs: { id: string; label: string; path: string; roles: UserRole[] }[] 
   { id: 'home', label: 'Inicio', path: '/', roles: ['admin', 'docente'] },
   { id: 'dashboard', label: 'Dashboard', path: '/dashboard', roles: ['admin', 'docente'] },
   { id: 'users', label: 'Usuarios', path: '/users', roles: ['admin', 'docente'] },
+  { id: 'security', label: 'Seguridad', path: '/security', roles: ['admin', 'docente'] },
   { id: 'network', label: 'Network', path: '/network', roles: ['admin', 'docente'] },
   { id: 'logs', label: 'Logs', path: '/logs', roles: ['admin', 'docente'] },
 ];

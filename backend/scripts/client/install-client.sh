@@ -401,6 +401,55 @@ fi
 echo -e "${GREEN}✅ Configuración LDAP completada${NC}"
 echo ""
 
+# ==========================================
+# INSTALACIÓN Y CONFIGURACIÓN DE SURICATA IDS
+# ==========================================
+echo ""
+echo -e "${BLUE}🛡️  Instalando Suricata IDS para monitoreo de seguridad...${NC}"
+
+# Instalar Suricata
+apt-get install -y suricata > /dev/null 2>&1 || {
+    echo -e "${YELLOW}⚠️  No se pudo instalar Suricata, continuando sin IDS${NC}"
+}
+
+# Verificar si Suricata se instaló correctamente
+if command -v suricata &> /dev/null; then
+    echo -e "${GREEN}✅ Suricata instalado correctamente${NC}"
+    
+    # Detectar interfaz de red principal (excluyendo lo y docker)
+    NETWORK_INTERFACE=$(ip -o link show | grep -v "lo\|docker\|veth" | awk -F': ' '{print $2}' | head -n1)
+    echo -e "${BLUE}📡 Interfaz de red detectada: $NETWORK_INTERFACE${NC}"
+    
+    # Configurar Suricata para monitorear la interfaz correcta
+    sed -i "s/interface: .*/interface: $NETWORK_INTERFACE/" /etc/suricata/suricata.yaml 2>/dev/null || true
+    
+    # Habilitar eve.json (salida JSON para alertas)
+    sed -i 's/^  - eve-log:/  - eve-log:\n      enabled: yes/' /etc/suricata/suricata.yaml 2>/dev/null || true
+    
+    # Actualizar reglas de Suricata
+    echo -e "${BLUE}📥 Actualizando reglas de detección de Suricata...${NC}"
+    suricata-update > /dev/null 2>&1 || echo -e "${YELLOW}⚠️  No se pudieron actualizar las reglas${NC}"
+    
+    # Crear directorio de logs si no existe
+    mkdir -p /var/log/suricata
+    chmod 755 /var/log/suricata
+    
+    # Reiniciar Suricata con la nueva configuración
+    systemctl restart suricata 2>/dev/null || service suricata restart 2>/dev/null || true
+    systemctl enable suricata 2>/dev/null || true
+    
+    # Verificar que Suricata esté corriendo
+    sleep 2
+    if systemctl is-active --quiet suricata 2>/dev/null || service suricata status 2>/dev/null | grep -q "running"; then
+        echo -e "${GREEN}✅ Suricata IDS activo y monitoreando tráfico de red${NC}"
+        echo -e "${GREEN}   📊 Las alertas se guardarán en: /var/log/suricata/eve.json${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Suricata instalado pero no pudo iniciarse${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  Suricata no disponible, continuando sin IDS${NC}"
+fi
+
 # Ejecutar el agente inmediatamente para verificar y registrar la PC
 echo ""
 echo -e "${BLUE}🔍 Registrando este equipo en el servidor...${NC}"
@@ -434,10 +483,15 @@ echo "   • Servidor LDAP: $LDAP_SERVER"
 echo "   • Usuarios pueden iniciar sesión con sus credenciales LDAP"
 echo "   • Los directorios home se crean automáticamente"
 echo ""
-echo "📝 Comandos útiles:"
+echo "�️  Suricata IDS configurado:"
+echo "   • Monitoreo de seguridad activo en interfaz: $NETWORK_INTERFACE"
+echo "   • Alertas se guardan en: /var/log/suricata/eve.json"
+echo "   • Las amenazas detectadas aparecen en el dashboard"
+echo ""
+echo "�📝 Comandos útiles:"
 echo "   • Verificar agente: sudo /usr/local/bin/uninet-agent"
-echo "   • Ver logs: grep uninet /var/log/syslog"
-echo "   • Listar usuarios LDAP: getent passwd | grep '/home'"
+echo "   • Ver logs: grep uninet /var/log/syslog"echo "   • Ver alertas IDS: sudo tail -f /var/log/suricata/eve.json"
+echo "   • Estado Suricata: sudo systemctl status suricata"echo "   • Listar usuarios LDAP: getent passwd | grep '/home'"
 echo "   • Probar usuario LDAP: id <nombre_usuario>"
 echo ""
 echo "💡 Funcionamiento automático:"

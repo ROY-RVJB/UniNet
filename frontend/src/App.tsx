@@ -6,6 +6,7 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { UsersPage } from '@/pages/UsersPage'
 import { NetworkPage } from '@/pages/NetworkPage'
 import { LogsPage } from '@/pages/LogsPage'
+import { SecurityDashboardPage } from '@/pages/SecurityDashboardPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { CarreraSelectModal } from '@/components/CarreraSelectModal'
 import { useAuth } from '@/contexts/AuthContext'
@@ -40,6 +41,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/security" element={<SecurityDashboardPage />} />
         {/* Network y Logs: admin ve todo, docente ve solo su carrera */}
         <Route path="/network" element={<NetworkPage />} />
         <Route path="/logs" element={<LogsPage />} />

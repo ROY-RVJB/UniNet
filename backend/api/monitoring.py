@@ -21,6 +21,7 @@ router = APIRouter()
 # Pero ahora TODO se guarda en la BD para persistir
 clients_state: Dict[str, dict] = {} 
 network_rules: Dict[str, str] = {}
+security_alerts: List[dict] = []  # Almacén en memoria para alertas de seguridad
 
 def init_cache():
     """Carga datos de la BD a la memoria al iniciar el servidor"""
@@ -48,6 +49,23 @@ class LogEntry(BaseModel):
     category: str         # NETWORK, SYSTEM, AUTH
     message: str
     carrera: str
+
+class SecurityAlert(BaseModel):
+    hostname: str
+    ip: str
+    user: Optional[str] = None
+    carrera: str
+    timestamp: str
+    signature: str
+    severity: int         # 1=crítica, 2=alta, 3=media
+    category: str
+    src_ip: str
+    dest_ip: str
+    protocol: str
+    src_port: Optional[int] = None
+    dest_port: Optional[int] = None
+    signature_id: int
+
     hostname: Optional[str] = None
 
 # --- 3. HELPER: SISTEMA DE LOGS ---
@@ -216,3 +234,111 @@ async def get_stats():
             online += 1
     
     return {"total": total, "online": online, "inUse": in_use, "offline": offline}
+
+
+# --- 8. ENDPOINTS DE SEGURIDAD (SURICATA IDS) ---
+
+@router.post("/security/alerts")
+async def receive_security_alert(alert: SecurityAlert):
+    """Recibe alertas de seguridad de Suricata desde los clientes"""
+    global security_alerts
+    
+    # Mapear severidad de Suricata (1=critical, 2=high, 3=medium) a nuestro sistema
+    severity_map = {1: "critical", 2: "high", 3: "medium"}
+    severity_str = severity_map.get(alert.severity, "low")
+    
+    # Crear registro de alerta
+    alert_record = {
+        "id": f"alert-{uuid.uuid4()}",
+        "timestamp": alert.timestamp,
+        "pcId": alert.hostname,
+        "pcName": alert.hostname,
+        "carreraId": alert.carrera,
+        "carreraName": "Ingeniería de Sistemas",  # TODO: Mapear desde carrera ID
+        "userName": alert.user,
+        "severity": severity_str,
+        "category": alert.category.lower().replace(" ", "-") if alert.category else "other",
+        "title": alert.signature,
+        "description": f"Suricata detected {alert.category or 'suspicious activity'}",
+        "sourceIp": alert.src_ip,
+        "destIp": alert.dest_ip,
+        "protocol": alert.protocol,
+        "sourcePort": alert.src_port,
+        "destPort": alert.dest_port,
+        "signatureId": alert.signature_id,
+        "acknowledged": False
+    }
+    
+    # Agregar a la lista de alertas (mantener últimas 1000)
+    security_alerts.append(alert_record)
+    if len(security_alerts) > 1000:
+        security_alerts = security_alerts[-1000:]
+    
+    print(f"🛡️  Nueva alerta de seguridad: {alert.signature} desde {alert.hostname} ({severity_str})")
+    
+    return {"status": "ok", "alert_id": alert_record["id"]}
+
+
+@router.get("/security/alerts")
+async def get_security_alerts(
+    acknowledged: Optional[bool] = None,
+    severity: Optional[str] = None,
+    hostname: Optional[str] = None,
+    limit: int = Query(default=100, le=1000)
+):
+    """Obtiene alertas de seguridad con filtros opcionales"""
+    global security_alerts
+    
+    # Filtrar alertas
+    filtered = security_alerts.copy()
+    
+    if acknowledged is not None:
+        filtered = [a for a in filtered if a["acknowledged"] == acknowledged]
+    
+    if severity:
+        filtered = [a for a in filtered if a["severity"] == severity]
+    
+    if hostname:
+        filtered = [a for a in filtered if a["pcId"] == hostname]
+    
+    # Ordenar por timestamp descendente (más recientes primero)
+    filtered.sort(key=lambda x: x["timestamp"], reverse=True)
+    
+    # Limitar resultados
+    return filtered[:limit]
+
+
+@router.post("/security/alerts/{alert_id}/acknowledge")
+async def acknowledge_alert(alert_id: str):
+    """Marca una alerta como revisada"""
+    global security_alerts
+    
+    for alert in security_alerts:
+        if alert["id"] == alert_id:
+            alert["acknowledged"] = True
+            return {"status": "ok", "alert_id": alert_id}
+    
+    raise HTTPException(status_code=404, detail="Alert not found")
+
+
+@router.post("/security/remediation")
+async def execute_remediation(payload: dict):
+    """Endpoint para ejecutar acciones de remediación"""
+    action = payload.get("action")  # 'quarantine' | 'kick' | 'block'
+    hostname = payload.get("hostname")
+    alert_id = payload.get("alert_id")
+    
+    if not all([action, hostname]):
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    # Guardar la acción pendiente para que el agente la ejecute en el próximo heartbeat
+    # TODO: Implementar cola de acciones pendientes
+    
+    print(f"🚨 Acción de remediación solicitada: {action} en {hostname}")
+    
+    return {
+        "status": "ok",
+        "action": action,
+        "hostname": hostname,
+        "message": f"Action {action} will be executed on next heartbeat"
+    }

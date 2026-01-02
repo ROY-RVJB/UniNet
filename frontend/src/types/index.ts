@@ -94,3 +94,51 @@ export interface Carrera {
   nodeId?: string;         // ID del nodo (ej: "NODE-ISI-01")
   lastSync?: Date;         // Última sincronización
 }
+
+// ==========================================
+// TIPOS - Alertas de Seguridad (Suricata)
+// ==========================================
+
+/**
+ * Severidad de la alerta
+ */
+export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+
+/**
+ * Categorías de alertas de Suricata
+ */
+export type AlertCategory = 
+  | 'port-scan'           // Escaneo de puertos
+  | 'brute-force'         // Intentos de fuerza bruta
+  | 'malware'             // Malware detectado
+  | 'exploit'             // Intento de explotación
+  | 'policy-violation'    // Violación de políticas
+  | 'suspicious-traffic'  // Tráfico sospechoso
+  | 'ddos'                // Ataque DDoS
+  | 'unauthorized-access' // Acceso no autorizado
+  | 'data-exfiltration'   // Exfiltración de datos
+  | 'other';              // Otros
+
+/**
+ * Alerta de seguridad de Suricata
+ */
+export interface SecurityAlert {
+  id: string;                 // ID único de la alerta
+  timestamp: Date;            // Timestamp de la alerta
+  pcId: string;               // PC que generó la alerta ("pc-01")
+  pcName: string;             // Nombre de la PC
+  carreraId: string;          // ID de la carrera (ej: "5001")
+  carreraName: string;        // Nombre de la carrera (ej: "Ingeniería de Sistemas")
+  userName: string | null;    // Usuario LDAP que estaba usando la PC (null si no hay usuario)
+  severity: AlertSeverity;    // Severidad
+  category: AlertCategory;    // Categoría
+  title: string;              // Título corto de la alerta
+  description: string;        // Descripción detallada
+  sourceIp: string;           // IP origen
+  destIp: string;             // IP destino
+  protocol: string;           // Protocolo (TCP/UDP/ICMP)
+  sourcePort?: number;        // Puerto origen (opcional)
+  destPort?: number;          // Puerto destino (opcional)
+  signatureId?: number;       // ID de firma de Suricata
+  acknowledged?: boolean;     // Si fue reconocida por el admin
+}

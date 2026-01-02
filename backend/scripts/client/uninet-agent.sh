@@ -33,6 +33,72 @@ CARRERA=${CARRERA:-"5010"}
 # Siempre enviar user como string (o vacío)
 JSON_DATA="{\"hostname\":\"$HOSTNAME\",\"ip\":\"$IP\",\"user\":\"$USER_FIELD\",\"carrera\":\"$CARRERA\"}"
 
+# ==========================================
+# LEER Y ENVIAR ALERTAS DE SURICATA IDS
+# ==========================================
+SURICATA_LOG="/var/log/suricata/eve.json"
+LAST_ALERT_FILE="/var/run/uninet-last-alert"
+
+# Verificar si Suricata está activo y hay alertas nuevas
+if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
+    # Obtener timestamp de la última alerta procesada
+    if [ -f "$LAST_ALERT_FILE" ]; then
+        LAST_TIMESTAMP=$(cat "$LAST_ALERT_FILE")
+    else
+        LAST_TIMESTAMP="1970-01-01T00:00:00"
+    fi
+    
+    # Buscar alertas nuevas desde el último timestamp
+    NEW_ALERTS=$(sudo grep '"event_type":"alert"' "$SURICATA_LOG" 2>/dev/null | tail -n 50)
+    
+    if [ -n "$NEW_ALERTS" ]; then
+        # Enviar alertas al backend
+        ALERT_URL="${SERVER_URL%/heartbeat}/security/alerts"
+        
+        echo "$NEW_ALERTS" | while read -r alert_line; do
+            # Extraer campos del JSON
+            TIMESTAMP=$(echo "$alert_line" | grep -o '"timestamp":"[^"]*"' | cut -d'"' -f4)
+            SIGNATURE=$(echo "$alert_line" | grep -o '"signature":"[^"]*"' | cut -d'"' -f4)
+            SEVERITY=$(echo "$alert_line" | grep -o '"severity":[0-9]*' | cut -d':' -f2)
+            SRC_IP=$(echo "$alert_line" | grep -o '"src_ip":"[^"]*"' | cut -d'"' -f4)
+            DEST_IP=$(echo "$alert_line" | grep -o '"dest_ip":"[^"]*"' | cut -d'"' -f4)
+            PROTO=$(echo "$alert_line" | grep -o '"proto":"[^"]*"' | cut -d'"' -f4)
+            SRC_PORT=$(echo "$alert_line" | grep -o '"src_port":[0-9]*' | cut -d':' -f2)
+            DEST_PORT=$(echo "$alert_line" | grep -o '"dest_port":[0-9]*' | cut -d':' -f2)
+            SIGNATURE_ID=$(echo "$alert_line" | grep -o '"signature_id":[0-9]*' | cut -d':' -f2)
+            CATEGORY=$(echo "$alert_line" | grep -o '"category":"[^"]*"' | cut -d'"' -f4)
+            
+            # Construir payload para el backend
+            ALERT_PAYLOAD="{
+                \"hostname\":\"$HOSTNAME\",
+                \"ip\":\"$IP\",
+                \"user\":\"$USER_FIELD\",
+                \"carrera\":\"$CARRERA\",
+                \"timestamp\":\"$TIMESTAMP\",
+                \"signature\":\"$SIGNATURE\",
+                \"severity\":$SEVERITY,
+                \"category\":\"$CATEGORY\",
+                \"src_ip\":\"$SRC_IP\",
+                \"dest_ip\":\"$DEST_IP\",
+                \"protocol\":\"$PROTO\",
+                \"src_port\":$SRC_PORT,
+                \"dest_port\":$DEST_PORT,
+                \"signature_id\":$SIGNATURE_ID
+            }"
+            
+            # Enviar alerta al backend (sin bloquear el heartbeat)
+            curl -X POST "$ALERT_URL" \
+                -H "Content-Type: application/json" \
+                -d "$ALERT_PAYLOAD" \
+                --max-time 2 \
+                --silent > /dev/null 2>&1 &
+            
+            # Guardar timestamp de la última alerta enviada
+            echo "$TIMESTAMP" > "$LAST_ALERT_FILE"
+        done
+    fi
+fi
+
 
 
 # Enviar heartbeat y guardar respuesta
