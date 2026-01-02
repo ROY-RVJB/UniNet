@@ -58,14 +58,14 @@ export function DashboardPage() {
         if (selectedCarrera) {
           url += `?carrera=${selectedCarrera.id}`;
         }
-        
+
         const res = await fetch(url);
         if (!res.ok) {
           console.warn('Backend no responde:', res.status);
           setIsLoading(false);
           return;
         }
-        
+
         const data: Array<{
           id: string;
           name: string;
@@ -74,6 +74,8 @@ export function DashboardPage() {
           user: string | null;
           lastSeen: string;
           carrera?: string;
+          metrics?: any;
+          metricsTimestamp?: string;
         }> = await res.json();
 
         // Transformar datos del backend al formato del frontend
@@ -86,6 +88,8 @@ export function DashboardPage() {
           lastSeen: new Date(pc.lastSeen),
           laboratoryId: `lab-${pc.carrera || '5010'}`,
           carrera: pc.carrera,
+          metrics: pc.metrics,
+          metricsTimestamp: pc.metricsTimestamp,
         }));
 
         setPcs(transformedPCs);
@@ -104,6 +108,16 @@ export function DashboardPage() {
 
     return () => clearInterval(interval);
   }, [selectedCarrera]); // Re-fetch cuando cambie la carrera seleccionada
+
+  // Actualizar selectedPC cuando cambian los datos de pcs (para métricas en tiempo real)
+  useEffect(() => {
+    if (selectedPC) {
+      const updatedPC = pcs.find(pc => pc.id === selectedPC.id);
+      if (updatedPC) {
+        setSelectedPC(updatedPC);
+      }
+    }
+  }, [pcs]); // Se ejecuta cada vez que pcs cambia (cada 3 segundos)
 
   return (
     <>

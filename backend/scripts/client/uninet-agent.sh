@@ -55,17 +55,45 @@ try:
     # Red
     net = psutil.net_io_counters()
 
-    # Procesos top
+    # Procesos top (ordenados por CPU o RAM)
     processes = []
-    for proc in sorted(psutil.process_iter(["pid", "name", "username", "cpu_percent", "memory_percent", "memory_info"]), 
-                       key=lambda p: p.info.get("cpu_percent", 0) or 0, reverse=True)[:5]:
+    # Primera llamada para inicializar cpu_percent
+    for proc in psutil.process_iter(['pid', 'name', 'username', 'memory_percent', 'memory_info']):
+        try:
+            proc.cpu_percent(interval=None)  # Inicializar
+        except:
+            pass
+    
+    # Esperar un momento para que se acumulen datos
+    import time
+    time.sleep(0.1)
+    
+    # Segunda llamada para obtener CPU% real
+    all_procs = []
+    for proc in psutil.process_iter(['pid', 'name', 'username', 'memory_percent', 'memory_info']):
+        try:
+            cpu = proc.cpu_percent(interval=None)
+            all_procs.append({
+                'proc': proc,
+                'cpu': cpu,
+                'mem': proc.info.get('memory_percent', 0) or 0
+            })
+        except:
+            pass
+    
+    # Ordenar por CPU + RAM (combinado)
+    all_procs.sort(key=lambda p: (p['cpu'] + p['mem']), reverse=True)
+    
+    # Tomar los top 5
+    for item in all_procs[:5]:
+        proc = item['proc']
         try:
             processes.append({
                 "pid": proc.info["pid"],
                 "name": proc.info["name"],
                 "user": proc.info["username"] or "unknown",
-                "cpu_percent": round(proc.info["cpu_percent"] or 0, 1),
-                "mem_percent": round(proc.info["memory_percent"] or 0, 1),
+                "cpu_percent": round(item['cpu'], 1),
+                "mem_percent": round(item['mem'], 1),
                 "mem_mb": round((proc.info["memory_info"].rss / 1024 / 1024), 1) if proc.info["memory_info"] else 0
             })
         except:
