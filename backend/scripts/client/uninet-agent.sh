@@ -168,10 +168,10 @@ if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
             [ -z "$SIGNATURE" ] && SIGNATURE="Unknown"
             
             # ===== FILTRAR ALERTAS RUIDOSAS =====
-            # Ignorar alertas STUN/P2P y Go HTTP Client (tráfico VPN normal)
+            # Ignorar alertas STUN/P2P, Go HTTP, ZeroTier y Spotify (tráfico normal/legítimo)
             case "$SIGNATURE_ID" in
-                2016149|2016150|2024897|2060251)
-                    # Alerta de tráfico VPN normal - IGNORAR
+                2016149|2016150|2024897|2060251|2027397|2039784)
+                    # Alerta de tráfico normal - IGNORAR
                     continue
                     ;;
             esac

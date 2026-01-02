@@ -447,26 +447,27 @@ EOF
     mkdir -p /var/log/suricata
     chmod 755 /var/log/suricata
     
-    # Deshabilitar alertas STUN/P2P y Go HTTP (tráfico VPN normal - muy ruidoso)
-    echo -e "${BLUE}🔇 Configurando filtros de alertas...${NC}"
+    # Deshabilitar alertas de tráfico normal (STUN/P2P, ZeroTier, Spotify, etc.)
+    echo -e "${BLUE}🔇 Deshabilitando alertas de tráfico legítimo en Suricata...${NC}"
     
-    # Método 1: Crear archivo disable.conf con los SIDs a deshabilitar
-    cat > /etc/suricata/disable.conf <<'DISABLE_RULES'
-2016149
-2016150
-2024897
-2060251
-DISABLE_RULES
-    
-    # Método 2: Usar suricata-update para deshabilitar permanentemente
+    # Usar suricata-update para deshabilitar permanentemente
     if command -v suricata-update &> /dev/null; then
-        suricata-update disable-sid 2016149 2>/dev/null
-        suricata-update disable-sid 2016150 2>/dev/null
-        suricata-update disable-sid 2024897 2>/dev/null
-        suricata-update disable-sid 2060251 2>/dev/null
+        # Deshabilitar cada SID individualmente
+        suricata-update disable-sid 2016149 2>/dev/null  # STUN/P2P 1
+        suricata-update disable-sid 2016150 2>/dev/null  # STUN/P2P 2
+        suricata-update disable-sid 2024897 2>/dev/null  # Go HTTP Client
+        suricata-update disable-sid 2060251 2>/dev/null  # Go HTTP 2
+        suricata-update disable-sid 2027397 2>/dev/null  # ZeroTier
+        suricata-update disable-sid 2039784 2>/dev/null  # Spotify P2P
+        
+        # CRÍTICO: Aplicar los cambios actualizando las reglas
+        echo -e "${BLUE}   📥 Aplicando cambios a las reglas de Suricata...${NC}"
+        suricata-update > /dev/null 2>&1
+        
+        echo -e "${GREEN}   ✅ Reglas actualizadas - Suricata solo generará alertas reales${NC}"
+    else
+        echo -e "${YELLOW}   ⚠️  suricata-update no disponible${NC}"
     fi
-    
-    echo -e "${GREEN}   ✅ Filtros configurados (solo alertas relevantes)${NC}"
     
     # Reiniciar Suricata con la nueva configuración
     systemctl restart suricata 2>/dev/null || service suricata restart 2>/dev/null || true
