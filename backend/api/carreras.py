@@ -98,19 +98,21 @@ async def list_carreras():
     default_meta = {'faculty': 'General', 'icon': 'GraduationCap'}
     
     # Metadata específica (Hardcoded para coincidir con frontend actual)
+    # IMPORTANTE: faculty debe ser lowercase (ciencias, artes, educacion, salud, ingenieria)
+    # IMPORTANTE: icon debe coincidir con componentes lucide-react (TreePine, no Trees)
     metadata_map = {
-        '5001': {'faculty': 'Ciencias', 'icon': 'Briefcase'},
-        '5002': {'faculty': 'Ciencias', 'icon': 'Receipt'},
-        '5003': {'faculty': 'Ciencias', 'icon': 'Scale'},
-        '5004': {'faculty': 'Artes', 'icon': 'Mountain'},
-        '5005': {'faculty': 'Educación', 'icon': 'Baby'},
-        '5006': {'faculty': 'Educación', 'icon': 'Calculator'},
-        '5007': {'faculty': 'Educación', 'icon': 'GraduationCap'},
-        '5008': {'faculty': 'Salud', 'icon': 'Stethoscope'},
-        '5009': {'faculty': 'Ingeniería', 'icon': 'Factory'},
-        '5010': {'faculty': 'Ingeniería', 'icon': 'Monitor'},
-        '5011': {'faculty': 'Ingeniería', 'icon': 'Trees'},
-        '5012': {'faculty': 'Ciencias', 'icon': 'Stethoscope'}, # Veterinaria
+        '5001': {'faculty': 'ciencias', 'icon': 'Briefcase'},
+        '5002': {'faculty': 'ciencias', 'icon': 'Receipt'},
+        '5003': {'faculty': 'ciencias', 'icon': 'Scale'},
+        '5004': {'faculty': 'artes', 'icon': 'Mountain'},
+        '5005': {'faculty': 'educacion', 'icon': 'Baby'},
+        '5006': {'faculty': 'educacion', 'icon': 'Calculator'},
+        '5007': {'faculty': 'educacion', 'icon': 'GraduationCap'},
+        '5008': {'faculty': 'salud', 'icon': 'Stethoscope'},
+        '5009': {'faculty': 'ingenieria', 'icon': 'Factory'},
+        '5010': {'faculty': 'ingenieria', 'icon': 'Monitor'},
+        '5011': {'faculty': 'ingenieria', 'icon': 'TreePine'}, # TreePine, no Trees
+        '5012': {'faculty': 'salud', 'icon': 'Stethoscope'},    # Veterinaria es Salud/Ciencias, Stethoscope es seguro
     }
 
     for carrera_id, nombre in rows:
