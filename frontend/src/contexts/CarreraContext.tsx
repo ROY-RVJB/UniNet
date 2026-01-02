@@ -61,7 +61,7 @@ export function CarreraProvider({ children }: CarreraProviderProps) {
           pcsCount: 0,
           usersCount: 0,
           nodeId: `NODE-${c.id}`, // Generar ID de nodo temporal
-          lastSync: new Date().toISOString()
+          lastSync: new Date()
         }));
 
         setCarreras(mappedCarreras);

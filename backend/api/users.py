@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import subprocess
 import os
+import traceback  # Add traceback import
 
 router = APIRouter()
 
@@ -281,7 +282,9 @@ async def list_users(carrera: Optional[str] = None):
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="Timeout al listar usuarios")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        print(f"💥 Excepción al listar usuarios: {repr(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error interno: {repr(e)}")
 
 
 # ==========================
