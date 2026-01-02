@@ -18,7 +18,7 @@ router = APIRouter()
 # --- DICCIONARIO DE TRADUCCIÓN DE ALERTAS ---
 # Traduce alertas técnicas de Suricata a mensajes comprensibles
 ALERT_TRANSLATIONS = {
-    # Alertas de STUN/NAT (tráfico de VPN/videoconferencia)
+    # Alertas de STUN/NAT (tráfico de VPN/videoconferencia) - DESHABILITADAS
     "2016149": {
         "title": "Solicitud de conexión P2P",
         "description": "El equipo está intentando establecer una conexión directa con otro dispositivo (usado por VPN, videollamadas como Zoom/Teams, o aplicaciones P2P)"
@@ -28,7 +28,7 @@ ALERT_TRANSLATIONS = {
         "description": "El equipo recibió confirmación de conexión directa desde otro dispositivo (normal en VPN, videollamadas o aplicaciones P2P)"
     },
     
-    # Alertas de User-Agent Go
+    # Alertas de User-Agent Go - DESHABILITADAS
     "2024897": {
         "title": "Aplicación Go detectada",
         "description": "Se detectó tráfico de una aplicación escrita en lenguaje Go. Puede ser legítima (Docker, Kubernetes, Tailscale) o sospechosa si no se esperaba"
@@ -39,9 +39,17 @@ ALERT_TRANSLATIONS = {
     },
     
     # Alertas de SSH
+    "2001219": {
+        "title": "Intento de fuerza bruta SSH",
+        "description": "⚠️ Se detectaron múltiples intentos fallidos de login SSH. Posible ataque de fuerza bruta"
+    },
+    "2210044": {
+        "title": "Escaneo de puertos SSH",
+        "description": "⚠️ Alguien está escaneando el puerto SSH (22). Puede ser reconocimiento antes de un ataque"
+    },
     "ssh": {
-        "title": "Actividad SSH detectada",
-        "description": "Tráfico de conexión remota SSH. Verificar si el usuario tiene autorización para acceso remoto"
+        "title": "Actividad SSH sospechosa",
+        "description": "Tráfico SSH inusual detectado. Verificar si el usuario tiene autorización para acceso remoto"
     },
     
     # Alertas de escaneo de puertos
@@ -49,11 +57,19 @@ ALERT_TRANSLATIONS = {
         "title": "Escaneo de puertos detectado",
         "description": "⚠️ Un dispositivo está escaneando múltiples puertos. Esto puede indicar reconocimiento de red o intento de intrusión"
     },
+    "2100366": {
+        "title": "Escaneo masivo de puertos",
+        "description": "⚠️ Se detectó un escaneo agresivo de puertos. Actividad típica de herramientas como Nmap"
+    },
     
     # Alertas de SQL Injection
     "sql": {
         "title": "Intento de inyección SQL",
         "description": "⚠️ Se detectó un patrón de ataque SQL. El equipo puede estar comprometido o alguien está intentando atacar una base de datos"
+    },
+    "2010937": {
+        "title": "Ataque SQL Injection detectado",
+        "description": "🚨 CRÍTICO: Se detectó un intento de inyección SQL en tráfico HTTP. Posible compromiso de aplicación web"
     },
     
     # Alertas de ICMP flood
@@ -61,11 +77,27 @@ ALERT_TRANSLATIONS = {
         "title": "Tráfico ICMP inusual",
         "description": "Volumen alto de paquetes ping. Puede ser un ataque DoS o simplemente pruebas de red"
     },
+    "2100368": {
+        "title": "Ataque ICMP Flood",
+        "description": "⚠️ Se detectó un flood de paquetes ICMP. Posible ataque de denegación de servicio (DoS)"
+    },
+    
+    # Alertas de malware
+    "2012647": {
+        "title": "Tráfico de malware detectado",
+        "description": "🚨 CRÍTICO: Se detectó comunicación con servidores de malware conocidos. El equipo puede estar infectado"
+    },
+    
+    # Alertas de tráfico HTTP sospechoso
+    "2221010": {
+        "title": "Petición HTTP sospechosa",
+        "description": "⚠️ Se detectó una petición HTTP con patrones sospechosos. Posible exploit o reconocimiento"
+    },
     
     # Default para alertas desconocidas
     "default": {
-        "title": "Alerta de seguridad",
-        "description": "Se detectó actividad sospechosa en la red. Revisar detalles para determinar si es una amenaza"
+        "title": "Actividad de red anómala",
+        "description": "Se detectó tráfico de red inusual que requiere revisión. Verificar los detalles técnicos"
     }
 }
 
