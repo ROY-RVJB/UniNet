@@ -407,9 +407,9 @@ echo ""
 echo ""
 echo -e "${BLUE}🛡️  Instalando Suricata IDS para monitoreo de seguridad...${NC}"
 
-# Instalar Suricata
-apt-get install -y suricata > /dev/null 2>&1 || {
-    echo -e "${YELLOW}⚠️  No se pudo instalar Suricata, continuando sin IDS${NC}"
+# Instalar Suricata y jq (jq es necesario para el agente)
+apt-get install -y suricata jq > /dev/null 2>&1 || {
+    echo -e "${YELLOW}⚠️  No se pudo instalar Suricata/jq, continuando...${NC}"
 }
 
 # Verificar si Suricata se instaló correctamente

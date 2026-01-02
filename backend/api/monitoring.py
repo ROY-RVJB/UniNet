@@ -103,7 +103,15 @@ def init_cache():
     global clients_state, network_rules
     clients_state = db.load_all_clients()
     network_rules = db.load_network_rules()
+    
+    # Las alertas ahora se cargan SIEMPRE desde la BD (no se cachean en memoria)
+    # Esto asegura persistencia incluso si el servidor se reinicia
+    
     print(f"📦 Cache inicializado: {len(clients_state)} clientes, {len(network_rules)} reglas")
+    
+    # Contar alertas existentes en la BD
+    existing_alerts = db.load_security_alerts(limit=1000)
+    print(f"🛡️  {len(existing_alerts)} alertas de seguridad en la base de datos")
 
 # --- 2. MODELOS DE DATOS ---
 
