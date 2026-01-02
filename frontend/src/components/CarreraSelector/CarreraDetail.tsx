@@ -81,8 +81,9 @@ export function CarreraDetail({ carrera }: CarreraDetailProps) {
   }
 
   const IconComponent = iconMap[carrera.icon] || Monitor;
-  const facultyColor = FACULTY_COLORS[carrera.faculty];
-  const facultyLabel = FACULTY_LABELS[carrera.faculty];
+  // Fallback a color por defecto para evitar crash
+  const facultyColor = FACULTY_COLORS[carrera.faculty] || '#64748b';
+  const facultyLabel = FACULTY_LABELS[carrera.faculty] || carrera.faculty;
   const status = statusConfig[carrera.status] || statusConfig.offline;
 
   // Calcular tiempo desde última sincronización

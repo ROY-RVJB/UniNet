@@ -54,8 +54,9 @@ interface CarreraListItemProps {
 
 export function CarreraListItem({ carrera, isSelected, isLocked = false, onSelect }: CarreraListItemProps) {
   const IconComponent = iconMap[carrera.icon] || Monitor;
-  const facultyColor = FACULTY_COLORS[carrera.faculty];
-  const facultyLabel = FACULTY_LABELS[carrera.faculty];
+  // Fallback a variable CSS o color por defecto si no existe la facultad
+  const facultyColor = FACULTY_COLORS[carrera.faculty] || '#64748b'; // Slate-500 default
+  const facultyLabel = FACULTY_LABELS[carrera.faculty] || carrera.faculty;
   const status = statusConfig[carrera.status] || statusConfig.offline;
 
   // Estilo de glow dinámico basado en color de facultad (solo si no está bloqueado)
