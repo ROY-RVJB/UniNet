@@ -58,7 +58,7 @@ export function ControlPanel() {
   useEffect(() => {
     fetchData();
     // Opcional: Polling cada 3 segundos para actualizar stats (detección rápida)
-    const interval = setInterval(fetchData, 3000);
+    const interval = setInterval(fetchData, 1000); // Actualización cada 1 segundo
     return () => clearInterval(interval);
   }, [fetchData]);
 

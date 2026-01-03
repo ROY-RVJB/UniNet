@@ -1,5 +1,9 @@
 import type { SystemMetrics } from '@/types';
-import { Cpu, HardDrive, MemoryStick, Network, Activity } from 'lucide-react';
+import { Network, Activity, ArrowUp, ArrowDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { CPUDisplay } from './CPUDisplay';
+import { MemoryBitfield } from './MemoryBitfield';
+import { StorageDisplay } from './StorageDisplay';
 
 interface SystemMetricsPanelProps {
     metrics?: SystemMetrics;
@@ -8,104 +12,126 @@ interface SystemMetricsPanelProps {
 export function SystemMetricsPanel({ metrics }: SystemMetricsPanelProps) {
     if (!metrics) {
         return (
-            <div className="p-4 text-center text-gray-700 dark:text-gray-300">
-                <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm font-medium">Sin métricas disponibles</p>
-                <p className="text-xs mt-1">El agente aún no ha enviado datos</p>
+            <div className="flex flex-col items-center justify-center p-12 text-zinc-500">
+                <Activity className="w-6 h-6 mb-3 animate-pulse opacity-50" />
+                <p className="text-sm font-medium">Waiting for data...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-4 p-4">
-            {/* CPU */}
-            <MetricCard
-                icon={<Cpu className="w-5 h-5" />}
-                title="CPU"
-                value={`${metrics.cpu.percent}%`}
-                progress={metrics.cpu.percent}
-                details={`${metrics.cpu.cores} cores • Load: ${metrics.cpu.load_average[0].toFixed(2)}, ${metrics.cpu.load_average[1].toFixed(2)}, ${metrics.cpu.load_average[2].toFixed(2)}`}
-                color="blue"
+        <div className="space-y-4 px-1">
+            {/* CPU Display - Full Width */}
+            <CPUDisplay
+                percent={metrics.cpu.percent}
+                cores={metrics.cpu.cores}
             />
 
-            {/* RAM */}
-            <MetricCard
-                icon={<MemoryStick className="w-5 h-5" />}
-                title="Memoria RAM"
-                value={`${(metrics.ram.used / 1024).toFixed(1)} GB / ${(metrics.ram.total / 1024).toFixed(1)} GB`}
-                progress={metrics.ram.percent}
-                details={`${metrics.ram.percent.toFixed(1)}% usado • ${(metrics.ram.available / 1024).toFixed(1)} GB disponible`}
-                color="green"
+            {/* Memory Bitfield - Full Width */}
+            <MemoryBitfield
+                totalGB={metrics.ram.total / 1024}
+                usedGB={metrics.ram.used / 1024}
+                percent={metrics.ram.percent}
             />
 
-            {/* Swap (solo si está en uso) */}
-            {metrics.ram.swap_total > 0 && metrics.ram.swap_percent > 5 && (
-                <MetricCard
-                    icon={<MemoryStick className="w-5 h-5" />}
-                    title="Swap"
-                    value={`${(metrics.ram.swap_used / 1024).toFixed(1)} GB / ${(metrics.ram.swap_total / 1024).toFixed(1)} GB`}
-                    progress={metrics.ram.swap_percent}
-                    details={`${metrics.ram.swap_percent.toFixed(1)}% usado`}
-                    color="yellow"
-                />
-            )}
-
-            {/* Disco */}
-            <MetricCard
-                icon={<HardDrive className="w-5 h-5" />}
-                title="Disco"
-                value={`${(metrics.disk.used / 1024).toFixed(1)} GB / ${(metrics.disk.total / 1024).toFixed(1)} GB`}
-                progress={metrics.disk.percent}
-                details={`${metrics.disk.percent.toFixed(1)}% usado • ${(metrics.disk.free / 1024).toFixed(1)} GB libre`}
-                color="purple"
+            {/* Storage - Full Width */}
+            <StorageDisplay
+                totalGB={metrics.disk.total / 1024}
+                usedGB={metrics.disk.used / 1024}
+                freeGB={metrics.disk.free / 1024}
+                percent={metrics.disk.percent}
             />
 
-            {/* Red */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-2">
-                    <Network className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Red</h4>
+            {/* Red - Estilo Linear */}
+            <div className="bg-black/20 rounded-lg p-4 border border-white/5 flex flex-col justify-between h-full hover:border-white/10 transition-colors">
+                <div className="flex items-center gap-2 mb-3 text-zinc-400">
+                    <Network className="w-3.5 h-3.5" />
+                    <span className="text-xs font-medium uppercase tracking-wider">Network</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                        <span className="text-gray-700 dark:text-gray-300">↑ Enviado:</span>
-                        <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{(metrics.network.sent_total / 1024).toFixed(2)} GB</span>
+
+                <div className="space-y-3 mt-auto">
+                    <div className="flex items-center justify-between group">
+                        <div className="flex items-center gap-1.5 text-zinc-500">
+                            <ArrowUp className="w-3 h-3 group-hover:text-zinc-300 transition-colors" />
+                            <span className="text-[10px] uppercase tracking-wider">Up</span>
+                        </div>
+                        <span className="font-mono text-sm text-zinc-200">
+                            {(metrics.network.sent_total / 1024).toFixed(2)} <span className="text-xs text-zinc-600">GB</span>
+                        </span>
                     </div>
-                    <div>
-                        <span className="text-gray-700 dark:text-gray-300">↓ Recibido:</span>
-                        <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{(metrics.network.recv_total / 1024).toFixed(2)} GB</span>
+
+                    <div className="flex items-center justify-between group">
+                        <div className="flex items-center gap-1.5 text-zinc-500">
+                            <ArrowDown className="w-3 h-3 group-hover:text-zinc-300 transition-colors" />
+                            <span className="text-[10px] uppercase tracking-wider">Down</span>
+                        </div>
+                        <span className="font-mono text-sm text-zinc-200">
+                            {(metrics.network.recv_total / 1024).toFixed(2)} <span className="text-xs text-zinc-600">GB</span>
+                        </span>
                     </div>
                 </div>
             </div>
 
-            {/* Procesos Top */}
+            {/* Swap Warning - Linear Alert Style */}
+            {metrics.ram.swap_total > 0 && metrics.ram.swap_percent > 10 && (
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-md p-3 flex items-start gap-3">
+                    <Activity className="w-4 h-4 text-amber-500 mt-0.5" />
+                    <div>
+                        <p className="text-xs font-medium text-amber-500">High Swap Usage</p>
+                        <p className="text-[10px] text-amber-500/70 mt-0.5">
+                            System is using {metrics.ram.swap_percent}% of swap memory. Performance may be degraded.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Top Processes - Table Style */}
             {metrics.top_processes && metrics.top_processes.length > 0 && (
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                    <h4 className="font-semibold text-sm mb-3 flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                        <Activity className="w-4 h-4" />
-                        Procesos Top
-                    </h4>
-                    <div className="space-y-2">
-                        {metrics.top_processes.map((proc) => (
-                            <div key={proc.pid} className="flex items-center justify-between text-xs">
-                                <div className="flex-1 min-w-0">
-                                    <div className="font-medium truncate text-gray-900 dark:text-gray-100">{proc.name}</div>
-                                    <div className="text-gray-600 dark:text-gray-400 text-[10px]">
-                                        PID: {proc.pid} • Usuario: {proc.user}
-                                    </div>
-                                </div>
-                                <div className="flex gap-3 text-right ml-2">
-                                    <div>
-                                        <div className="font-medium text-blue-600 dark:text-blue-400">{proc.cpu_percent}%</div>
-                                        <div className="text-gray-600 dark:text-gray-400">CPU</div>
-                                    </div>
-                                    <div>
-                                        <div className="font-medium text-green-600 dark:text-green-400">{proc.mem_mb.toFixed(0)} MB</div>
-                                        <div className="text-gray-600 dark:text-gray-400">RAM</div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                <div className="mt-6">
+                    <div className="flex items-center gap-2 mb-3 px-1">
+                        <Activity className="w-3.5 h-3.5 text-zinc-500" />
+                        <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Top Processes</h4>
+                    </div>
+
+                    <div className="border border-white/5 rounded-lg bg-black/20 overflow-hidden">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-white/5 text-[10px] text-zinc-500 uppercase tracking-wider">
+                                    <th className="py-2 px-3 font-medium">Name</th>
+                                    <th className="py-2 px-3 font-medium text-right">CPU</th>
+                                    <th className="py-2 px-3 font-medium text-right">RAM</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {metrics.top_processes.map((proc) => (
+                                    <tr key={proc.pid} className="group hover:bg-white/5 transition-colors">
+                                        <td className="py-2 px-3">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm text-zinc-200 font-medium truncate max-w-[100px] group-hover:text-white transition-colors">
+                                                    {proc.name}
+                                                </span>
+                                                <span className="text-[10px] text-zinc-600 font-mono">
+                                                    {proc.user}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="py-2 px-3 text-right">
+                                            <span className={cn(
+                                                "text-xs font-mono tabular-nums",
+                                                proc.cpu_percent > 50 ? "text-amber-500" : "text-zinc-400"
+                                            )}>
+                                                {proc.cpu_percent.toFixed(1)}%
+                                            </span>
+                                        </td>
+                                        <td className="py-2 px-3 text-right">
+                                            <span className="text-xs font-mono text-zinc-400 tabular-nums">
+                                                {proc.mem_mb.toFixed(0)} MB
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             )}
@@ -113,54 +139,71 @@ export function SystemMetricsPanel({ metrics }: SystemMetricsPanelProps) {
     );
 }
 
-// Componente auxiliar para mostrar una métrica con barra de progreso
-interface MetricCardProps {
-    icon: React.ReactNode;
+// ==========================================
+// Minimalist Ring Chart
+// ==========================================
+
+interface MetricRingProps {
     title: string;
+    icon: React.ReactNode;
+    percent: number;
     value: string;
-    progress: number;
-    details?: string;
-    color?: 'blue' | 'green' | 'purple' | 'yellow' | 'red';
+    subtext: string;
+    color?: string;
 }
 
-function MetricCard({ icon, title, value, progress, details, color = 'blue' }: MetricCardProps) {
-    const colorClasses = {
-        blue: 'bg-blue-500',
-        green: 'bg-green-500',
-        purple: 'bg-purple-500',
-        yellow: 'bg-yellow-500',
-        red: 'bg-red-500',
-    };
-
-    const iconColorClasses = {
-        blue: 'text-blue-600',
-        green: 'text-green-600',
-        purple: 'text-purple-600',
-        yellow: 'text-yellow-600',
-        red: 'text-red-600',
-    };
+function MetricRing({ title, icon, percent, value, subtext }: MetricRingProps) {
+    const radius = 26;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (percent / 100) * circumference;
 
     return (
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                    <div className={iconColorClasses[color]}>{icon}</div>
-                    <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">{title}</h4>
+        <div className="bg-black/20 rounded-lg p-4 border border-white/5 flex flex-col justify-between h-full hover:border-white/10 transition-colors group">
+            <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2 text-zinc-400 group-hover:text-zinc-300 transition-colors">
+                    {icon}
+                    <span className="text-xs font-medium uppercase tracking-wider">{title}</span>
                 </div>
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{value}</span>
             </div>
 
-            {/* Barra de progreso */}
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-1">
-                <div
-                    className={`h-2 rounded-full transition-all duration-300 ${colorClasses[color]}`}
-                    style={{ width: `${Math.min(progress, 100)}%` }}
-                />
-            </div>
+            <div className="flex items-end justify-between mt-2">
+                <div>
+                    <div className="text-xl font-medium text-white tracking-tight leading-none mb-1">
+                        {value}
+                    </div>
+                    <div className="text-[10px] text-zinc-500 font-medium">
+                        {subtext}
+                    </div>
+                </div>
 
-            {details && (
-                <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{details}</p>
-            )}
+                <div className="relative w-12 h-12 flex-shrink-0">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 60 60">
+                        {/* Track */}
+                        <circle
+                            cx="30"
+                            cy="30"
+                            r={radius}
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            fill="transparent"
+                            className="text-white/5"
+                        />
+                        {/* Indicator */}
+                        <circle
+                            cx="30"
+                            cy="30"
+                            r={radius}
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            fill="transparent"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={offset}
+                            strokeLinecap="round"
+                            className="text-white transition-all duration-700 ease-out"
+                        />
+                    </svg>
+                </div>
+            </div>
         </div>
     );
 }

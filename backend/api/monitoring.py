@@ -2,16 +2,18 @@
 
 import subprocess
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 import uuid
+import asyncio
 
 # Importar funciones de la base de datos
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from database import db
+from api.websocket_manager import manager as ws_manager
 
 router = APIRouter()
 
@@ -388,6 +390,34 @@ async def receive_heartbeat(data: HeartbeatData):
         # Guardar cambios en la base de datos
         db.save_client(data.hostname, clients_state[data.hostname])
     
+    # ============ WEBSOCKET BROADCAST ============
+    # Construir payload para WebSocket (solo este PC)
+    time_since = now - clients_state[data.hostname]["last_seen"]
+    is_alive = time_since < timedelta(seconds=15)
+    
+    status_str = "offline"
+    if is_alive:
+        status_str = "inUse" if clients_state[data.hostname]["user"] else "online"
+    
+    ws_payload = {
+        "type": "metrics_update",
+        "pc": {
+            "id": clients_state[data.hostname]["id"],
+            "name": data.hostname,
+            "ip": data.ip,
+            "status": status_str,
+            "user": data.user,
+            "lastSeen": now.isoformat(),
+            "carrera": carrera_actual,
+            "metrics": clients_state[data.hostname].get("metrics"),
+            "metricsTimestamp": clients_state[data.hostname].get("metrics_timestamp")
+        }
+    }
+    
+    # Broadcast a todos los WebSockets conectados (async task)
+    asyncio.create_task(ws_manager.broadcast(ws_payload, carrera=carrera_actual))
+    # =============================================
+    
     # B. LÓGICA DE BLOQUEO (CRÍTICO)
     # Verificamos si existe una regla de "bloquear" para esta carrera
     regla_actual = network_rules.get(carrera_actual, "desbloquear")
@@ -568,3 +598,49 @@ async def execute_remediation(payload: dict):
         "hostname": hostname,
         "message": f"Action {action} will be executed on next heartbeat"
     }
+
+
+# --- 9. WEBSOCKET ENDPOINT PARA TIEMPO REAL ---
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, carrera: str = None):
+    """
+    WebSocket endpoint para recibir métricas en tiempo real
+    
+    Uso desde frontend:
+    const ws = new WebSocket('ws://localhost:4000/api/monitoring/ws?carrera=5010');
+    
+    El servidor enviará:
+    - Mensaje inicial con estado completo de todos los PCs
+    - Actualizaciones en tiempo real cuando lleguen heartbeats de clientes
+    """
+    await ws_manager.connect(websocket, carrera)
+    
+    try:
+        # Enviar estado inicial completo
+        initial_data = await get_status(carrera=carrera)
+        await websocket.send_json({
+            "type": "initial_state",
+            "pcs": initial_data
+        })
+        
+        print(f"📡 Cliente WebSocket conectado (carrera: {carrera or 'todas'})")
+        
+        # Mantener conexión abierta
+        while True:
+            # Esperar mensajes del cliente (ping/pong para keep-alive)
+            try:
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
+                # Cliente puede enviar "ping" para mantener conexión
+                if data == "ping":
+                    await websocket.send_text("pong")
+            except asyncio.TimeoutError:
+                # Enviar ping al cliente para verificar conexión
+                await websocket.send_text("ping")
+    
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+        print(f"📡 Cliente WebSocket desconectado")
+    except Exception as e:
+        print(f"❌ Error en WebSocket: {e}")
+        ws_manager.disconnect(websocket)

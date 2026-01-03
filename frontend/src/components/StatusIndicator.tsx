@@ -7,77 +7,54 @@ interface StatusIndicatorProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-// Configuración de estados con animaciones personalizadas
+// Configuración de badges estilo Resend
 const statusConfig: Record<PCStatus, {
-  color: string;
+  bgColor: string;
+  textColor: string;
   label: string;
-  animation: string;
-  ringColor: string;
 }> = {
   online: {
-    color: 'bg-status-online',
-    label: 'Conectado',
-    animation: 'animate-status-online',
-    ringColor: 'ring-status-online/30',
+    bgColor: 'bg-emerald-500/10',
+    textColor: 'text-emerald-500',
+    label: 'Online',
   },
   offline: {
-    color: 'bg-status-offline',
-    label: 'Sin Señal',
-    animation: 'animate-status-offline',
-    ringColor: 'ring-status-offline/20',
+    bgColor: 'bg-red-500/10',
+    textColor: 'text-red-500',
+    label: 'Offline',
   },
   inUse: {
-    color: 'bg-status-inUse',
+    bgColor: 'bg-amber-500/10',
+    textColor: 'text-amber-500',
     label: 'En Uso',
-    animation: 'animate-status-inuse',
-    ringColor: 'ring-status-inUse/30',
   },
   examMode: {
-    color: 'bg-status-examMode',
-    label: 'Modo Examen',
-    animation: '',
-    ringColor: 'ring-status-examMode/20',
+    bgColor: 'bg-purple-500/10',
+    textColor: 'text-purple-500',
+    label: 'Examen',
   },
 };
 
-// Tamaños del indicador
+// Tamaños del badge
 const sizeClasses = {
-  sm: 'h-2 w-2',
-  md: 'h-3 w-3',
-  lg: 'h-4 w-4',
+  sm: 'px-2 py-0.5 text-[10px]',
+  md: 'px-2.5 py-1 text-xs',
+  lg: 'px-3 py-1.5 text-sm',
 };
 
-export function StatusIndicator({ status, showLabel = false, size = 'sm' }: StatusIndicatorProps) {
+export function StatusIndicator({ status, showLabel = true, size = 'md' }: StatusIndicatorProps) {
   const config = statusConfig[status];
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Indicador con anillo exterior */}
-      <div className="relative">
-        {/* Anillo exterior sutil */}
-        <div
-          className={cn(
-            'absolute inset-0 rounded-full ring-2',
-            config.ringColor,
-            config.animation
-          )}
-          style={{ transform: 'scale(1.5)' }}
-        />
-        {/* Punto central */}
-        <div
-          className={cn(
-            'rounded-full relative z-10',
-            sizeClasses[size],
-            config.color,
-            config.animation
-          )}
-        />
-      </div>
-      {showLabel && (
-        <span className="text-sm text-tech-textDim font-medium">
-          {config.label}
-        </span>
+    <div
+      className={cn(
+        'inline-flex items-center justify-center rounded-md font-medium tracking-wide',
+        config.bgColor,
+        config.textColor,
+        sizeClasses[size]
       )}
+    >
+      {showLabel && config.label}
     </div>
   );
 }

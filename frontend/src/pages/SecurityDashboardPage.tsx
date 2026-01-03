@@ -20,7 +20,7 @@ export function SecurityDashboardPage() {
       try {
         const res = await fetch(`${apiUrl}/api/monitoring/status`);
         if (!res.ok) return;
-        
+
         const data: Array<{
           id: string;
           name: string;
@@ -49,17 +49,17 @@ export function SecurityDashboardPage() {
     };
 
     fetchPCs();
-    const interval = setInterval(fetchPCs, 3000);
+    const interval = setInterval(fetchPCs, 1000); // Actualización cada 1 segundo
     return () => clearInterval(interval);
   }, []);
 
   const handlePCClick = (pcId: string) => {
     console.log('🎯 handlePCClick llamado con pcId:', pcId);
     console.log('📊 PCs disponibles:', pcs.map(p => ({ id: p.id, name: p.name })));
-    
+
     const pc = pcs.find(p => p.id === pcId);
     console.log('🔍 PC encontrada:', pc);
-    
+
     if (pc) {
       console.log('✅ Abriendo panel para PC:', pc.name);
       setSelectedPC(pc);

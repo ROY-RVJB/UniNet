@@ -5,11 +5,12 @@ import { PCDetailPanel } from '@/components/PCDetailPanel'
 import { PCStatusFilter, type FilterStatus } from '@/components/PCStatusFilter'
 import { useCarrera } from '@/contexts/CarreraContext'
 import type { PC } from '@/types'
+import { useWebSocketMetrics } from '@/hooks/useWebSocketMetrics';
 
 export function DashboardPage() {
   // Estado dinámico de PCs - se obtiene del backend
-  const [pcs, setPcs] = useState<PC[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  // const [pcs, setPcs] = useState<PC[]>([]) // Replaced by WebSocket hook
+  // const [isLoading, setIsLoading] = useState(true) // Replaced by WebSocket hook
   const { selectedCarrera } = useCarrera()
 
   // Estado para el panel de detalles de PC
@@ -18,6 +19,17 @@ export function DashboardPage() {
 
   // Estado para filtro de PCs por estado
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
+
+  // Usar WebSocket en lugar de polling
+  const { pcs, isConnected, error } = useWebSocketMetrics(selectedCarrera?.id);
+  const [isLoading, setIsLoading] = useState(!isConnected);
+
+  // Actualizar loading state cuando conecte
+  useEffect(() => {
+    if (isConnected) {
+      setIsLoading(false);
+    }
+  }, [isConnected]);
 
   const handlePCClick = (pc: PC) => {
     setSelectedPC(pc)
@@ -42,72 +54,72 @@ export function DashboardPage() {
     }
   }, [pcs])
 
-  // Fetch dinámico de PCs desde el backend
-  useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL;
-    if (!apiUrl) {
-      console.error('VITE_API_URL no está configurado');
-      setIsLoading(false);
-      return;
-    }
+  // Fetch dinámico de PCs desde el backend - Replaced by WebSocket
+  // useEffect(() => {
+  //   const apiUrl = import.meta.env.VITE_API_URL;
+  //   if (!apiUrl) {
+  //     console.error('VITE_API_URL no está configurado');
+  //     setIsLoading(false);
+  //     return;
+  //   }
 
-    const fetchStatus = async () => {
-      try {
-        // Construir URL con filtro de carrera si está seleccionada
-        let url = `${apiUrl}/api/monitoring/status`;
-        if (selectedCarrera) {
-          url += `?carrera=${selectedCarrera.id}`;
-        }
+  //   const fetchStatus = async () => {
+  //     try {
+  //       // Construir URL con filtro de carrera si está seleccionada
+  //       let url = `${ apiUrl } /api/monitoring / status`;
+  //       if (selectedCarrera) {
+  //         url += `? carrera = ${ selectedCarrera.id } `;
+  //       }
 
-        const res = await fetch(url);
-        if (!res.ok) {
-          console.warn('Backend no responde:', res.status);
-          setIsLoading(false);
-          return;
-        }
+  //       const res = await fetch(url);
+  //       if (!res.ok) {
+  //         console.warn('Backend no responde:', res.status);
+  //         setIsLoading(false);
+  //         return;
+  //       }
 
-        const data: Array<{
-          id: string;
-          name: string;
-          ip: string;
-          status: 'online' | 'offline' | 'inUse';
-          user: string | null;
-          lastSeen: string;
-          carrera?: string;
-          metrics?: any;
-          metricsTimestamp?: string;
-        }> = await res.json();
+  //       const data: Array<{
+  //         id: string;
+  //         name: string;
+  //         ip: string;
+  //         status: 'online' | 'offline' | 'inUse';
+  //         user: string | null;
+  //         lastSeen: string;
+  //         carrera?: string;
+  //         metrics?: any;
+  //         metricsTimestamp?: string;
+  //       }> = await res.json();
 
-        // Transformar datos del backend al formato del frontend
-        const transformedPCs: PC[] = data.map(pc => ({
-          id: pc.id,
-          name: pc.name,
-          ip: pc.ip,
-          status: pc.status,
-          user: pc.user,
-          lastSeen: new Date(pc.lastSeen),
-          laboratoryId: `lab-${pc.carrera || '5010'}`,
-          carrera: pc.carrera,
-          metrics: pc.metrics,
-          metricsTimestamp: pc.metricsTimestamp,
-        }));
+  //       // Transformar datos del backend al formato del frontend
+  //       const transformedPCs: PC[] = data.map(pc => ({
+  //         id: pc.id,
+  //         name: pc.name,
+  //         ip: pc.ip,
+  //         status: pc.status,
+  //         user: pc.user,
+  //         lastSeen: new Date(pc.lastSeen),
+  //         laboratoryId: `lab - ${ pc.carrera || '5010' } `,
+  //         carrera: pc.carrera,
+  //         metrics: pc.metrics,
+  //         metricsTimestamp: pc.metricsTimestamp,
+  //       }));
 
-        setPcs(transformedPCs);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error conectando con backend:', err);
-        setIsLoading(false);
-      }
-    };
+  //       setPcs(transformedPCs);
+  //       setIsLoading(false);
+  //     } catch (err) {
+  //       console.error('Error conectando con backend:', err);
+  //       setIsLoading(false);
+  //     }
+  //   };
 
-    // Fetch inicial
-    fetchStatus();
+  //   // Fetch inicial
+  //   fetchStatus();
 
-    // Polling cada 3 segundos para actualizar el estado (detección rápida)
-    const interval = setInterval(fetchStatus, 3000);
+  //   // Polling cada 1 segundo para monitoreo casi instantáneo (antes: 3 segundos)
+  //   const interval = setInterval(fetchStatus, 1000);
 
-    return () => clearInterval(interval);
-  }, [selectedCarrera]); // Re-fetch cuando cambie la carrera seleccionada
+  //   return () => clearInterval(interval);
+  // }, [selectedCarrera]); // Re-fetch cuando cambie la carrera seleccionada
 
   // Actualizar selectedPC cuando cambian los datos de pcs (para métricas en tiempo real)
   useEffect(() => {
@@ -117,7 +129,7 @@ export function DashboardPage() {
         setSelectedPC(updatedPC);
       }
     }
-  }, [pcs]); // Se ejecuta cada vez que pcs cambia (cada 3 segundos)
+  }, [pcs, selectedPC]); // Se ejecuta cada vez que pcs cambia (cada 3 segundos)
 
   return (
     <>
