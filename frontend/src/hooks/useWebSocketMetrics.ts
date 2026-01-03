@@ -12,10 +12,16 @@ export function useWebSocketMetrics(carrera?: string) {
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
-    const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-    const pingIntervalRef = useRef<NodeJS.Timeout>();
+    const reconnectTimeoutRef = useRef<number | undefined>(undefined);
+    const pingIntervalRef = useRef<number | undefined>(undefined);
+    const isConnectingRef = useRef(false);
 
     const connect = useCallback(() => {
+        // Prevenir múltiples conexiones simultáneas (React StrictMode)
+        if (isConnectingRef.current || (wsRef.current && wsRef.current.readyState === WebSocket.OPEN)) {
+            return;
+        }
+
         const apiUrl = import.meta.env.VITE_API_URL;
         if (!apiUrl) {
             setError('VITE_API_URL no configurado');
@@ -29,12 +35,14 @@ export function useWebSocketMetrics(carrera?: string) {
             : `${wsUrl}/api/monitoring/ws`;
 
         console.log('🔌 Conectando WebSocket:', url);
+        isConnectingRef.current = true;
 
         const ws = new WebSocket(url);
         wsRef.current = ws;
 
         ws.onopen = () => {
             console.log('✅ WebSocket conectado');
+            isConnectingRef.current = false;
             setIsConnected(true);
             setError(null);
 
@@ -48,6 +56,13 @@ export function useWebSocketMetrics(carrera?: string) {
 
         ws.onmessage = (event) => {
             try {
+                // Manejar mensajes de texto (ping/pong)
+                if (typeof event.data === 'string' && (event.data === 'ping' || event.data === 'pong')) {
+                    // Ignorar ping/pong - solo para keep-alive
+                    return;
+                }
+
+                // Parsear mensajes JSON
                 const message: WebSocketMessage = JSON.parse(event.data);
 
                 if (message.type === 'initial_state' && message.pcs) {
@@ -84,11 +99,13 @@ export function useWebSocketMetrics(carrera?: string) {
 
         ws.onerror = (event) => {
             console.error('❌ Error WebSocket:', event);
+            isConnectingRef.current = false;
             setError('Error de conexión WebSocket');
         };
 
         ws.onclose = () => {
             console.log('🔌 WebSocket desconectado');
+            isConnectingRef.current = false;
             setIsConnected(false);
 
             // Limpiar ping interval
@@ -96,7 +113,7 @@ export function useWebSocketMetrics(carrera?: string) {
                 clearInterval(pingIntervalRef.current);
             }
 
-            // Reconectar después de 3 segundos
+            // Reconectar después de 3 segundos solo si no se canceló
             reconnectTimeoutRef.current = setTimeout(() => {
                 console.log('🔄 Reconectando WebSocket...');
                 connect();
@@ -109,15 +126,26 @@ export function useWebSocketMetrics(carrera?: string) {
 
         // Cleanup al desmontar
         return () => {
-            if (wsRef.current) {
-                wsRef.current.close();
-            }
+            // Cancelar reconexión pendiente
             if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
+                reconnectTimeoutRef.current = undefined;
             }
+
+            // Limpiar ping interval
             if (pingIntervalRef.current) {
                 clearInterval(pingIntervalRef.current);
+                pingIntervalRef.current = undefined;
             }
+
+            // Cerrar WebSocket
+            if (wsRef.current) {
+                wsRef.current.close();
+                wsRef.current = null;
+            }
+
+            // Reset flag
+            isConnectingRef.current = false;
         };
     }, [connect]);
 
