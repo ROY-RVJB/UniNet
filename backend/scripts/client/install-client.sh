@@ -414,6 +414,23 @@ echo -e "${GREEN}✅ Configuración LDAP completada${NC}"
 echo ""
 
 # ==========================================
+# REGISTRO INICIAL EN EL SERVIDOR
+# ==========================================
+# Ejecutar el agente ANTES de Suricata para que la PC aparezca inmediatamente
+echo ""
+echo -e "${BLUE}🔍 Registrando este equipo en el servidor...${NC}"
+$AGENT_FILE
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Equipo registrado exitosamente${NC}"
+    echo -e "${GREEN}   La PC ya está visible en el dashboard${NC}"
+else
+    echo -e "${YELLOW}⚠️  Advertencia: Primer heartbeat falló, pero el agente seguirá intentando${NC}"
+fi
+
+echo ""
+
+# ==========================================
 # INSTALACIÓN Y CONFIGURACIÓN DE SURICATA IDS
 # ==========================================
 echo ""
@@ -497,17 +514,6 @@ EOF
     fi
 else
     echo -e "${YELLOW}⚠️  Suricata no disponible, continuando sin IDS${NC}"
-fi
-
-# Ejecutar el agente inmediatamente para verificar y registrar la PC
-echo ""
-echo -e "${BLUE}🔍 Registrando este equipo en el servidor...${NC}"
-$AGENT_FILE
-
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Equipo registrado exitosamente${NC}"
-else
-    echo -e "${YELLOW}⚠️  Advertencia: Primer heartbeat falló, pero el agente seguirá intentando${NC}"
 fi
 
 # Información del sistema
