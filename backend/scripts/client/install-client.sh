@@ -182,11 +182,11 @@ echo -e "${BLUE}⏱️  Configurando monitoreo automático...${NC}"
 
 # Detectar si es actualización
 IS_UPDATE=false
-if crontab -l 2>/dev/null | grep -q "uninet-agent-runner"; then
+if crontab -u root -l 2>/dev/null | grep -q "uninet-agent-runner"; then
     IS_UPDATE=true
     echo -e "${YELLOW}📦 Instalación existente detectada - Actualizando configuración...${NC}"
     # Limpiar cron anterior
-    crontab -l 2>/dev/null | grep -v "uninet-agent-runner" | crontab - 2>/dev/null
+    crontab -u root -l 2>/dev/null | grep -v "uninet-agent-runner" | crontab -u root - 2>/dev/null
 fi
 
 # Crear script wrapper para ejecutar cada 5 segundos (12 veces por minuto)
@@ -204,7 +204,7 @@ chmod +x "$CRON_WRAPPER"
 
 # Agregar tarea a cron (se ejecuta cada minuto, pero el wrapper lo hace cada 5s)
 CRON_JOB="* * * * * $CRON_WRAPPER >/dev/null 2>&1"
-(crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
+(crontab -u root -l 2>/dev/null; echo "$CRON_JOB") | crontab -u root -
 
 if [ "$IS_UPDATE" = true ]; then
     echo -e "${GREEN}✅ Monitoreo actualizado exitosamente (heartbeat cada 5 segundos - Detección RÁPIDA)${NC}"
