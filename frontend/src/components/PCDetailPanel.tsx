@@ -1,4 +1,6 @@
 import type { PC } from '@/types';
+import { LogViewer } from './LogViewer';
+import { usePersonalLogs } from '@/hooks/usePersonalLogs';
 import { cn } from '@/lib/utils';
 import {
   X,
@@ -26,6 +28,9 @@ interface PCDetailPanelProps {
 export function PCDetailPanel({ pc, isOpen, onClose }: PCDetailPanelProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [prevMetricsTimestamp, setPrevMetricsTimestamp] = useState<string | undefined>();
+
+  // Personal logs hook
+  const { logs: personalLogs, loading: logsLoading, error: logsError } = usePersonalLogs(pc?.name, pc?.user || undefined);
 
   // Detect when metrics update
   useEffect(() => {
@@ -169,6 +174,16 @@ export function PCDetailPanel({ pc, isOpen, onClose }: PCDetailPanelProps) {
               <SystemMetricsPanel metrics={pc.metrics} />
             </div>
           )}
+
+          {/* Logs personales */}
+          <div className="space-y-2">
+            <h3 className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Logs personales</h3>
+            {logsLoading && <div className="text-zinc-400 text-xs">Cargando logs...</div>}
+            {logsError && <div className="text-red-400 text-xs">Error: {logsError}</div>}
+            {!logsLoading && !logsError && (
+              <LogViewer logs={personalLogs} />
+            )}
+          </div>
 
           {/* Advertencia si está offline */}
           {isOffline && (
