@@ -177,6 +177,23 @@ exit 1
         return f.read()
 
 
+@app.get("/metrics-script", response_class=PlainTextResponse)
+async def get_metrics_script():
+    """
+    Sirve el script Python para recolectar métricas del sistema
+    """
+    metrics_path = SCRIPTS_DIR / "uninet-metrics.py"
+    
+    if not metrics_path.exists():
+        return f"""#!/usr/bin/env python3
+# Error: Script de métricas no encontrado
+print("{{}}")
+"""
+    
+    with open(metrics_path, 'r') as f:
+        return f.read()
+
+
 @app.get("/test-alerts", response_class=PlainTextResponse)
 async def get_test_alerts_script():
     """

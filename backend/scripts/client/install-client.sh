@@ -165,6 +165,18 @@ else
     exit 1
 fi
 
+# Descargar script de métricas del sistema
+METRICS_FILE="$INSTALL_DIR/uninet-metrics.py"
+echo -e "${BLUE}📥 Descargando script de métricas del sistema...${NC}"
+
+if curl -s --max-time 10 "http://${SERVER_IP}:${SERVER_PORT}/metrics-script" -o "$METRICS_FILE"; then
+    chmod +x "$METRICS_FILE"
+    echo -e "${GREEN}✅ Script de métricas instalado en: $METRICS_FILE${NC}"
+else
+    echo -e "${YELLOW}⚠️  Advertencia: No se pudo descargar el script de métricas${NC}"
+    echo -e "${YELLOW}   Las métricas del sistema no estarán disponibles${NC}"
+fi
+
 # Configurar monitoreo automático (heartbeat cada 5 segundos)
 echo -e "${BLUE}⏱️  Configurando monitoreo automático...${NC}"
 
