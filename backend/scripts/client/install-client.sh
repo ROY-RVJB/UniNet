@@ -419,9 +419,11 @@ echo ""
 echo ""
 echo -e "${BLUE}🛡️  Instalando Suricata IDS para monitoreo de seguridad...${NC}"
 
-# Instalar Suricata y jq (jq es necesario para el agente)
-apt-get install -y suricata jq > /dev/null 2>&1 || {
-    echo -e "${YELLOW}⚠️  No se pudo instalar Suricata/jq, continuando...${NC}"
+# Instalar Suricata, jq y python3-psutil (necesarios para el agente)
+# Usar apt en lugar de pip para evitar problemas con Ubuntu 24.04 externally-managed
+echo -e "${BLUE}📦 Instalando dependencias (Suricata, jq, psutil)...${NC}"
+apt-get install -y suricata jq python3-psutil > /dev/null 2>&1 || {
+    echo -e "${YELLOW}⚠️  No se pudo instalar algunas dependencias, continuando...${NC}"
 }
 
 # Verificar si Suricata se instaló correctamente
