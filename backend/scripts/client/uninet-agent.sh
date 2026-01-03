@@ -167,14 +167,19 @@ if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
             [ -z "$SIGNATURE_ID" ] && SIGNATURE_ID="0"
             [ -z "$SIGNATURE" ] && SIGNATURE="Unknown"
             
-            # ===== FILTRAR ALERTAS RUIDOSAS =====
-            # Ignorar alertas STUN/P2P, Go HTTP, ZeroTier y Spotify (tráfico normal/legítimo)
-            case "$SIGNATURE_ID" in
-                2016149|2016150|2024897|2060251|2027397|2039784)
-                    # Alerta de tráfico normal - IGNORAR
+            # ===== FILTRAR TRÁFICO NORMAL =====
+            # Ignorar TODAS las alertas de tráfico normal (no son amenazas)
+            case "$CATEGORY" in
+                "Not Suspicious Traffic"|"Potentially Bad Traffic"|"Unknown Traffic")
+                    # Tráfico normal/legítimo - IGNORAR
                     continue
                     ;;
             esac
+            
+            # Ignorar alertas ET INFO (solo informativas, no amenazas)
+            if echo "$SIGNATURE" | grep -qi "^ET INFO"; then
+                continue
+            fi
             
             # Asegurar que los valores numéricos sean válidos (regex: solo dígitos)
             [[ ! "$SRC_PORT" =~ ^[0-9]+$ ]] && SRC_PORT="0"
