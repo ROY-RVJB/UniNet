@@ -102,11 +102,17 @@ if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
             [ -z "$SIGNATURE_ID" ] && SIGNATURE_ID="0"
             [ -z "$SIGNATURE" ] && SIGNATURE="Unknown"
             
-            # ===== FILTRAR ALERTAS RUIDOSAS =====
-            # Ignorar alertas STUN/P2P, Go HTTP, ZeroTier y Spotify (tráfico normal/legítimo)
-            case "$SIGNATURE_ID" in
-                2016149|2016150|2024897|2060251|2027397|2039784)
-                    # Alerta de tráfico normal - IGNORAR
+            # ===== FILTRAR TODO EL TRÁFICO NORMAL =====
+            # SOLO mostrar alertas CRÍTICAS (severity=1) y ALTAS (severity=2)
+            # Ignorar severity=3 (informativas/falsos positivos)
+            if [ "$SEVERITY" = "3" ]; then
+                # Alerta informativa (falso positivo) - IGNORAR
+                continue
+            fi
+            
+            # Doble filtro: Ignorar categorías de tráfico normal
+            case "$CATEGORY" in
+                "Not Suspicious Traffic"|"Potentially Bad Traffic"|"Unknown Traffic"|"Misc activity")
                     continue
                     ;;
             esac
