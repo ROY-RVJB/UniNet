@@ -364,6 +364,12 @@ async def receive_heartbeat(data: HeartbeatData):
             "last_seen": now,
             "first_seen": now
         }
+        
+        # Guardar métricas si están presentes en el primer heartbeat
+        if data.metrics:
+            clients_state[data.hostname]["metrics"] = data.metrics.dict()
+            clients_state[data.hostname]["metrics_timestamp"] = now.isoformat()
+        
         # Guardar en la base de datos
         db.save_client(data.hostname, clients_state[data.hostname])
         add_log("INFO", "SYSTEM", f"🖥️ Nuevo equipo conectado: {data.hostname}", carrera_actual, data.hostname)
