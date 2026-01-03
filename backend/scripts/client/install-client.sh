@@ -206,6 +206,14 @@ chmod +x "$CRON_WRAPPER"
 CRON_JOB="* * * * * $CRON_WRAPPER >/dev/null 2>&1"
 (crontab -u root -l 2>/dev/null; echo "$CRON_JOB") | crontab -u root -
 
+# Verificar que el cron se configuró
+echo -e "${BLUE}🔍 Verificando cron...${NC}"
+if crontab -u root -l 2>/dev/null | grep -q "uninet-agent-runner"; then
+    echo -e "${GREEN}   ✓ Cron configurado correctamente${NC}"
+else
+    echo -e "${YELLOW}   ⚠ Cron NO se configuró - requerirá configuración manual${NC}"
+fi
+
 if [ "$IS_UPDATE" = true ]; then
     echo -e "${GREEN}✅ Monitoreo actualizado exitosamente (heartbeat cada 5 segundos - Detección RÁPIDA)${NC}"
 else
