@@ -8,9 +8,9 @@ interface SystemMetricsPanelProps {
 export function SystemMetricsPanel({ metrics }: SystemMetricsPanelProps) {
     if (!metrics) {
         return (
-            <div className="p-4 text-center text-gray-500">
+            <div className="p-4 text-center text-gray-700 dark:text-gray-300">
                 <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Sin métricas disponibles</p>
+                <p className="text-sm font-medium">Sin métricas disponibles</p>
                 <p className="text-xs mt-1">El agente aún no ha enviado datos</p>
             </div>
         );
@@ -63,17 +63,17 @@ export function SystemMetricsPanel({ metrics }: SystemMetricsPanelProps) {
             {/* Red */}
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-2">
-                    <Network className="w-5 h-5 text-indigo-600" />
-                    <h4 className="font-semibold text-sm">Red</h4>
+                    <Network className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Red</h4>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                        <span className="text-gray-600 dark:text-gray-400">↑ Enviado:</span>
-                        <span className="ml-2 font-medium">{(metrics.network.sent_total / 1024).toFixed(2)} GB</span>
+                        <span className="text-gray-700 dark:text-gray-300">↑ Enviado:</span>
+                        <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{(metrics.network.sent_total / 1024).toFixed(2)} GB</span>
                     </div>
                     <div>
-                        <span className="text-gray-600 dark:text-gray-400">↓ Recibido:</span>
-                        <span className="ml-2 font-medium">{(metrics.network.recv_total / 1024).toFixed(2)} GB</span>
+                        <span className="text-gray-700 dark:text-gray-300">↓ Recibido:</span>
+                        <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{(metrics.network.recv_total / 1024).toFixed(2)} GB</span>
                     </div>
                 </div>
             </div>
@@ -81,7 +81,7 @@ export function SystemMetricsPanel({ metrics }: SystemMetricsPanelProps) {
             {/* Procesos Top */}
             {metrics.top_processes && metrics.top_processes.length > 0 && (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                    <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                    <h4 className="font-semibold text-sm mb-3 flex items-center gap-2 text-gray-900 dark:text-gray-100">
                         <Activity className="w-4 h-4" />
                         Procesos Top
                     </h4>
@@ -89,19 +89,19 @@ export function SystemMetricsPanel({ metrics }: SystemMetricsPanelProps) {
                         {metrics.top_processes.map((proc) => (
                             <div key={proc.pid} className="flex items-center justify-between text-xs">
                                 <div className="flex-1 min-w-0">
-                                    <div className="font-medium truncate">{proc.name}</div>
-                                    <div className="text-gray-500 text-[10px]">
+                                    <div className="font-medium truncate text-gray-900 dark:text-gray-100">{proc.name}</div>
+                                    <div className="text-gray-600 dark:text-gray-400 text-[10px]">
                                         PID: {proc.pid} • Usuario: {proc.user}
                                     </div>
                                 </div>
                                 <div className="flex gap-3 text-right ml-2">
                                     <div>
-                                        <div className="font-medium text-blue-600">{proc.cpu_percent}%</div>
-                                        <div className="text-gray-500">CPU</div>
+                                        <div className="font-medium text-blue-600 dark:text-blue-400">{proc.cpu_percent}%</div>
+                                        <div className="text-gray-600 dark:text-gray-400">CPU</div>
                                     </div>
                                     <div>
-                                        <div className="font-medium text-green-600">{proc.mem_mb.toFixed(0)} MB</div>
-                                        <div className="text-gray-500">RAM</div>
+                                        <div className="font-medium text-green-600 dark:text-green-400">{proc.mem_mb.toFixed(0)} MB</div>
+                                        <div className="text-gray-600 dark:text-gray-400">RAM</div>
                                     </div>
                                 </div>
                             </div>
@@ -145,9 +145,9 @@ function MetricCard({ icon, title, value, progress, details, color = 'blue' }: M
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <div className={iconColorClasses[color]}>{icon}</div>
-                    <h4 className="font-semibold text-sm">{title}</h4>
+                    <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">{title}</h4>
                 </div>
-                <span className="text-sm font-bold">{value}</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{value}</span>
             </div>
 
             {/* Barra de progreso */}
@@ -159,7 +159,7 @@ function MetricCard({ icon, title, value, progress, details, color = 'blue' }: M
             </div>
 
             {details && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{details}</p>
+                <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{details}</p>
             )}
         </div>
     );
