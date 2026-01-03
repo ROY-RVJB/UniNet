@@ -30,23 +30,28 @@ echo "✅ Suricata activo"
 echo ""
 
 # 1. Port Scan (CRÍTICA)
-echo "🎯 [1/6] Generando Port Scan (CRÍTICA)..."
-echo "   Ejecutando: nmap -F $SERVER_IP"
+echo "🎯 [1/6] Generando Port Scan AGRESIVO (CRÍTICA)..."
 if command -v nmap &> /dev/null; then
-    nmap -F $SERVER_IP 2>/dev/null || echo "   ⚠️  nmap falló"
+    echo "   Ejecutando: nmap -sS -T4 --top-ports 100 $SERVER_IP"
+    sudo nmap -sS -T4 --top-ports 100 $SERVER_IP 2>/dev/null || echo "   ⚠️  nmap falló"
 else
-    echo "   ⚠️  nmap no instalado (instalar: sudo apt install nmap)"
+    echo "   nmap no disponible, usando nc para escanear puertos..."
+    for port in {20..80} {443..445} {3306..3310} {8080..8090}; do
+        timeout 0.1 nc -zv $SERVER_IP $port 2>&1 | grep -q succeeded &
+    done
+    wait
 fi
 sleep 2
 echo ""
 
 # 2. SSH Brute Force (ALTA)
 echo "🎯 [2/6] Generando SSH Brute Force (ALTA)..."
-echo "   Intentando 5 logins fallidos a SSH..."
-for i in {1..5}; do 
-  echo "   Intento $i/5..."
-  timeout 2 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=1 fake_user_$i@$SERVER_IP 2>/dev/null || true
+echo "   Intentando 10 logins fallidos rápidos a SSH..."
+for i in {1..10}; do 
+  timeout 1 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=1 -o NumberOfPasswordPrompts=1 admin@$SERVER_IP 2>/dev/null &
+  timeout 1 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=1 -o NumberOfPasswordPrompts=1 root@$SERVER_IP 2>/dev/null &
 done
+wait
 sleep 2
 echo ""
 

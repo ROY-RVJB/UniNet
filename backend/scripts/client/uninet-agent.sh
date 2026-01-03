@@ -195,19 +195,20 @@ if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
             [ -z "$SIGNATURE_ID" ] && SIGNATURE_ID="0"
             [ -z "$SIGNATURE" ] && SIGNATURE="Unknown"
             
-            # ===== FILTRAR TRÁFICO NORMAL =====
-            # Ignorar TODAS las alertas de tráfico normal (no son amenazas)
+            # ===== FILTRAR TODO EL TRÁFICO NORMAL =====
+            # SOLO mostrar alertas CRÍTICAS (severity=1) y ALTAS (severity=2)
+            # Ignorar severity=3 (informativas/falsos positivos)
+            if [ "$SEVERITY" = "3" ]; then
+                # Alerta informativa (falso positivo) - IGNORAR
+                continue
+            fi
+            
+            # Doble filtro: Ignorar categorías de tráfico normal
             case "$CATEGORY" in
-                "Not Suspicious Traffic"|"Potentially Bad Traffic"|"Unknown Traffic")
-                    # Tráfico normal/legítimo - IGNORAR
+                "Not Suspicious Traffic"|"Potentially Bad Traffic"|"Unknown Traffic"|"Misc activity")
                     continue
                     ;;
             esac
-            
-            # Ignorar alertas ET INFO (solo informativas, no amenazas)
-            if echo "$SIGNATURE" | grep -qi "^ET INFO"; then
-                continue
-            fi
             
             # Asegurar que los valores numéricos sean válidos (regex: solo dígitos)
             [[ ! "$SRC_PORT" =~ ^[0-9]+$ ]] && SRC_PORT="0"
