@@ -103,13 +103,19 @@ if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
             [ -z "$SIGNATURE" ] && SIGNATURE="Unknown"
             
             # ===== FILTRAR TODO EL TRÁFICO NORMAL =====
-            # Lista de signature_ids de tráfico legítimo
-            case "$SIGNATURE_ID" in
-                2016149|2016150|2024897|2060251|2027397|2039784|2019102|2019103|2063117|2013504)
-                    # Tráfico normal/legítimo - IGNORAR
-                    continue
-                    ;;
-            esac
+            # IMPORTANTE: Permitir TODAS las alertas custom (SID 9000000-9999999)
+            if [[ "$SIGNATURE_ID" =~ ^9[0-9]{6}$ ]]; then
+                # Es una alerta custom - NO filtrar
+                :  # No hacer nada, permitir que pase
+            else
+                # Lista de signature_ids de tráfico legítimo
+                case "$SIGNATURE_ID" in
+                    2016149|2016150|2024897|2060251|2027397|2039784|2019102|2019103|2063117|2013504)
+                        # Tráfico normal/legítimo - IGNORAR
+                        continue
+                        ;;
+                esac
+            fi
             
             # Filtro adicional: Ignorar categorías específicas
             case "$CATEGORY" in
