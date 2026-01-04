@@ -522,6 +522,65 @@ EOF
     mkdir -p /var/log/suricata
     chmod 755 /var/log/suricata
     
+    # Crear reglas personalizadas para amenazas reales
+    echo -e "${BLUE}🛡️  Creando reglas personalizadas de detección...${NC}"
+    mkdir -p /var/lib/suricata/rules
+    cat > /var/lib/suricata/rules/local.rules << 'CUSTOM_RULES'
+# ==========================================
+# UniNet - Reglas Personalizadas de Amenazas
+# ==========================================
+
+# SSH Brute Force - 10+ conexiones en 60 segundos
+alert tcp any any -> any 22 (msg:"CUSTOM SSH Brute Force Attack Detected"; flow:to_server; flags:S; threshold: type both, track by_src, count 10, seconds 60; classtype:attempted-admin; sid:9000001; rev:1;)
+
+# Port Scan agresivo - 20+ puertos en 10 segundos
+alert tcp any any -> any any (msg:"CUSTOM Aggressive Port Scan Detected"; flags:S; threshold: type both, track by_src, count 20, seconds 10; classtype:attempted-recon; sid:9000002; rev:1;)
+
+# SQL Injection en HTTP GET
+alert http any any -> any any (msg:"CUSTOM SQL Injection Attempt in URI"; flow:established,to_server; http.uri; content:"' OR '"; nocase; classtype:web-application-attack; sid:9000003; rev:1;)
+alert http any any -> any any (msg:"CUSTOM SQL Injection DROP TABLE"; flow:established,to_server; http.uri; content:"DROP TABLE"; nocase; classtype:web-application-attack; sid:9000004; rev:1;)
+alert http any any -> any any (msg:"CUSTOM SQL Injection UNION SELECT"; flow:established,to_server; http.uri; content:"UNION SELECT"; nocase; classtype:web-application-attack; sid:9000005; rev:1;)
+
+# XSS Attacks
+alert http any any -> any any (msg:"CUSTOM XSS Script Tag in URI"; flow:established,to_server; http.uri; content:"<script>"; nocase; classtype:web-application-attack; sid:9000006; rev:1;)
+
+# Directory Traversal
+alert http any any -> any any (msg:"CUSTOM Directory Traversal ../"; flow:established,to_server; http.uri; content:"../"; classtype:web-application-attack; sid:9000007; rev:1;)
+alert http any any -> any any (msg:"CUSTOM Path Traversal /etc/passwd"; flow:established,to_server; http.uri; content:"/etc/passwd"; nocase; classtype:web-application-attack; sid:9000008; rev:1;)
+
+# Telnet Brute Force
+alert tcp any any -> any 23 (msg:"CUSTOM Telnet Brute Force Detected"; flow:to_server; threshold: type both, track by_src, count 10, seconds 60; classtype:attempted-admin; sid:9000009; rev:1;)
+
+# FTP Brute Force
+alert tcp any any -> any 21 (msg:"CUSTOM FTP Brute Force Detected"; flow:to_server; threshold: type both, track by_src, count 10, seconds 60; classtype:attempted-admin; sid:9000010; rev:1;)
+CUSTOM_RULES
+
+    # Configurar Suricata para usar local.rules
+    python3 <<'PYCONFIG'
+import re
+config_file = "/etc/suricata/suricata.yaml"
+try:
+    with open(config_file, 'r') as f:
+        content = f.read()
+    
+    # Buscar la sección rule-files
+    if 'local.rules' not in content:
+        # Agregar local.rules después de la primera regla
+        pattern = r'(rule-files:\s*\n\s*-\s*[^\n]+)'
+        replacement = r'\1\n  - local.rules'
+        new_content = re.sub(pattern, replacement, content)
+        
+        with open(config_file, 'w') as f:
+            f.write(new_content)
+        print("✅ local.rules agregada a suricata.yaml")
+    else:
+        print("⚠️  local.rules ya existe en suricata.yaml")
+except Exception as e:
+    print(f"⚠️  Error configurando local.rules: {e}")
+PYCONFIG
+
+    echo -e "${GREEN}✅ Reglas personalizadas instaladas${NC}"
+    
     # Deshabilitar alertas de tráfico normal (STUN/P2P, ZeroTier, Spotify, etc.)
     echo -e "${BLUE}🔇 Deshabilitando alertas de tráfico legítimo en Suricata...${NC}"
     
