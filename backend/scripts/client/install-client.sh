@@ -177,6 +177,20 @@ else
     echo -e "${YELLOW}   Las métricas del sistema no estarán disponibles${NC}"
 fi
 
+# Instalar python3-psutil ANTES del primer heartbeat para que las métricas estén disponibles
+echo -e "${BLUE}📦 Instalando python3-psutil para métricas del sistema...${NC}"
+apt-get update -qq > /dev/null 2>&1
+apt-get install -y python3-psutil > /dev/null 2>&1 || {
+    echo -e "${YELLOW}⚠️  Advertencia: No se pudo instalar python3-psutil${NC}"
+    echo -e "${YELLOW}   Las métricas del sistema no estarán disponibles${NC}"
+}
+
+if python3 -c "import psutil" 2>/dev/null; then
+    echo -e "${GREEN}✅ python3-psutil instalado correctamente${NC}"
+else
+    echo -e "${YELLOW}⚠️  python3-psutil no disponible - métricas limitadas${NC}"
+fi
+
 # Configurar monitoreo automático (heartbeat cada 5 segundos)
 echo -e "${BLUE}⏱️  Configurando monitoreo automático...${NC}"
 
