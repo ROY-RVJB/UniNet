@@ -103,16 +103,28 @@ if [ -f "$SURICATA_LOG" ] && [ -r "$SURICATA_LOG" ]; then
             [ -z "$SIGNATURE" ] && SIGNATURE="Unknown"
             
             # ===== FILTRAR TODO EL TRÁFICO NORMAL =====
-            # SOLO mostrar alertas CRÍTICAS (severity=1) y ALTAS (severity=2)
-            # Ignorar severity=3 (informativas/falsos positivos)
-            if [ "$SEVERITY" = "3" ]; then
-                # Alerta informativa (falso positivo) - IGNORAR
-                continue
-            fi
+            # Lista de signature_ids de tráfico legítimo (actualizar según necesidad)
+            case "$SIGNATURE_ID" in
+                # STUN/P2P (VPN Tailscale)
+                2016149|2016150|2024897|2060251|\
+                # ZeroTier (VPN)
+                2027397|2039784|\
+                # Spotify P2P
+                2039784|\
+                # SSDP (descubrimiento de dispositivos local)
+                2019102|2019103|\
+                # DNS abuse (Azure, dominios legítimos)
+                2063117|\
+                # APT User-Agent (actualizaciones de Ubuntu)
+                2013504)
+                    # Tráfico normal/legítimo - IGNORAR
+                    continue
+                    ;;
+            esac
             
-            # Doble filtro: Ignorar categorías de tráfico normal
+            # Filtro adicional: Ignorar categorías específicas
             case "$CATEGORY" in
-                "Not Suspicious Traffic"|"Potentially Bad Traffic"|"Unknown Traffic"|"Misc activity")
+                "Not Suspicious Traffic"|"Unknown Traffic"|"Misc activity")
                     continue
                     ;;
             esac

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Shield, AlertTriangle, Info, AlertCircle, Skull, Filter, Search, Download, CheckCircle2 } from 'lucide-react';
 import { SecurityAlertsPanel } from '@/components/SecurityAlertsPanel';
 import { PCDetailPanel } from '@/components/PCDetailPanel';
-import type { AlertSeverity, PC } from '@/types';
+import type { AlertSeverity, PC, SecurityAlert } from '@/types';
 
 export function SecurityDashboardPage() {
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'all'>('all');
@@ -10,6 +10,7 @@ export function SecurityDashboardPage() {
   const [pcs, setPcs] = useState<PC[]>([]);
   const [selectedPC, setSelectedPC] = useState<PC | null>(null);
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+  const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
 
   // Fetch PCs para poder mostrar los detalles
   useEffect(() => {
@@ -53,6 +54,27 @@ export function SecurityDashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch alertas para calcular estadísticas
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) return;
+
+    const fetchAlerts = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/monitoring/security/alerts`);
+        if (!res.ok) return;
+        const data: SecurityAlert[] = await res.json();
+        setAlerts(data);
+      } catch (err) {
+        console.error('Error fetching alerts:', err);
+      }
+    };
+
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 10000); // Actualización cada 10 segundos
+    return () => clearInterval(interval);
+  }, []);
+
   const handlePCClick = (pcId: string) => {
     console.log('🎯 handlePCClick llamado con pcId:', pcId);
     console.log('📊 PCs disponibles:', pcs.map(p => ({ id: p.id, name: p.name })));
@@ -75,14 +97,14 @@ export function SecurityDashboardPage() {
     setTimeout(() => setSelectedPC(null), 300);
   };
 
-  // Stats mock
+  // Calcular estadísticas reales desde las alertas
   const stats = {
-    total: 127,
-    critical: 3,
-    high: 8,
-    medium: 15,
-    low: 45,
-    acknowledged: 56,
+    total: alerts.length,
+    critical: alerts.filter(a => a.severity === 'critical').length,
+    high: alerts.filter(a => a.severity === 'high').length,
+    medium: alerts.filter(a => a.severity === 'medium').length,
+    low: alerts.filter(a => a.severity === 'low').length,
+    acknowledged: alerts.filter(a => a.acknowledged).length,
   };
 
   return (

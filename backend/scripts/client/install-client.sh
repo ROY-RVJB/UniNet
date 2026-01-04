@@ -479,9 +479,21 @@ apt-get install -y suricata jq python3-psutil > /dev/null 2>&1 || {
 if command -v suricata &> /dev/null; then
     echo -e "${GREEN}✅ Suricata instalado correctamente${NC}"
     
-    # Actualizar reglas de Suricata primero
-    echo -e "${BLUE}📥 Actualizando reglas de detección de Suricata...${NC}"
-    suricata-update > /dev/null 2>&1 || echo -e "${YELLOW}⚠️  No se pudieron actualizar las reglas${NC}"
+    # Actualizar fuentes y reglas de Suricata
+    echo -e "${BLUE}📥 Configurando fuentes de reglas de Suricata...${NC}"
+    
+    # Actualizar lista de fuentes disponibles
+    suricata-update update-sources > /dev/null 2>&1 || true
+    
+    # Habilitar fuentes de reglas importantes
+    suricata-update enable-source et/open > /dev/null 2>&1 || true
+    suricata-update enable-source oisf/trafficid > /dev/null 2>&1 || true
+    
+    # Descargar y actualizar todas las reglas
+    echo -e "${BLUE}   📥 Descargando reglas de detección (esto puede tardar 1-2 minutos)...${NC}"
+    suricata-update > /dev/null 2>&1 || echo -e "${YELLOW}⚠️  Advertencia al actualizar reglas${NC}"
+    
+    echo -e "${GREEN}✅ Reglas de Suricata instaladas y actualizadas${NC}"
     
     # Detectar interfaz de red principal
     NETWORK_INTERFACE=$(ip -o link show | grep -v "lo\|docker\|veth\|virbr" | awk -F': ' '{print $2}' | head -n1)
