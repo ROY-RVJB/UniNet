@@ -82,8 +82,19 @@ rm /tmp/base.ldif
 
 # Guardar configuración
 mkdir -p /etc/uninet
+
+# Detectar IP de Tailscale automáticamente
+TAILSCALE_IP=$(tailscale ip -4 2>/dev/null)
+if [ -z "$TAILSCALE_IP" ]; then
+    echo -e "${YELLOW}⚠️  Tailscale no detectado, usando localhost${NC}"
+    LDAP_URI="ldap://localhost:389"
+else
+    echo -e "${GREEN}✅ Tailscale detectado: $TAILSCALE_IP${NC}"
+    LDAP_URI="ldap://$TAILSCALE_IP:389"
+fi
+
 cat > /etc/uninet/ldap.conf << EOF
-LDAP_URI=ldap://localhost:389
+LDAP_URI=$LDAP_URI
 LDAP_BASE=$LDAP_BASE
 LDAP_ADMIN=cn=admin,$LDAP_BASE
 LDAP_DOMAIN=$DOMAIN
@@ -103,7 +114,7 @@ echo ""
 echo "📝 Información de conexión:"
 echo "   Base DN: $LDAP_BASE"
 echo "   Admin DN: cn=admin,$LDAP_BASE"
-echo "   URI: ldap://localhost:389"
+echo "   URI: $LDAP_URI"
 echo ""
 echo "💡 Próximos pasos:"
 echo "   1. Crear usuarios con: ./create-user.sh"
