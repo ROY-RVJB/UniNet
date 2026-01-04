@@ -657,3 +657,32 @@ echo "   • Estado de la máquina se reporta cada 5 segundos (⚡ Cambios visib
 echo "   • Usuario activo se muestra en el dashboard"
 echo "   • Los usuarios LDAP pueden hacer login gráfico"
 echo ""
+# === Instalar UniNet Agent automáticamente ===
+echo "Instalando UniNet Agent..."
+
+cp "$(dirname "$0")/uninet-agent.sh" /usr/local/bin/uninet-agent.sh
+chmod +x /usr/local/bin/uninet-agent.sh
+
+# Crear servicio systemd para ejecución automática cada 30s
+cat > /etc/systemd/system/uninet-agent.service << 'EOF'
+[Unit]
+Description=UniNet Agent - Monitoreo y Control de Internet
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/uninet-agent.sh
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable uninet-agent.service
+systemctl start uninet-agent.service
+
+echo "✅ UniNet Agent instalado y ejecutándose automáticamente"
