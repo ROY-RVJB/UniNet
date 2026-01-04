@@ -56,7 +56,7 @@ $ATTRIBUTE: $NEW_VALUE
 EOF
 
 # Aplicar modificación
-if ldapmodify -x -D "$LDAP_ADMIN" -w "$ADMIN_PASS" -f "$TEMP_LDIF" 2>/dev/null; then
+if ldapmodify -x -H "$LDAP_URI" -D "$LDAP_ADMIN" -w "$ADMIN_PASS" -f "$TEMP_LDIF" 2>/dev/null; then
     rm "$TEMP_LDIF"
     echo "✅ Usuario $USERNAME modificado exitosamente"
     echo "   $ATTRIBUTE: $NEW_VALUE"

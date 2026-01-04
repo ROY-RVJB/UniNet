@@ -88,8 +88,8 @@ loginShell: /bin/bash
 userPassword: $(slappasswd -s "$PASSWORD")
 EOF
 
-# Agregar usuario a LDAP
-if ldapadd -x -D "$LDAP_ADMIN" -w "$ADMIN_PASS" -f "$TEMP_LDIF"; then
+# Agregar usuario a LDAP (especificar URI explícitamente)
+if ldapadd -x -H "$LDAP_URI" -D "$LDAP_ADMIN" -w "$ADMIN_PASS" -f "$TEMP_LDIF"; then
     rm "$TEMP_LDIF"
     echo "✅ Usuario $USERNAME creado exitosamente"
     echo "   UID: $UID_NUMBER"
@@ -101,7 +101,7 @@ if ldapadd -x -D "$LDAP_ADMIN" -w "$ADMIN_PASS" -f "$TEMP_LDIF"; then
     echo "   DN: uid=$USERNAME,ou=users,$LDAP_BASE"
     exit 0
 else
-    ERROR_MSG=$(ldapadd -x -D "$LDAP_ADMIN" -w "$ADMIN_PASS" -f "$TEMP_LDIF" 2>&1)
+    ERROR_MSG=$(ldapadd -x -H "$LDAP_URI" -D "$LDAP_ADMIN" -w "$ADMIN_PASS" -f "$TEMP_LDIF" 2>&1)
     rm "$TEMP_LDIF"
     echo "❌ Error al crear usuario $USERNAME: $ERROR_MSG" >&2
     exit 1

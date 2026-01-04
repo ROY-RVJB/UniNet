@@ -77,7 +77,7 @@ objectClass: organizationalUnit
 ou: groups
 EOF
 
-ldapadd -x -D "cn=admin,$LDAP_BASE" -w "$ADMIN_PASS" -f /tmp/base.ldif
+ldapadd -x -H ldapi:/// -D "cn=admin,$LDAP_BASE" -w "$ADMIN_PASS" -f /tmp/base.ldif
 rm /tmp/base.ldif
 
 # Guardar configuración
