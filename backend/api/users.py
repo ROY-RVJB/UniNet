@@ -195,7 +195,7 @@ async def create_user(user_data: UserCreate):
             ],
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=60,
             env=env
         )
 

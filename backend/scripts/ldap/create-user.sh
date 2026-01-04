@@ -40,8 +40,8 @@ if [ ! -w "$UID_FILE" ] && [ ! -w "/etc/uninet/" ]; then
 fi
 
 if [ ! -f "$UID_FILE" ]; then
-    # Primera vez: buscar el último UID en LDAP
-    LAST_UID=$(ldapsearch -x -LLL -b "$LDAP_BASE" "(objectClass=posixAccount)" uidNumber 2>/dev/null | grep "^uidNumber:" | awk '{print $2}' | sort -n | tail -1)
+    # Primera vez: buscar el último UID en LDAP (con timeout de 5 segundos)
+    LAST_UID=$(timeout 5 ldapsearch -x -LLL -b "$LDAP_BASE" "(objectClass=posixAccount)" uidNumber 2>/dev/null | grep "^uidNumber:" | awk '{print $2}' | sort -n | tail -1)
     if [ -z "$LAST_UID" ]; then
         echo "10000" > "$UID_FILE"
         UID_NUMBER=10000
