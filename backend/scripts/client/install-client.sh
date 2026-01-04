@@ -530,8 +530,8 @@ EOF
 # UniNet - Reglas Personalizadas de Amenazas
 # ==========================================
 
-# SSH Brute Force - 10+ conexiones en 60 segundos
-alert tcp any any -> any 22 (msg:"CUSTOM SSH Brute Force Attack Detected"; flow:to_server; flags:S; threshold: type both, track by_src, count 10, seconds 60; classtype:attempted-admin; sid:9000001; rev:1;)
+# SSH Brute Force - 10+ intentos de conexión SYN al puerto 22 en 60 segundos
+alert tcp any any -> any 22 (msg:"CUSTOM SSH Brute Force Attack Detected"; flags:S; threshold: type both, track by_src, count 10, seconds 60; classtype:attempted-admin; sid:9000001; rev:2;)
 
 # Port Scan agresivo - 20+ puertos en 10 segundos
 alert tcp any any -> any any (msg:"CUSTOM Aggressive Port Scan Detected"; flags:S; threshold: type both, track by_src, count 20, seconds 10; classtype:attempted-recon; sid:9000002; rev:1;)
