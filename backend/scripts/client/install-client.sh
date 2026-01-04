@@ -216,17 +216,27 @@ EOF
 
 chmod +x "$CRON_WRAPPER"
 
-# Agregar tarea a cron (se ejecuta cada minuto, pero el wrapper lo hace cada 5s)
-CRON_JOB="* * * * * $CRON_WRAPPER >/dev/null 2>&1"
-(crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
-
-# Verificar que el cron se configuró
+# Configurar cron usando /etc/cron.d/ (más confiable que crontab desde curl pipe)
+CRON_FILE="/etc/cron.d/uninet-agent"
+cat > "$CRON_FILE" << 'CRONEOF'
+# UniNet Agent - Heartbeat cada 5 segundos
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+* * * * * root /usr/local/bin/uninet-agent-runner > /dev/null 2>&1
+CRONEOF
+# Permisos correctos para /etc/cron.d/
+chmod 644 "$CRON_FILE"
+# Reiniciar cron para que tome el cambio
+systemctl restart cron 2>/dev/null || service cron restart 2>/dev/null || true
+# Verificar que el archivo se creó correctamente
 echo -e "${BLUE}🔍 Verificando cron...${NC}"
-if crontab -l 2>/dev/null | grep -q "uninet-agent-runner"; then
+if [ -f "$CRON_FILE" ] && grep -q "uninet-agent-runner" "$CRON_FILE"; then
     echo -e "${GREEN}   ✓ Cron configurado correctamente${NC}"
+    echo -e "${GREEN}   ✓ Archivo: $CRON_FILE${NC}"
 else
     echo -e "${YELLOW}   ⚠ Cron NO se configuró - requerirá configuración manual${NC}"
 fi
+
 
 if [ "$IS_UPDATE" = true ]; then
     echo -e "${GREEN}✅ Monitoreo actualizado exitosamente (heartbeat cada 5 segundos - Detección RÁPIDA)${NC}"
