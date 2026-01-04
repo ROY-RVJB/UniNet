@@ -215,6 +215,12 @@ if echo "$RESPONSE" | grep -q '"block_internet":true'; then
     sudo ufw default deny outgoing
     sudo ufw default deny incoming
     sudo ufw --force enable
+    # Detectar todas las interfaces de red excepto loopback y bloquear salida
+    interfaces=$(ip -o link show | awk -F': ' '{print $2}' | grep -v '^lo$')
+    for iface in $interfaces; do
+        echo "[INFO] Bloqueando salida en interfaz: $iface"
+        sudo ufw deny out on "$iface" 2>/dev/null
+    done
     # Bloquear ICMP (ping) usando iptables directamente
     sudo iptables -A OUTPUT -p icmp --icmp-type echo-request -j DROP
     sudo iptables -A INPUT -p icmp --icmp-type echo-reply -j DROP
