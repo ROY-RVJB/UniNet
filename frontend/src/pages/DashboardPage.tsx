@@ -5,12 +5,9 @@ import { PCDetailPanel } from '@/components/PCDetailPanel'
 import { PCStatusFilter, type FilterStatus } from '@/components/PCStatusFilter'
 import { useCarrera } from '@/contexts/CarreraContext'
 import type { PC } from '@/types'
-import { useWebSocketMetrics } from '@/hooks/useWebSocketMetrics';
+import { useWebSocket } from '@/contexts/WebSocketContext';
 
 export function DashboardPage() {
-  // Estado dinámico de PCs - se obtiene del backend
-  // const [pcs, setPcs] = useState<PC[]>([]) // Replaced by WebSocket hook
-  // const [isLoading, setIsLoading] = useState(true) // Replaced by WebSocket hook
   const { selectedCarrera } = useCarrera()
 
   // Estado para el panel de detalles de PC
@@ -20,8 +17,8 @@ export function DashboardPage() {
   // Estado para filtro de PCs por estado
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
 
-  // Usar WebSocket en lugar de polling
-  const { pcs, isConnected, error } = useWebSocketMetrics(selectedCarrera?.id);
+  // Usar WebSocket global context
+  const { pcs, isConnected } = useWebSocket();
   const [isLoading, setIsLoading] = useState(!isConnected);
 
   // Actualizar loading state cuando conecte
