@@ -82,7 +82,7 @@ function normalizeText(text: string): string {
 
 /**
  * Genera username desde nombres y apellidos
- * Formato: nombre.apellidopaterno
+ * Formato: nombre.apellidopaterno (completo, sin truncar)
  */
 function generateUsername(
   nombres: string,
@@ -91,14 +91,14 @@ function generateUsername(
   if (!nombres.trim() || !apellidoPaterno.trim()) return ""
 
   const nombre = normalizeText(nombres.split(' ')[0]) // Primer nombre
-  const paterno = normalizeText(apellidoPaterno)
+  const paterno = normalizeText(apellidoPaterno) // Apellido completo
 
   return `${nombre}.${paterno}`
 }
 
 /**
  * Genera username con código como sufijo
- * Formato: nombre.apellidopaterno.codigocompleto
+ * Formato: nombre.apellidopaterno.codigocompleto (apellido completo, sin truncar)
  */
 function generateUsernameWithCode(
   nombres: string,
@@ -113,17 +113,20 @@ function generateUsernameWithCode(
 }
 
 /**
- * Simula verificación de disponibilidad de username
- * TODO: Conectar con backend real
+ * Verifica disponibilidad de username contra el backend
  */
 async function checkUsernameAvailability(username: string): Promise<boolean> {
   try {
     const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/users/check-username/${username}`)
-    if (!res.ok) return false
+    if (!res.ok) {
+      console.error('Error checking username:', res.status)
+      return true // En caso de error, asumir disponible para no bloquear
+    }
     const data = await res.json()
     return data.available === true
-  } catch {
-    return false
+  } catch (error) {
+    console.error('Error connecting to backend:', error)
+    return true // En caso de error de conexión, asumir disponible para no bloquear
   }
 }
 
@@ -218,11 +221,9 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
   const [usernameStatus, setUsernameStatus] = React.useState<{
     checking: boolean
     available: boolean | null
-    usedCode: boolean // Si usó código como sufijo
   }>({
     checking: false,
     available: null,
-    usedCode: false,
   })
   const [usernameManuallyEdited, setUsernameManuallyEdited] = React.useState(false)
 
@@ -246,64 +247,27 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
     setErrors({})
     setTouched({})
     setIsLoading(false)
-    setUsernameStatus({ checking: false, available: null, usedCode: false })
+    setUsernameStatus({ checking: false, available: null })
     setUsernameManuallyEdited(false)
   }, [isOpen, carreraCode])
 
-  // Auto-generar username cuando cambian nombres o apellidos
+  // Auto-generar username cuando cambian nombres o apellidos (sin verificar en tiempo real)
   React.useEffect(() => {
     if (usernameManuallyEdited) return // No auto-generar si el usuario editó manualmente
     if (!formData.nombres.trim() || !formData.apellidoPaterno.trim()) return
 
-    const checkAndGenerate = async () => {
-      // Generar username base
-      const baseUsername = generateUsername(formData.nombres, formData.apellidoPaterno)
-      
-      setUsernameStatus(prev => ({ ...prev, checking: true }))
-      
-      // Verificar disponibilidad
-      const available = await checkUsernameAvailability(baseUsername)
-      
-      if (available) {
-        // Username disponible
-        setFormData(prev => ({
-          ...prev,
-          username: baseUsername,
-          email: `${baseUsername}@universidad.edu.pe`
-        }))
-        setUsernameStatus({ checking: false, available: true, usedCode: false })
-      } else if (formData.codigo.trim()) {
-        // Username ocupado, intentar con código
-        const usernameWithCode = generateUsernameWithCode(
-          formData.nombres,
-          formData.apellidoPaterno,
-          formData.codigo
-        )
-        const availableWithCode = await checkUsernameAvailability(usernameWithCode)
-        
-        setFormData(prev => ({
-          ...prev,
-          username: usernameWithCode,
-          email: `${usernameWithCode}@universidad.edu.pe`
-        }))
-        setUsernameStatus({ 
-          checking: false, 
-          available: availableWithCode, 
-          usedCode: true 
-        })
-      } else {
-        // Username ocupado y no hay código para usar
-        setFormData(prev => ({
-          ...prev,
-          username: baseUsername,
-          email: `${baseUsername}@universidad.edu.pe`
-        }))
-        setUsernameStatus({ checking: false, available: false, usedCode: false })
-      }
-    }
-
-    checkAndGenerate()
-  }, [formData.nombres, formData.apellidoPaterno, formData.codigo, usernameManuallyEdited])
+    // Generar username simple: nombre.apellido (sin verificar aún)
+    const username = generateUsername(formData.nombres, formData.apellidoPaterno)
+    
+    setFormData(prev => ({
+      ...prev,
+      username: username,
+      email: `${username}@universidad.edu.pe`
+    }))
+    
+    // Resetear el estado de verificación
+    setUsernameStatus({ checking: false, available: null })
+  }, [formData.nombres, formData.apellidoPaterno, usernameManuallyEdited])
 
   // Validaciones
   const validateField = (field: keyof UserFormData, value: string): string | undefined => {
@@ -333,7 +297,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
         if (!value.trim()) return "Este campo es obligatorio"
         if (value.length < 3) return "Mínimo 3 caracteres"
         if (!/^[a-z0-9._-]+$/.test(value)) return "Solo letras minúsculas, números, puntos, guiones"
-        if (usernameStatus.available === false) return "Este usuario ya existe"
+        // Removida verificación en tiempo real - se verificará al enviar
         return undefined
 
       case "dni":
@@ -437,7 +401,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
   }
 
   const isFormValid = React.useMemo(() => {
-    const baseValid = (
+    return (
       formData.codigo.trim().length >= 8 &&
       formData.nombres.trim().length >= 2 &&
       formData.apellidoPaterno.trim().length >= 2 &&
@@ -446,17 +410,9 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
       formData.dni.length === 8 &&
       formData.password.length >= 6 &&
       formData.confirmPassword === formData.password &&
-      usernameStatus.available !== false &&
-      !usernameStatus.checking
+      (!carreraCode ? formData.carrera.trim() !== "" : true)
     )
-
-    // Si no hay carreraCode predefinido, validar que se haya seleccionado una
-    if (!carreraCode) {
-      return baseValid && formData.carrera.trim() !== ""
-    }
-
-    return baseValid
-  }, [formData, usernameStatus, carreraCode])
+  }, [formData, carreraCode])
 
   if (!isOpen) return null
 
@@ -561,22 +517,11 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, carreraCode }: Crea
                   )}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  {usernameStatus.checking ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-white/30" />
-                  ) : usernameStatus.available === true ? (
-                    <Check className="h-4 w-4 text-green-400" />
-                  ) : usernameStatus.available === false ? (
-                    <AlertCircle className="h-4 w-4 text-red-400" />
-                  ) : null}
+                  {/* Icono removido - sin verificación en tiempo real */}
                 </div>
               </div>
               {touched.username && errors.username && (
                 <p className="text-xs text-red-400">{errors.username}</p>
-              )}
-              {usernameStatus.usedCode && (
-                <p className="text-xs text-yellow-400">
-                  ℹ️ Se agregó código porque el usuario base ya existe
-                </p>
               )}
             </div>
 

@@ -106,9 +106,39 @@ echo "$ADMIN_PASS" > /etc/uninet/ldap_admin_pass
 chmod 640 /etc/uninet/ldap_admin_pass
 chown root:$BACKEND_USER /etc/uninet/ldap_admin_pass
 
+# Configurar NSS y PAM para autenticación LDAP
+echo ""
+echo "🔐 Configurando autenticación del sistema..."
+
+# Configurar /etc/ldap.conf para libnss-ldap y libpam-ldap
+cat > /etc/ldap.conf << EOF
+base $LDAP_BASE
+uri ldap://localhost
+ldap_version 3
+rootbinddn cn=admin,$LDAP_BASE
+pam_password crypt
+nss_base_passwd ou=users,$LDAP_BASE?one
+nss_base_group ou=groups,$LDAP_BASE?one
+EOF
+
+# Configurar NSS para usar LDAP
+sed -i 's/^passwd:.*/passwd:         files systemd ldap/' /etc/nsswitch.conf
+sed -i 's/^group:.*/group:          files systemd ldap/' /etc/nsswitch.conf
+sed -i 's/^shadow:.*/shadow:         files ldap/' /etc/nsswitch.conf
+
+# Configurar PAM para crear home directories automáticamente
+if ! grep -q "pam_mkhomedir.so" /etc/pam.d/common-session; then
+    echo "session required pam_mkhomedir.so skel=/etc/skel umask=0022" >> /etc/pam.d/common-session
+fi
+
+# Reiniciar nscd (caché de nombres)
+systemctl restart nscd 2>/dev/null || true
+
+echo -e "${GREEN}✅ Autenticación LDAP configurada${NC}"
+
 echo ""
 echo "============================================================"
-echo -e "  ${GREEN}✅ OpenLDAP instalado correctamente${NC}"
+echo -e "  ${GREEN}✅ OpenLDAP instalado y configurado correctamente${NC}"
 echo "============================================================"
 echo ""
 echo "📝 Información de conexión:"
@@ -119,4 +149,5 @@ echo ""
 echo "💡 Próximos pasos:"
 echo "   1. Crear usuarios con: ./create-user.sh"
 echo "   2. Listar usuarios con: ./list-users.sh"
+echo "   3. Probar login: su - <usuario>"
 echo ""

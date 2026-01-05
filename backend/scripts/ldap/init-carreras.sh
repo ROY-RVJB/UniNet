@@ -29,6 +29,33 @@ fi
 echo "=== Inicializando Carreras en LDAP ==="
 echo ""
 
+# Crear grupo base "alumnos" (GID 5000) primero
+echo "=== Grupo Base ==="
+if timeout 3 ldapsearch -x -H "$LDAP_URI" -b "cn=alumnos,$LDAP_GROUPS_BASE" -LLL -s base "(objectClass=*)" dn &>/dev/null; then
+    echo "⏭️  5000 - alumnos (ya existe)"
+else
+    LDIF_FILE="/tmp/alumnos.ldif"
+    cat > "$LDIF_FILE" << EOF
+dn: cn=alumnos,$LDAP_GROUPS_BASE
+objectClass: posixGroup
+objectClass: top
+cn: alumnos
+gidNumber: 5000
+description: Grupo base de todos los estudiantes
+EOF
+    
+    if ldapadd -x -H "$LDAP_URI" -D "$LDAP_ADMIN" -w "$ADMIN_PASS" -f "$LDIF_FILE" &>/dev/null; then
+        echo "✅ 5000 - alumnos"
+    else
+        echo "❌ 5000 - alumnos (error al crear)"
+    fi
+    
+    rm -f "$LDIF_FILE"
+fi
+
+echo ""
+echo "=== Grupos de Carreras ==="
+
 # Definir las 12 carreras
 declare -A CARRERAS=(
     ["5001"]="Administración de Empresas"

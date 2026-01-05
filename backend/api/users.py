@@ -175,16 +175,24 @@ async def check_username_availability(username: str):
         ldap_base = conf.get("LDAP_BASE", "dc=uninet,dc=com")
         
         result = subprocess.run(
-            ["ldapsearch", "-x", "-LLL", "-b", f"ou=users,{ldap_base}", f"(uid={username})", "dn"],
+            ["ldapsearch", "-x", "-H", "ldap://localhost", "-LLL", "-b", f"ou=users,{ldap_base}", f"(uid={username})", "dn"],
             capture_output=True,
             text=True,
             timeout=5
         )
         
-        # Si encuentra resultados, el username existe
-        if result.returncode == 0 and f"uid={username}" in result.stdout:
-            return {"available": False, "reason": "Username ya existe"}
+        # Verificación más estricta: el usuario existe solo si:
+        # 1. El comando tuvo éxito (returncode 0)
+        # 2. Hay un DN en la salida (significa que encontró una entrada)
+        # 3. El uid exacto está en la salida
+        if result.returncode == 0 and result.stdout.strip():
+            # Verificar que realmente encontró el DN del usuario
+            lines = result.stdout.strip().split('\n')
+            for line in lines:
+                if line.startswith('dn:') and f'uid={username},' in line:
+                    return {"available": False, "reason": "Username ya existe"}
         
+        # Si no encontró nada o el comando falló, el username está disponible
         return {"available": True}
         
     except subprocess.TimeoutExpired:
