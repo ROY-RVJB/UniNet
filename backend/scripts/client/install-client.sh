@@ -533,8 +533,8 @@ EOF
 # SSH Brute Force - 10+ intentos de conexión SYN al puerto 22 en 60 segundos
 alert tcp any any -> any 22 (msg:"CUSTOM SSH Brute Force Attack Detected"; flags:S; threshold: type both, track by_src, count 10, seconds 60; classtype:attempted-admin; sid:9000001; rev:2;)
 
-# Port Scan agresivo - 100+ puertos en 60 segundos (solo escaneos reales como nmap)
-alert tcp any any -> any any (msg:"CUSTOM Aggressive Port Scan Detected"; flags:S; threshold: type both, track by_src, count 100, seconds 60; classtype:attempted-recon; sid:9000002; rev:2;)
+# Port Scan DESHABILITADO temporalmente (genera falsos positivos con apt-get durante instalación)
+# alert tcp any any -> any any (msg:"CUSTOM Aggressive Port Scan Detected"; flags:S; threshold: type both, track by_src, count 150, seconds 60; classtype:attempted-recon; sid:9000002; rev:3;)
 
 # SQL Injection en HTTP GET
 alert http any any -> any any (msg:"CUSTOM SQL Injection Attempt in URI"; flow:established,to_server; http.uri; content:"' OR '"; nocase; classtype:web-application-attack; sid:9000003; rev:1;)

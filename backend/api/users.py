@@ -206,8 +206,14 @@ async def create_user(user_data: UserCreate):
 
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="Timeout al crear usuario")
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions (como el 400 de arriba)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        import traceback
+        error_detail = f"Error interno: {type(e).__name__}: {str(e)}"
+        print(f"❌ ERROR al crear usuario:")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=error_detail)
 
 
 @router.get("/list", response_model=List[UserResponse])
