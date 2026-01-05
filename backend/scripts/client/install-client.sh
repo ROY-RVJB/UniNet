@@ -603,15 +603,32 @@ PYCONFIG
         echo -e "${YELLOW}   ⚠️  suricata-update no disponible${NC}"
     fi
     
-    # Reiniciar Suricata con la nueva configuración
-    systemctl restart suricata 2>/dev/null || service suricata restart 2>/dev/null || true
+    # Detener Suricata antes de limpiar logs
+    echo -e "${BLUE}🔄 Reiniciando Suricata con configuración limpia...${NC}"
+    systemctl stop suricata 2>/dev/null || service suricata stop 2>/dev/null || true
+    sleep 1
+    
+    # Limpiar y preparar eve.json (evitar archivos corruptos)
+    if [ -f /var/log/suricata/eve.json ]; then
+        # Si existe, respaldarlo y crear uno nuevo limpio
+        mv /var/log/suricata/eve.json /var/log/suricata/eve.json.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+    fi
+    
+    # Crear eve.json limpio con permisos correctos
+    touch /var/log/suricata/eve.json
+    chown suricata:suricata /var/log/suricata/eve.json 2>/dev/null || chown root:root /var/log/suricata/eve.json
+    chmod 644 /var/log/suricata/eve.json
+    
+    # Iniciar Suricata con configuración limpia
+    systemctl start suricata 2>/dev/null || service suricata start 2>/dev/null || true
     systemctl enable suricata 2>/dev/null || true
     
     # Verificar que Suricata esté corriendo
-    sleep 2
+    sleep 3
     if systemctl is-active --quiet suricata 2>/dev/null || service suricata status 2>/dev/null | grep -q "running"; then
         echo -e "${GREEN}✅ Suricata IDS activo y monitoreando tráfico de red en: $NETWORK_INTERFACE${NC}"
         echo -e "${GREEN}   📊 Las alertas se guardarán en: /var/log/suricata/eve.json${NC}"
+        echo -e "${GREEN}   🧹 Archivo eve.json limpio y listo para recibir alertas${NC}"
     else
         echo -e "${YELLOW}⚠️  Suricata instalado pero no pudo iniciarse${NC}"
     fi
