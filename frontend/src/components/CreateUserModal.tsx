@@ -98,7 +98,7 @@ function generateUsername(
 
 /**
  * Genera username con código como sufijo
- * Formato: nombre.apellidopaterno1234 (últimos 4 dígitos del código)
+ * Formato: nombre.apellidopaterno.codigocompleto
  */
 function generateUsernameWithCode(
   nombres: string,
@@ -108,9 +108,8 @@ function generateUsernameWithCode(
   if (!codigo.trim()) return generateUsername(nombres, apellidoPaterno)
   
   const baseUsername = generateUsername(nombres, apellidoPaterno)
-  const codigoSuffix = codigo.slice(-4) // Últimos 4 dígitos
   
-  return `${baseUsername}${codigoSuffix}`
+  return `${baseUsername}.${codigo}`
 }
 
 /**
