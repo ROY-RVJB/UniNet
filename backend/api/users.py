@@ -161,6 +161,39 @@ async def create_user_options():
     return {"message": "OK"}
 
 
+@router.get("/check-username/{username}")
+async def check_username_availability(username: str):
+    """
+    Verifica si un username está disponible en LDAP
+    """
+    if not username or len(username) < 3:
+        return {"available": False, "reason": "Username muy corto"}
+    
+    # Verificar contra LDAP
+    try:
+        conf = _read_ldap_conf()
+        ldap_base = conf.get("LDAP_BASE", "dc=uninet,dc=com")
+        
+        result = subprocess.run(
+            ["ldapsearch", "-x", "-LLL", "-b", f"ou=users,{ldap_base}", f"(uid={username})", "dn"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        # Si encuentra resultados, el username existe
+        if result.returncode == 0 and f"uid={username}" in result.stdout:
+            return {"available": False, "reason": "Username ya existe"}
+        
+        return {"available": True}
+        
+    except subprocess.TimeoutExpired:
+        return {"available": False, "reason": "Timeout al verificar"}
+    except Exception as e:
+        print(f"Error verificando username: {e}")
+        return {"available": False, "reason": "Error al verificar"}
+
+
 @router.post("/create", response_model=dict)
 async def create_user(user_data: UserCreate):
     """

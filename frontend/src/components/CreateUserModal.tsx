@@ -118,12 +118,14 @@ function generateUsernameWithCode(
  * TODO: Conectar con backend real
  */
 async function checkUsernameAvailability(username: string): Promise<boolean> {
-  // Simulación de llamada API con delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  
-  // Por ahora, simular que algunos usernames están ocupados
-  const ocupados = ['juan.perez', 'maria.torres', 'jose.gomez']
-  return !ocupados.includes(username)
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/users/check-username/${username}`)
+    if (!res.ok) return false
+    const data = await res.json()
+    return data.available === true
+  } catch {
+    return false
+  }
 }
 
 // ==========================================
