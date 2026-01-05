@@ -522,7 +522,24 @@ async def receive_security_alert(request: Request):
     # Traducir la alerta técnica a mensaje comprensible
     translation = translate_alert(alert.signature, alert.signature_id, alert.category or "")
     
-    # Crear registro de alerta
+    # DEDUPLICACIÓN: Verificar si ya existe una alerta NO RECONOCIDA del mismo tipo
+    # Solo muestra UNA alerta activa por tipo/equipo hasta que el admin la revise
+    existing_alerts = db.load_security_alerts(limit=100)
+    
+    for existing in existing_alerts:
+        # Solo verificar alertas NO RECONOCIDAS (acknowledged == False)
+        if existing.get("acknowledged", False):
+            continue  # Ya fue revisada, permitir nueva alerta si se repite
+        
+        # Verificar si es la misma alerta activa (mismo signature_id, src_ip, hostname)
+        if (existing.get("signatureId") == alert.signature_id and
+            existing.get("sourceIp") == alert.src_ip and
+            existing.get("pcId") == alert.hostname):
+            
+            print(f"⚠️  Alerta duplicada ignorada: {translation['title']} ya existe y no ha sido revisada")
+            return {"status": "ok", "alert_id": existing.get("id"), "deduplicated": True}
+    
+    # No es duplicado, crear nueva alerta
     alert_record = {
         "id": f"alert-{uuid.uuid4()}",
         "timestamp": alert.timestamp,
